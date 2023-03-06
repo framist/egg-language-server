@@ -1,2 +1,9 @@
+
+# yo code 生成
 node_modules
 *.vsix
+
+# 参考 LSP Example
+out
+client/server
+.vscode-test
