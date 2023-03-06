@@ -1,0 +1,25 @@
+{
+  "name": "lisp-egg-support",
+  "displayName": "lisp-egg-support",
+  "description": "lisp language support with egg support",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.76.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "lisp",
+      "aliases": ["lisp", "lisp"],
+      "extensions": [".lisp"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "lisp",
+      "scopeName": "source.lisp",
+      "path": "./syntaxes/lisp.tmLanguage.json"
+    }]
+  }
+}
