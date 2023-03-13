@@ -1,57 +1,25 @@
-# lisp-egg-support README
+[*中文*](#lisp-egg-support-介绍) | [*English*](#lisp-egg-support-readme)
 
-This is the README for your extension "lisp-egg-support". After writing up a brief description, we recommend including the following sections.
+# lisp-egg-support 介绍
 
-## Features
+## 特征
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+## 依赖
 
-For example if there is an image subfolder under your extension project workspace:
+## 设置
 
-\!\[feature X\]\(images/feature-x.png\)
+如果您的扩展通过 “贡献” 添加了任何VS代码设置，则包括在内。配置 ”扩展点。
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+例如:
 
-## Requirements
+此扩展提供以下设置:
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+* 'myExtension.enable': 启用/禁用此扩展。
+* 'myExtension.thing': 设置为 'blah' 做某事。
 
-## Extension Settings
+## 开发
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-# 开发
-
-## Structure
+### 结构
 
 ```
 .
@@ -62,15 +30,62 @@ Added features X, Y, and Z.
 ├── package.json // The extension manifest.
 └── server // 语言服务器
     └── src
-        └── server.ts // 语言服务器入口点
+        └── main.rs // 语言服务器入口点
 ```
-## Running the Sample
 
-- Run `npm install` in this folder. This installs all necessary npm modules in both the client and server folder
-- Open VS Code on this folder.
-- Press Ctrl+Shift+B to start compiling the client and server in [watch mode](https://code.visualstudio.com/docs/editor/tasks#:~:text=The%20first%20entry%20executes,the%20HelloWorld.js%20file.).  现在这个版本应该直接 F5 开始调试就行。
-- Switch to the Run and Debug View in the Sidebar (Ctrl+Shift+D).
-- Select `Launch Client` from the drop down (if it is not already).
-- Press ▷ to run the launch config (F5).
+### 运行
+
+0. 在此文件夹上打开 VS Code
+1. 在此文件夹中运行 `npm install` , 这将在客户端文件夹中安装所有必要的 npm 模块
+2. `cargo build`
+3. press <kbd>F5</kbd> or
+   1. 切换到侧栏中的运行和调试视图 (Ctrl+Shift+D).
+   2. Select `Launch Client` from the drop down (if it is not already).
+   3. Press ▷ to run the launch config (F5).
 
 
+## Known Issues
+
+## Release Notes
+
+---
+
+*English*
+
+# lisp-egg-support README
+
+## Features
+
+## Requirements
+
+## Extension Settings
+
+## Development
+
+### Structure
+
+```
+.
+├── client // Language Client
+│   ├── src
+│   │   ├── test // End to End tests for Language Client / Server
+│   │   └── extension.ts // Language Client entry point
+├── package.json // The extension manifest.
+└── server // Language Server
+    └── src
+        └── main.rs // Language Server entry point
+```
+
+### Running
+
+0. Open VS Code on this folder.
+1. Run `npm install` in this folder. This installs all necessary npm modules in both the client and server folder
+2. `cargo build`
+3. press <kbd>F5</kbd> or 
+   1. Switch to the Run and Debug View in the Sidebar (Ctrl+Shift+D).
+   2. Select `Launch Client` from the drop down (if it is not already).
+   3. Press ▷ to run the launch config (F5).
+
+## Known Issues
+
+## Release Notes
