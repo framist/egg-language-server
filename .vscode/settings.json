@@ -1,5 +1,6 @@
 {
 	"editor.insertSpaces": false,
+	// 关闭tsc任务自动检测，因为我们有必要的任务作为npm脚本
 	"typescript.tsc.autoDetect": "off",
 	"typescript.preferences.quoteStyle": "single",
 	"editor.codeActionsOnSave": {

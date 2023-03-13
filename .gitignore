@@ -7,3 +7,7 @@ node_modules
 out
 client/server
 .vscode-test
+
+# rust
+/server/target/
+/target/
