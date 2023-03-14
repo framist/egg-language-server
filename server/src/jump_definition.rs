@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
 use im_rc::Vector;
-use log::debug;
-use tower_lsp::{lsp_types::MessageType, Client};
 
 use crate::chumsky::{Expr, Func, Spanned};
 /// return (need_to_continue_search, founded reference)

@@ -115,18 +115,6 @@ pub enum Value {
     Func(String),
 }
 
-impl Value {
-    fn num(self, span: Span) -> Result<f64, Error> {
-        if let Value::Num(x) = self {
-            Ok(x)
-        } else {
-            Err(Error {
-                span,
-                msg: format!("'{}' is not a number", self),
-            })
-        }
-    }
-}
 
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -492,10 +480,6 @@ pub fn funcs_parser() -> impl Parser<Token, HashMap<String, Func>, Error = Simpl
         .then_ignore(end())
 }
 
-struct Error {
-    span: Span,
-    msg: String,
-}
 
 pub fn type_inference(expr: &Spanned<Expr>, symbol_type_table: &mut HashMap<Span, Value>) {
     match &expr.0 {
