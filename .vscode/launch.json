@@ -3,12 +3,38 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			// Used for testing the extension with a local build of the LSP server (in `target/debug`).
+			"name": "Run Extension (Debug Build)",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				// "--disable-extensions", // 临时禁止其他的一切插件
+				"--extensionDevelopmentPath=${workspaceRoot}" // 需调试的 VSCode 插件目录
+			],
+			"outFiles": [
+				"${workspaceRoot}/client/out/**/*.js"
+			],
+			"preLaunchTask": "Build Server and Extension",
+			"skipFiles": [
+				"<node_internals>/**/*.js"
+			],
+			"env": {
+				"SERVER_PATH_DEBUG": "${workspaceRoot}/target/debug/lisp-egg-language-server", // debug server 路径
+			}
+		},
+		{
 			"type": "extensionHost",
 			"request": "launch",
 			"name": "Launch Client",
 			"runtimeExecutable": "${execPath}",
-			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
-			"outFiles": ["${workspaceRoot}/client/out/**/*.js"],
+			"args": [
+				// "--disable-extensions", // 临时禁止其他的一切插件
+				"--extensionDevelopmentPath=${workspaceRoot}" // 需调试的 VSCode 插件目录
+			],
+			"outFiles": [
+				"${workspaceRoot}/client/out/**/*.js"
+			],
 			"autoAttachChildProcesses": true,
 			"preLaunchTask": {
 				"type": "npm",
@@ -16,7 +42,7 @@
 			},
 			// 客户端应得到的环境变量：服务器bin的路径
 			"env": {
-				"SERVER_PATH": "${workspaceRoot}/target/debug/lisp-egg-language-server"
+				"SERVER_PATH_DEBUG": "${workspaceRoot}/target/debug/lisp-egg-language-server"
 			}
 		},
 		{
@@ -29,7 +55,9 @@
 				"--extensionTestsPath=${workspaceRoot}/client/out/test/index",
 				"${workspaceRoot}/client/testFixture"
 			],
-			"outFiles": ["${workspaceRoot}/client/out/test/**/*.js"]
+			"outFiles": [
+				"${workspaceRoot}/client/out/test/**/*.js"
+			]
 		}
 	]
 }

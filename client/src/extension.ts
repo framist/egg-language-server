@@ -57,14 +57,15 @@ export function activate(context: ExtensionContext) {
 
 
 	const traceOutputChannel = window.createOutputChannel("Lisp-egg Language Server trace");
-	const command = process.env.SERVER_PATH || "lisp-egg-language-server";
+	const command = process.env.SERVER_PATH_DEBUG || "lisp-egg-language-server";
 	const run: Executable = {
 		command,
 		options: {
 			env: {
 				...process.env,
 				// eslint-disable-next-line @typescript-eslint/naming-convention
-				RUST_LOG: "debug",
+				RUST_LOG: "debug,egg=off", // rust 日志级别
+				// RUST_BACKTRACE: 1
 			},
 		},
 	};
@@ -88,7 +89,7 @@ export function activate(context: ExtensionContext) {
 	// 创建语言客户端并启动客户端。
 	client = new LanguageClient(
 		'lispEgglanguageServer', // 它是客户端的名称，与服务端配置文件中指定的名称相同。
-		'Language Server Example', // 对客户端的描述, 将会在用户界面中显示。
+		'Lisp Egg support Language Server', // 对客户端的描述, 将会在用户界面中显示。
 		serverOptions,
 		clientOptions
 	);

@@ -2,6 +2,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			"label": "Build Extension",
 			"type": "npm",
 			"script": "compile",
 			"group": "build",
@@ -28,6 +29,23 @@
 			"problemMatcher": [
 				"$tsc-watch"
 			]
+		},
+
+		{
+			"label": "Build Server",
+			"group": "build",
+			"type": "shell",
+			"command": "cargo build",
+			"problemMatcher": "$rustc"
+		},
+		// 联合调试
+		{
+			"label": "Build Server and Extension",
+			"dependsOn": [
+				"Build Server",
+				"Build Extension"
+			],
+			"problemMatcher": "$rustc"
 		}
 	]
 }

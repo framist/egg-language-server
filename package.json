@@ -1,25 +1,23 @@
 {
-  "name": "lisp-egg-support",
-  "displayName": "lisp-egg-support",
-  "description": "lisp language support with egg support",
+	"name": "lisp-egg-support",
+	"displayName": "lisp-egg-support",
+	"description": "lisp language support with egg support",
 	"license": "MIT",
-  "version": "0.0.1",
-  "engines": {
-    "vscode": "^1.76.0"
-  },
-  "categories": [
-    "Programming Languages"
-  ],
-
-  
-  "activationEvents": [
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.76.0"
+	},
+	"categories": [
+		"Programming Languages"
+	],
+	"activationEvents": [
 		"onLanguage:lisp"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "Example configuration",
+			"title": "lisp-egg-support configuration",
 			"properties": {
 				"lispEgglanguageServer.maxNumberOfProblems": {
 					"scope": "resource",
@@ -45,8 +43,8 @@
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
-		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"lint": "eslint ./client/src --ext .ts,.tsx",
+		"postinstall": "cd client && npm install && cd ..",
 		"test": "sh ./scripts/e2e.sh"
 	},
 	"devDependencies": {
