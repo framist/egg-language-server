@@ -3,4 +3,4 @@ pub mod completion;
 pub mod jump_definition;
 pub mod reference;
 pub mod semantic_token;
-pub mod egg_optimize;
+pub mod egg_support;

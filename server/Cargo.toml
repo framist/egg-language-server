@@ -20,4 +20,7 @@ im-rc = "15.0.0"
 # egg
 egg = "0.9.3"
 
-
+# 临时：egg 的依赖
+# [dev-dependencies]
+fxhash = "0.2.1"
+ordered-float = "3.0.0"

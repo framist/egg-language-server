@@ -1,7 +1,7 @@
 use log::*;
 
 // 实现的 lsp 功能
-use lisp_egg_language_server::egg_optimize::egg_violence;
+use lisp_egg_language_server::egg_support::optimize::egg_violence;
 
 // 依赖
 use tower_lsp::jsonrpc::Result;
@@ -120,22 +120,12 @@ impl Backend {
                 _ => Position::new(0, 0),
             };
 
-            // let diagnostic = Diagnostic::new_simple(
-            //     Range::new(start_position, end_position), m.into());
-            // let diagnostics = vec![diagnostic];
-
-            // debug!("diagnostics: {:?}", &diagnostics);
-            // // 发送诊断信息
-            // self.client
-            //     .publish_diagnostics(params.uri, diagnostics, Some(params.version))
-            //     .await;
-
             let diagnostic = Diagnostic::new(
                 Range::new(start_position, end_position), // 设置诊断范围
                 Some(DiagnosticSeverity::INFORMATION),    // 设置诊断级别为 "Information"
                 None,
-                Some("my-linter".to_owned()), // 可选字段，用于指定 linter 的名称或标识符等
-                m.to_string(),                     // 使用 markdown 格式表示诊断信息???
+                Some("egg-support".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
+                format!("可以优化为 => {}",m),                     
                 None,
                 None,
             );

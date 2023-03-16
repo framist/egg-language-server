@@ -1,14 +1,5 @@
 use egg::*;
 
-/* NOTICE 
-println 等向标准输出流写入会影响 语言服务器和客户端的通信
-请使用  debug!  等
-*/
-
-pub fn egg_violence(s: &str) -> String {
-	simplify(s)
-}
-
 // 该函数定义语言: SimpleLanguage。
 // 它包括 Num、加号"+"(Add、两个Id标志符参数)、
 // "*" 乘号(Mul、两个Id标志符参数)以及Symbol标记.
@@ -39,14 +30,13 @@ fn make_rules() -> Vec<Rewrite<SimpleLanguage, ()>> {
 }
 
 /// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
-fn simplify(s: &str) -> String {
-    // 解析表达式，类型注释(<SimpleLanguage>)告诉它使用哪种语言
-    // let expr: RecExpr<SimpleLanguage> = s.parse().unwrap();
+pub fn simplify(s: &str) -> Result<String, String> {
+    // 解析表达式，类型注释(<Language>)告诉它使用哪种语言
+    // let expr: RecExpr<Language> = s.parse().unwrap();
     let expr = match s.parse() {
         Ok(expr) => expr,
-        Err(error) => return format!("Failed to parse expression: {}", error),
+        Err(error) => return Err(format!("Failed to parse expression: {}", error)),
     };
-    
 
     // 使用 Runner 简化表达式，该运行器创建带有
     // 给定的表达式的 e-graph ，并在其上运行给定的规则
@@ -58,18 +48,17 @@ fn simplify(s: &str) -> String {
     // 使用提取器 extractor 选择 根 eclass 的最佳元素
     let extractor = Extractor::new(&runner.egraph, AstSize);
     let (_best_cost, best) = extractor.find_best(root);
-    // println!("Simplified {} to {} with cost {}", expr, best, best_cost);
-    best.to_string()
+    Ok(best.to_string())
 }
 
 #[test]
 fn simple_tests() {
-    assert_eq!(simplify("(* 0 42)"), "0");
-    assert_eq!(simplify("(+ 0 (* 1 foo))"), "foo");
+    assert_eq!(simplify("(* 0 42)").unwrap(), "0");
+    assert_eq!(simplify("(+ 0 (* 1 foo))").unwrap(), "foo");
 }
 
 #[test]
 fn my_tests() {
     println!("hello!");
-    println!("{}", simplify("(* 0 42)"));
+    println!("{}", simplify("(* 0 42)").unwrap());
 }
