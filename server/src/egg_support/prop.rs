@@ -87,6 +87,7 @@ rule! {contrapositive, "(-> ?a ?b)",    "(-> (~ ?b) (~ ?a))"     }
 
 // this has to be a multipattern since (& (-> ?a ?b) (-> (~ ?a) ?c))  !=  (| ?b ?c)
 // see https://github.com/egraphs-good/egg/issues/185
+#[allow(unused)]
 fn lem_imply() -> Rewrite {
     multi_rewrite!(
         "lem_imply";
@@ -96,6 +97,7 @@ fn lem_imply() -> Rewrite {
     )
 }
 
+#[allow(unused)]
 fn prove_something(name: &str, start: &str, rewrites: &[Rewrite], goals: &[&str]) {
     let _ = env_logger::builder().is_test(true).try_init();
     println!("Proving {}", name);
@@ -191,6 +193,7 @@ fn make_rules() -> Vec<Rewrite> {
 }
 
 /// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
+#[allow(unused)]
 pub fn simplify(s: &str) -> Result<String, String> {
     // 解析表达式，类型注释(<Language>)告诉它使用哪种语言
     // let expr: RecExpr<Language> = s.parse().unwrap();

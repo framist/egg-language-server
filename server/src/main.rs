@@ -110,7 +110,11 @@ struct TextDocumentItem {
 impl Backend {
     async fn on_change(&self, params: TextDocumentItem) {
         // egg
-        let m = format!("{}", egg_violence(&params.text));
+        let (m, diagnostic_type) = match egg_violence(&params.text) {
+            Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
+            Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR)
+        };
+
         debug!("Egg: {} => {}", params.text.trim(), m);
         if params.text.trim() != m {
             let start_position = Position::new(0, 0);
@@ -122,7 +126,7 @@ impl Backend {
 
             let diagnostic = Diagnostic::new(
                 Range::new(start_position, end_position), // 设置诊断范围
-                Some(DiagnosticSeverity::INFORMATION),    // 设置诊断级别为 "Information"
+                Some(diagnostic_type),    // 设置诊断级别为 "Information"
                 None,
                 Some("egg-support".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
                 format!("可以优化为 => {}",m),                     

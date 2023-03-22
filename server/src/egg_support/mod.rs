@@ -3,3 +3,4 @@ mod simple;
 mod math;
 mod lambda;
 mod prop;
+mod lisp;

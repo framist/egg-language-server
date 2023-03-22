@@ -29,11 +29,12 @@ fn make_rules() -> Vec<Rewrite<SimpleLanguage, ()>> {
     ]
 }
 
+#[allow(unused)]
 /// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
 pub fn simplify(s: &str) -> Result<String, String> {
     // 解析表达式，类型注释(<Language>)告诉它使用哪种语言
     // let expr: RecExpr<Language> = s.parse().unwrap();
-    let expr = match s.parse() {
+    let expr: RecExpr<SimpleLanguage> = match s.parse() {
         Ok(expr) => expr,
         Err(error) => return Err(format!("Failed to parse expression: {}", error)),
     };
