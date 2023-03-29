@@ -63,3 +63,9 @@ fn my_tests() {
     println!("hello!");
     println!("{}", simplify("(* 0 42)").unwrap());
 }
+
+// fn lambda_test() -> impl Fn(i32) -> i32 {
+//     let a = |x: i32| x;
+//     a
+    
+// }

@@ -6,12 +6,12 @@ define_language! {
         Bool(bool),
         Num(i32),
 
-        "var" = Var(Id),
+        "var" = Var(Id),        // 声明一个符号 ？
 
         "+" = Add([Id; 2]),
         "=" = Eq([Id; 2]),
 
-        "app" = App([Id; 2]),
+        "app" = App([Id; 2]),   // 使用函数 apply ？ 
         "lam" = Lambda([Id; 2]),
         "let" = Let([Id; 3]),
         "fix" = Fix([Id; 2]),
@@ -428,4 +428,10 @@ pub fn simplify(s: &str) -> Result<String, String> {
     let extractor = Extractor::new(&runner.egraph, AstSize);
     let (_best_cost, best) = extractor.find_best(root);
     Ok(best.to_string())
+}
+
+#[test]
+fn my_tests() {
+    println!("{}", simplify(
+        "(let five 5 (let eight (+ 3 (var five)) (let add (lam x y (+ (var x) (var y)))(app (var add) (var five) (var eight)))))").unwrap());
 }

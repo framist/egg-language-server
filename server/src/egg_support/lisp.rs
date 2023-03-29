@@ -1,6 +1,6 @@
 use egg::{rewrite as rw, *};
 
-// TODO 目前 仅仅简答得混合 lambda 与 math
+// TODO 目前 仅仅简单地混合 lambda 与 math
 // 不准备实现常数折叠
 
 use ordered_float::NotNan;
@@ -20,11 +20,11 @@ define_language! {
 
         Bool(bool),
 
-        "var" = Var(Id),
+        "var" = Var(Id),        // 声明之后为一个 var
 
         "=" = Eq([Id; 2]),
 
-        "app" = App([Id; 2]),
+        "app" = App([Id; 2]),   // apply 使用lam函数 声明之后为一个lambda, 如果是函数名，则需var声明
         "lam" = Lambda([Id; 2]),
         "let" = Let([Id; 3]),
         "fix" = Fix([Id; 2]),
@@ -43,6 +43,10 @@ define_language! {
         "sqrt" = Sqrt(Id),
 
         Constant(Constant),
+
+        // * Scheme
+        "display" = Display(Id),
+
     }
 }
 
@@ -191,5 +195,10 @@ fn lisp_test() {
     println!("{:?}", simplify("(lam x (+ 4
                                     (app (lam y (var y))
                                         4)))") );
+}
+
+#[test]
+fn lisp_temp_test() {
+    println!("{:?}", simplify(" (let add (lam x (+ (var x) 1))(app (var add) 1)))") );
 }
 
