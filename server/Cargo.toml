@@ -24,3 +24,13 @@ egg = "0.9.3"
 # [dev-dependencies]
 fxhash = "0.2.1"
 ordered-float = "3.0.0"
+
+# tree_sitter
+tree-sitter = "0.20.9"
+tree-sitter-javascript = "0.20.0"
+tree-sitter-rust = "0.20.3"
+tree-sitter-python = "0.20.2"
+tree-sitter-c = "0.20.2"
+tree-sitter-sexp = { git = "https://github.com/AbstractMachinesLab/tree-sitter-sexp" }
+tree-sitter-scheme = { git = "https://github.com/6cdh/tree-sitter-scheme.git"}
+tree-sitter-java = "0.20.0"

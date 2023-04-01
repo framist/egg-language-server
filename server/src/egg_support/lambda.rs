@@ -6,17 +6,17 @@ define_language! {
         Bool(bool),
         Num(i32),
 
-        "var" = Var(Id),        // 声明一个符号 ？
+        "var" = Var(Id),         // 声明是一个符号        (var 符号名)
 
         "+" = Add([Id; 2]),
         "=" = Eq([Id; 2]),
 
-        "app" = App([Id; 2]),   // 使用函数 apply ？ 
-        "lam" = Lambda([Id; 2]),
-        "let" = Let([Id; 3]),
-        "fix" = Fix([Id; 2]),
+        "app" = App([Id; 2]),    // 使用函数 apply      (app 函数名 表达式)
+        "lam" = Lambda([Id; 2]), // 建立一个函数        (lam 单参数名 表达式)
+        "let" = Let([Id; 3]),    // 注意是三个参数      (let 参数名 表达式 后续作用域)
+        "fix" = Fix([Id; 2]),    // 递归函数 fixpoint 不动点 其实也是语法糖
 
-        "if" = If([Id; 3]),
+        "if" = If([Id; 3]),      // 其实是语法糖，不必须的，为了方便  (if 条件表达式 成立表达式 不成立表达式)
 
         Symbol(egg::Symbol),
     }
@@ -433,5 +433,5 @@ pub fn simplify(s: &str) -> Result<String, String> {
 #[test]
 fn my_tests() {
     println!("{}", simplify(
-        "(let five 5 (let eight (+ 3 (var five)) (let add (lam x y (+ (var x) (var y)))(app (var add) (var five) (var eight)))))").unwrap());
+        "(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))").unwrap());
 }

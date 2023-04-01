@@ -1,5 +1,6 @@
-//! This is the parser and interpreter for the 'Foo' language. See `tutorial.md` in the repository's root to learn
-//! about it.
+//! This is the parser and interpreter for the 'Foo' language. 
+//! 使用 chumsky 解析 Foo 语言到 S-表达式
+//! 因泛用性不佳等原因不再采用 chumsky 库
 use chumsky::prelude::*;
 
 #[derive(Debug)]
@@ -223,6 +224,7 @@ fn eval<'a>(
 const SRC: &str = r"
 fn add x = x + 1;
 add(1)
+1
 ";
 
 // const SRC: &str = r"
