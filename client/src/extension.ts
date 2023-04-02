@@ -77,8 +77,13 @@ export function activate(context: ExtensionContext) {
 
 	// 控制语言客户端的选项
 	const clientOptions: LanguageClientOptions = {
-		// 注册 lisp 语言 服务器
-		documentSelector: [{ scheme: 'file', language: 'lisp' }],
+		// 注册 lisp 语言 服务器，注意还需要更改 activationEvents
+		// TODO 暂时未完全实现：多语言支持 
+		documentSelector: [
+			{ scheme: 'file', language: 'lisp' },
+			{ scheme: 'file', language: 'scheme' },
+			{ scheme: 'file', language: 'python' }
+		],
 		synchronize: {
 			// 当文件变动为'.clientrc'中那样时，通知服务器
 			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')

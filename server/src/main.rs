@@ -8,6 +8,15 @@ use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
+use serde_json::Value;
+
+
+// 设置 TODO
+#[derive(Debug)]
+struct Settings {
+    maxNumberOfProblems: u32,
+}
+
 #[derive(Debug)]
 struct Backend {
     client: Client,
@@ -107,12 +116,48 @@ struct TextDocumentItem {
 /// 目前只实现了
 /// - `on_change`
 ///   - 被 `did_change` 和 `did_open` 接口引用
+/// TODO 增量更新方式
 impl Backend {
     async fn on_change(&self, params: TextDocumentItem) {
+        // 根据拓展名选择解析器 
+        // TODO 临时的方式。 更好是侦测客户端语言配置
+        let target_language = match params
+            .uri
+            .to_file_path()
+            .unwrap()
+            .extension()
+            .unwrap()
+            .to_str()
+        {
+            Some(ext) => match ext {
+                "py" => "python",
+                "lisp" | "scm" => "lisp",
+                _ => {
+                    self.client
+                        .log_message(MessageType::ERROR, "文件拓展名错误")
+                        .await;
+                    return;
+                }
+            },
+            None => {
+                self.client
+                    .log_message(MessageType::ERROR, "文件拓展名错误")
+                    .await;
+                return;
+            }
+        };
+
+        let f;
+        if target_language == "lisp" {
+            f = egg_violence;
+        } else {
+            return self.client.log_message(MessageType::ERROR, format!("暂不支持{target_language}")).await;
+        }
+
         // egg
-        let (m, diagnostic_type) = match egg_violence(&params.text) {
+        let (m, diagnostic_type) = match f(&params.text) {
             Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
-            Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR)
+            Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
         };
 
         debug!("Egg: {} => {}", params.text.trim(), m);
@@ -120,16 +165,18 @@ impl Backend {
             let start_position = Position::new(0, 0);
             let lines = params.text.lines();
             let end_position = match (lines.clone().count(), lines.last()) {
-                (count, Some(last_line)) => Position::new(count as u32 - 1, last_line.len() as u32),
+                (count, Some(last_line)) => {
+                    Position::new(count as u32 - 1, last_line.len() as u32)
+                }
                 _ => Position::new(0, 0),
             };
 
             let diagnostic = Diagnostic::new(
                 Range::new(start_position, end_position), // 设置诊断范围
-                Some(diagnostic_type),    // 设置诊断级别为 "Information"
+                Some(diagnostic_type),                    // 设置诊断级别为 "Information"
                 None,
                 Some("egg-support".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
-                format!("可以优化为 => {}",m),                     
+                format!("可以优化为 => {}", m),
                 None,
                 None,
             );
@@ -140,14 +187,31 @@ impl Backend {
                 .publish_diagnostics(params.uri.clone(), diagnostics, Some(params.version))
                 .await;
 
-            debug!("诊断已发送！{}" , params.version);
+            debug!("诊断已发送！{}", params.version);
         } else {
             // 否则，发送空诊断
             self.client
                 .publish_diagnostics(params.uri.clone(), vec![], Some(params.version))
                 .await;
         }
+        
     }
+
+
+    // 获取客户端设置的函数
+    async fn get_client_settings(&self) -> Result<Option<Value>> {
+        let settings = self.client
+            .configuration(vec![ConfigurationItem {
+                scope_uri: None,
+                section: Some("maxNumberOfProblems".to_string()),
+            }])
+            .await;
+        self.client
+            .log_message(MessageType::INFO, format!("获取到客户端设置{:?}",settings))
+            .await;
+        Ok(None)
+    }
+
 }
 
 #[tokio::main]
@@ -162,3 +226,6 @@ async fn main() {
         .finish();
     Server::new(stdin, stdout, socket).serve(service).await;
 }
+
+
+

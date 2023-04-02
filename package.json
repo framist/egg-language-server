@@ -11,7 +11,9 @@
 		"Programming Languages"
 	],
 	"activationEvents": [
-		"onLanguage:lisp"
+		"onLanguage:lisp",
+		"onLanguage:scheme",
+		"onLanguage:python"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
