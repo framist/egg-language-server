@@ -1,5 +1,5 @@
 [package]
-name = "lisp-egg-language-server"
+name = "egg-language-server"
 version = "0.1.0"
 edition = "2021"
 

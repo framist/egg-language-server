@@ -1,6 +1,7 @@
 //! 用 tree-sitter 解析 python 代码
 //! note: 解析出的 IR 的树结构与 AST 不同。
 
+use log::*;
 use tree_sitter::{Node, Parser};
 
 /// 树指针的方式打印
@@ -199,22 +200,40 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
     }
 }
 
-// const CODE: &str = r#"
-// x = 1
-// x
-// "#;
+pub trait ToSexp {
+    fn to_sexp(&self) -> Result<String, String>;
+}
 
-// python 额外注意空格与 tab 是不一样的！
-const CODE: &str = r#"
-# oh yeah
+use crate::egg_support::optimize::egg_violence;
+
+pub fn py_parser(s: &str) -> Result<String, String> {
+    let mut parser = Parser::new();
+    parser.set_language(tree_sitter_python::language()).unwrap();
+    let tree = parser.parse(s, None).unwrap();
+    let root_node = tree.root_node();
+    
+    debug!("Root node: \n{:?}", &root_node);
+    debug!("sexp: \n{:?}", &root_node.to_sexp());
+    
+    let tree_cursor = tree.walk();
+    debug!("tree_cursor 方式打印:");
+    print_tree(&tree, &tree_cursor, s, 0);
+
+    egg_violence(ast_to_sexpr(&tree, &tree_cursor, s).as_str())
+}
+
+
+
+#[test]
+fn my_test() {
+    // python 额外注意空格与 tab 是不一样的！
+    const CODE: &str = r#"
 def add1(x):
     x = x + 1
     return x
 y = 1
 add1(y)
-"#;
-
-fn main() {
+    "#;
     let mut parser = Parser::new();
     parser.set_language(tree_sitter_python::language()).unwrap();
     let tree = parser.parse(CODE, None).unwrap();
@@ -231,8 +250,6 @@ fn main() {
     println!("my sexp: \n{:?}", ast_to_sexpr(&tree, &tree_cursor, CODE));
 }
 
+// TODO 过滤 comment
 
-// #[test]
-// fn my_test() {
-//     tree_sitter_python
-// }
+

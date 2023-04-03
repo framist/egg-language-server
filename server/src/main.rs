@@ -1,7 +1,8 @@
 use log::*;
 
 // 实现的 lsp 功能
-use lisp_egg_language_server::egg_support::optimize::egg_violence;
+use egg_language_server::egg_support::optimize::egg_violence;
+use egg_language_server::python::py_parser;
 
 // 依赖
 use tower_lsp::jsonrpc::Result;
@@ -49,6 +50,7 @@ impl LanguageServer for Backend {
         self.client
             .log_message(MessageType::INFO, "initialized!")
             .await;
+        self.get_client_settings().await;
     }
 
     async fn shutdown(&self) -> Result<()> {
@@ -147,15 +149,17 @@ impl Backend {
             }
         };
 
-        let f;
-        if target_language == "lisp" {
-            f = egg_violence;
+        let f_parser;
+        /* if target_language == "lisp" {
+            f_parser = |s| egg_violence(s);
+        } else */ if target_language == "python" {
+            f_parser = py_parser;
         } else {
             return self.client.log_message(MessageType::ERROR, format!("暂不支持{target_language}")).await;
         }
 
         // egg
-        let (m, diagnostic_type) = match f(&params.text) {
+        let (m, diagnostic_type) = match f_parser(&params.text) {
             Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
             Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
         };
@@ -198,8 +202,8 @@ impl Backend {
     }
 
 
-    // 获取客户端设置的函数
-    async fn get_client_settings(&self) -> Result<Option<Value>> {
+    // TODO 获取客户端设置的函数
+    async fn get_client_settings(&self) {
         let settings = self.client
             .configuration(vec![ConfigurationItem {
                 scope_uri: None,
@@ -209,7 +213,6 @@ impl Backend {
         self.client
             .log_message(MessageType::INFO, format!("获取到客户端设置{:?}",settings))
             .await;
-        Ok(None)
     }
 
 }

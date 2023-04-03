@@ -199,6 +199,6 @@ fn lisp_test() {
 
 #[test]
 fn lisp_temp_test() {
-    println!("{:?}", simplify(" (let add (lam x (+ (var x) 1))(app (var add) 1)))") );
+    println!("{:?}", simplify("(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))") );
 }
 
