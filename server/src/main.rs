@@ -9,13 +9,12 @@ use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
-use serde_json::Value;
 
-// 设置 TODO
-#[derive(Debug)]
-struct Settings {
-    maxNumberOfProblems: u32,
-}
+// TODO 设置 
+// #[derive(Debug)]
+// struct Settings {
+//     maxNumberOfProblems: u32,
+// }
 
 #[derive(Debug)]
 struct Backend {
@@ -136,34 +135,19 @@ impl Backend {
             )
             .await;
 
-        // 会影响线程安全：
-        // let f_parser: &dyn Fn(&str) -> core::result::Result<String, String>;
-        // if target_language == "lisp" {
-        //     f_parser = &egg_violence;
-        // } else if target_language == "python" {
-        //     f_parser = &py_parser;
-        // } else {
-        //     return self.client.log_message(MessageType::ERROR, format!("暂不支持{target_language}")).await;
-        // }
-
-        let m;
-        let diagnostic_type;
+        let f_parser: fn(&str) -> std::result::Result<String, String>;
         if target_language == "lisp" {
-            (m, diagnostic_type) = match egg_violence(&params.text) {
-                Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
-                Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
-            };
+            f_parser = egg_violence;
         } else if target_language == "python" {
-            (m, diagnostic_type) = match py_parser(&params.text) {
-                Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
-                Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
-            };
+            f_parser = py_parser;
         } else {
-            self.client
-                .log_message(MessageType::ERROR, format!("暂不支持的语言： {}", target_language))
-                .await;
-            return;
+            return self.client.log_message(MessageType::ERROR, format!("暂不支持{target_language}")).await;
         }
+        
+        let (m, diagnostic_type) = match f_parser(&params.text) {
+            Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
+            Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
+        };
 
         debug!("Egg: {} => {}", params.text.trim(), m);
         if params.text.trim() != m {
