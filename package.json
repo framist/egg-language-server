@@ -1,7 +1,7 @@
 {
-	"name": "lisp-egg-support",
-	"displayName": "lisp-egg-support",
-	"description": "lisp language support with egg support",
+	"name": "egg-support",
+	"displayName": "egg-support",
+	"description": "language support with egg support",
 	"license": "MIT",
 	"version": "0.0.1",
 	"engines": {
@@ -12,6 +12,7 @@
 	],
 	"activationEvents": [
 		"onLanguage:lisp",
+		"onLanguage:common-lisp",
 		"onLanguage:scheme",
 		"onLanguage:python"
 	],
@@ -19,7 +20,7 @@
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "lisp-egg-support configuration",
+			"title": "egg-support configuration",
 			"properties": {
 				"lispEgglanguageServer.maxNumberOfProblems": {
 					"scope": "resource",

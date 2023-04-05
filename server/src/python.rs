@@ -10,7 +10,7 @@ fn print_tree(tree: &tree_sitter::Tree, cursor: &tree_sitter::TreeCursor, code: 
     let node = cursor.node();
     let start = node.start_position();
     let end = node.end_position();
-    println!(
+    debug!(
         "{}{:?}:{}  [{}:{} - {}:{}] {} is_extra: {}",
         indent,
         node.kind(),
@@ -222,7 +222,20 @@ pub fn py_parser(s: &str) -> Result<String, String> {
     egg_violence(ast_to_sexpr(&tree, &tree_cursor, s).as_str())
 }
 
+#[test]
+fn test_py_parser() {
+    // python 额外注意空格与 tab 是不一样的！
+    let code: &str = r#"
+def add1(x):
+    x = x + 1
+    return x
+y = 1
+add1(y)
+"#;
+    println!("{}", py_parser(code).unwrap());
 
+
+}
 
 #[test]
 fn my_test() {

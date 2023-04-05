@@ -1,6 +1,6 @@
-[*中文*](#lisp-egg-support-介绍) | [*English*](#lisp-egg-support-readme)
+[*中文*](#egg-support-介绍) | [*English*](#egg-support-readme)
 
-# lisp-egg-support 介绍
+# egg-support 介绍
 
 ## 特征
 
@@ -52,7 +52,7 @@
 
 *English*
 
-# lisp-egg-support README
+# egg-support README
 
 ## Features
 

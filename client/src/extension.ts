@@ -56,8 +56,8 @@ export function activate(context: ExtensionContext) {
 	//* old end
 
 
-	const traceOutputChannel = window.createOutputChannel("Lisp-egg Language Server trace");
-	const command = process.env.SERVER_PATH_DEBUG || "lisp-egg-language-server";
+	const traceOutputChannel = window.createOutputChannel("egg Language Server trace");
+	const command = process.env.SERVER_PATH_DEBUG || "egg-language-server";
 	const run: Executable = {
 		command,
 		options: {
@@ -77,8 +77,9 @@ export function activate(context: ExtensionContext) {
 
 	// 控制语言客户端的选项
 	const clientOptions: LanguageClientOptions = {
-		// 注册 lisp 语言 服务器，注意还需要更改 activationEvents
+		// 注册 多 语言 服务器，注意还需要更改 activationEvents
 		// TODO 暂时未完全实现：多语言支持 
+		// TODO The use of a string as a document filter is deprecated @since 3.16.0.
 		documentSelector: [
 			{ scheme: 'file', language: 'lisp' },
 			{ scheme: 'file', language: 'scheme' },
@@ -93,8 +94,8 @@ export function activate(context: ExtensionContext) {
 
 	// 创建语言客户端并启动客户端。
 	client = new LanguageClient(
-		'lispEgglanguageServer', // 它是客户端的名称，与服务端配置文件中指定的名称相同。
-		'Lisp Egg support Language Server', // 对客户端的描述, 将会在用户界面中显示。
+		'EgglanguageServer', // 它是客户端的名称，与服务端配置文件中指定的名称相同。
+		'Egg support Language Server', // 对客户端的描述, 将会在用户界面中显示。
 		serverOptions,
 		clientOptions
 	);

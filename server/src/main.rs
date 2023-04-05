@@ -11,7 +11,6 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 use serde_json::Value;
 
-
 // 设置 TODO
 #[derive(Debug)]
 struct Settings {
@@ -121,57 +120,57 @@ struct TextDocumentItem {
 /// TODO 增量更新方式
 impl Backend {
     async fn on_change(&self, params: TextDocumentItem) {
-        // 根据拓展名选择解析器 
-        // TODO 临时的方式。 更好是侦测客户端语言配置
-        let target_language = match params
-            .uri
-            .to_file_path()
-            .unwrap()
-            .extension()
-            .unwrap()
-            .to_str()
-        {
-            Some(ext) => match ext {
-                "py" => "python",
-                "lisp" | "scm" => "lisp",
-                _ => {
-                    self.client
-                        .log_message(MessageType::ERROR, "文件拓展名错误")
-                        .await;
-                    return;
-                }
-            },
+        let target_language = match self.get_ext(&params).await {
+            Some(value) => value,
             None => {
                 self.client
-                    .log_message(MessageType::ERROR, "文件拓展名错误")
+                    .log_message(MessageType::ERROR, "不支持的文件拓展名")
                     .await;
                 return;
             }
         };
+        self.client
+            .log_message(
+                MessageType::INFO,
+                format!("target_language: {}", target_language),
+            )
+            .await;
 
-        let f_parser;
-        /* if target_language == "lisp" {
-            f_parser = |s| egg_violence(s);
-        } else */ if target_language == "python" {
-            f_parser = py_parser;
+        // 会影响线程安全：
+        // let f_parser: &dyn Fn(&str) -> core::result::Result<String, String>;
+        // if target_language == "lisp" {
+        //     f_parser = &egg_violence;
+        // } else if target_language == "python" {
+        //     f_parser = &py_parser;
+        // } else {
+        //     return self.client.log_message(MessageType::ERROR, format!("暂不支持{target_language}")).await;
+        // }
+
+        let m;
+        let diagnostic_type;
+        if target_language == "lisp" {
+            (m, diagnostic_type) = match egg_violence(&params.text) {
+                Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
+                Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
+            };
+        } else if target_language == "python" {
+            (m, diagnostic_type) = match py_parser(&params.text) {
+                Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
+                Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
+            };
         } else {
-            return self.client.log_message(MessageType::ERROR, format!("暂不支持{target_language}")).await;
+            self.client
+                .log_message(MessageType::ERROR, format!("暂不支持的语言： {}", target_language))
+                .await;
+            return;
         }
-
-        // egg
-        let (m, diagnostic_type) = match f_parser(&params.text) {
-            Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
-            Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
-        };
 
         debug!("Egg: {} => {}", params.text.trim(), m);
         if params.text.trim() != m {
             let start_position = Position::new(0, 0);
             let lines = params.text.lines();
             let end_position = match (lines.clone().count(), lines.last()) {
-                (count, Some(last_line)) => {
-                    Position::new(count as u32 - 1, last_line.len() as u32)
-                }
+                (count, Some(last_line)) => Position::new(count as u32 - 1, last_line.len() as u32),
                 _ => Position::new(0, 0),
             };
 
@@ -198,23 +197,32 @@ impl Backend {
                 .publish_diagnostics(params.uri.clone(), vec![], Some(params.version))
                 .await;
         }
-        
     }
 
+    async fn get_ext(&self, params: &TextDocumentItem) -> Option<&str> {
+        let target_language = match params.uri.to_file_path().ok()?.extension()?.to_str()? {
+            "py" => "python",
+            "lisp" | "scm" => "lisp",
+            _ => {
+                return None;
+            }
+        };
+        Some(target_language)
+    }
 
     // TODO 获取客户端设置的函数
     async fn get_client_settings(&self) {
-        let settings = self.client
+        let settings = self
+            .client
             .configuration(vec![ConfigurationItem {
                 scope_uri: None,
                 section: Some("maxNumberOfProblems".to_string()),
             }])
             .await;
         self.client
-            .log_message(MessageType::INFO, format!("获取到客户端设置{:?}",settings))
+            .log_message(MessageType::INFO, format!("获取到客户端设置{:?}", settings))
             .await;
     }
-
 }
 
 #[tokio::main]
@@ -229,6 +237,3 @@ async fn main() {
         .finish();
     Server::new(stdin, stdout, socket).serve(service).await;
 }
-
-
-
