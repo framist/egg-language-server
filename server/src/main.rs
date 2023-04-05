@@ -9,16 +9,17 @@ use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
+use std::sync::RwLock;
 
-// TODO 设置 
-// #[derive(Debug)]
-// struct Settings {
-//     maxNumberOfProblems: u32,
-// }
+#[derive(Debug)]
+struct Settings {
+    max_number_of_problems: u32,
+}
 
 #[derive(Debug)]
 struct Backend {
     client: Client,
+    settings: RwLock<Settings>,
 }
 
 // 这里应该是 自己需实现的 LSP 后端接口
@@ -45,10 +46,7 @@ impl LanguageServer for Backend {
         })
     }
     async fn initialized(&self, _: InitializedParams) {
-        self.client
-            .log_message(MessageType::INFO, "initialized!")
-            .await;
-        self.get_client_settings().await;
+        self.log_info(format!("initialized!")).await;
     }
 
     async fn shutdown(&self) -> Result<()> {
@@ -56,9 +54,11 @@ impl LanguageServer for Backend {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        self.client
-            .log_message(MessageType::INFO, "file opened!")
+        self.log_info(format!("file opened! {:?}", params.text_document.uri))
             .await;
+        // 获取配置
+        self.get_client_settings(&params.text_document.uri).await;
+
         self.on_change(TextDocumentItem {
             uri: params.text_document.uri,
             text: params.text_document.text,
@@ -68,6 +68,8 @@ impl LanguageServer for Backend {
     }
 
     async fn did_change(&self, mut params: DidChangeTextDocumentParams) {
+        // 获取配置
+        self.get_client_settings(&params.text_document.uri).await;
         self.on_change(TextDocumentItem {
             uri: params.text_document.uri,
             text: std::mem::take(&mut params.content_changes[0].text),
@@ -77,32 +79,25 @@ impl LanguageServer for Backend {
     }
 
     async fn did_save(&self, _: DidSaveTextDocumentParams) {
-        self.client
-            .log_message(MessageType::INFO, "file saved!")
-            .await;
-    }
-    async fn did_close(&self, _: DidCloseTextDocumentParams) {
-        self.client
-            .log_message(MessageType::INFO, "file closed!")
-            .await;
+        self.log_info("file saved!").await;
     }
 
-    async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {
-        self.client
-            .log_message(MessageType::INFO, "configuration changed!")
+    async fn did_close(&self, _: DidCloseTextDocumentParams) {
+        self.log_info("file closed!").await;
+    }
+
+    async fn did_change_configuration(&self, p: DidChangeConfigurationParams) {
+        // TODO 没获取到配置
+        self.log_info(format!("configuration changed! {:?}", p.settings))
             .await;
     }
 
     async fn did_change_workspace_folders(&self, _: DidChangeWorkspaceFoldersParams) {
-        self.client
-            .log_message(MessageType::INFO, "workspace folders changed!")
-            .await;
+        self.log_info("workspace folders changed!").await;
     }
 
     async fn did_change_watched_files(&self, _: DidChangeWatchedFilesParams) {
-        self.client
-            .log_message(MessageType::INFO, "watched files have changed!")
-            .await;
+        self.log_info("watched files have changed!").await;
     }
 }
 
@@ -122,8 +117,7 @@ impl Backend {
         let target_language = match self.get_ext(&params).await {
             Some(value) => value,
             None => {
-                self.client
-                    .log_message(MessageType::ERROR, "不支持的文件拓展名")
+                self.log_error(format!("不支持的文件类型: {}", params.uri))
                     .await;
                 return;
             }
@@ -141,9 +135,11 @@ impl Backend {
         } else if target_language == "python" {
             f_parser = py_parser;
         } else {
-            return self.client.log_message(MessageType::ERROR, format!("暂不支持{target_language}")).await;
+            return self
+                .log_warn(format!("不支持的语言: {}", target_language))
+                .await;
         }
-        
+
         let (m, diagnostic_type) = match f_parser(&params.text) {
             Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
             Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
@@ -194,18 +190,43 @@ impl Backend {
         Some(target_language)
     }
 
-    // TODO 获取客户端设置的函数
-    async fn get_client_settings(&self) {
+    // 获取客户端设置
+    async fn get_client_settings(&self, uri: &Url) {
         let settings = self
             .client
             .configuration(vec![ConfigurationItem {
-                scope_uri: None,
-                section: Some("maxNumberOfProblems".to_string()),
+                scope_uri: Some(uri.clone()),
+                section: Some("EgglanguageServer".to_string()),
             }])
             .await;
-        self.client
-            .log_message(MessageType::INFO, format!("获取到客户端设置{:?}", settings))
+        let old_set = self.settings.read().unwrap().max_number_of_problems;
+        self.log_info(format!("旧的客户端设置: {}", old_set)).await;
+        self.log_info(format!("获取到客户端设置{:?}", settings))
             .await;
+        // 例如
+        // Ok([Object {"maxNumberOfProblems": Number(100), "trace": Object {"server": String("verbose")}}])
+        match settings {
+            Ok(settings) => {
+                self.settings.write().unwrap().max_number_of_problems =
+                    settings[0]["maxNumberOfProblems"].as_u64().unwrap_or(100) as u32;
+            }
+            Err(_) => {
+                self.log_error("获取客户端设置失败".to_string()).await;
+            }
+        };
+    }
+
+    #[inline]
+    async fn log_error<M: std::fmt::Display>(&self, message: M) {
+        self.client.log_message(MessageType::ERROR, message).await;
+    }
+    #[inline]
+    async fn log_info<M: std::fmt::Display>(&self, message: M) {
+        self.client.log_message(MessageType::INFO, message).await;
+    }
+    #[inline]
+    async fn log_warn<M: std::fmt::Display>(&self, message: M) {
+        self.client.log_message(MessageType::WARNING, message).await;
     }
 }
 
@@ -216,8 +237,13 @@ async fn main() {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
 
-    let (service, socket) = LspService::build(|client| Backend { client })
-        // .custom_method("custom/inlay_hint", Backend::inlay_hint)
-        .finish();
+    let (service, socket) = LspService::build(|client| Backend {
+        client,
+        settings: RwLock::new(Settings {
+            max_number_of_problems: 42,
+        }),
+    })
+    // .custom_method("custom/inlay_hint", Backend::inlay_hint)
+    .finish();
     Server::new(stdin, stdout, socket).serve(service).await;
 }

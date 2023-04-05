@@ -1,7 +1,7 @@
 //! 用 tree-sitter 解析 python 代码
 //! note: 解析出的 IR 的树结构与 AST 不同。
 
-use tree_sitter::{Node, Parser};
+use tree_sitter::{Parser};
 
 /// 树指针的方式打印
 fn print_tree(tree: &tree_sitter::Tree, cursor: &tree_sitter::TreeCursor, code: &str, indent_level: usize) {
