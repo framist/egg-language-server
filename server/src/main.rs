@@ -9,6 +9,7 @@ use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
+use serde_json::Value;
 use std::sync::RwLock;
 
 #[derive(Debug)]
@@ -33,6 +34,10 @@ impl LanguageServer for Backend {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
                     TextDocumentSyncKind::FULL,
                 )),
+                execute_command_provider: Some(ExecuteCommandOptions {
+                    commands: vec!["EgglanguageServer.helloWorld".to_string()],
+                    work_done_progress_options: Default::default(),
+                }),
 
                 workspace: Some(WorkspaceServerCapabilities {
                     workspace_folders: Some(WorkspaceFoldersServerCapabilities {
@@ -98,6 +103,18 @@ impl LanguageServer for Backend {
 
     async fn did_change_watched_files(&self, _: DidChangeWatchedFilesParams) {
         self.log_info("watched files have changed!").await;
+    }
+
+    async fn execute_command(&self, p: ExecuteCommandParams) -> Result<Option<Value>> {
+        self.log_info(format!("command executed! {:?}", p.command)).await;
+
+        // match self.client.apply_edit(WorkspaceEdit::default()).await {
+        //     Ok(res) if res.applied => self.client.log_message(MessageType::INFO, "applied").await,
+        //     Ok(_) => self.client.log_message(MessageType::INFO, "rejected").await,
+        //     Err(err) => self.client.log_message(MessageType::ERROR, err).await,
+        // }
+
+        Ok(None)
     }
 }
 

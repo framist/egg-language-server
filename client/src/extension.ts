@@ -37,23 +37,8 @@ let client: LanguageClient;
 
 // 启动函数
 export function activate(context: ExtensionContext) {
-	//* old
-	// // 服务器由 node 实现
-	// const serverModule = context.asAbsolutePath(
-	// 	path.join('server', 'out', 'server.js')  // **服务器路径**
-	// );
+	//* 启动语言服务器
 
-	// // 如果插件运行在调试模式那么就会使用debug server options
-	// // 不然就使用 run options
-	// // IPC（Inter-Process Communication，进程间通信）
-	// const serverOptions: ServerOptions = {
-	// 	run: { module: serverModule, transport: TransportKind.ipc },
-	// 	debug: {
-	// 		module: serverModule,
-	// 		transport: TransportKind.ipc,
-	// 	}
-	// };
-	//* old end
 
 	// 创建一个输出通道，用于显示语言服务器的跟踪信息
 	const traceOutputChannel = window.createOutputChannel("egg Language Server trace");
@@ -64,7 +49,7 @@ export function activate(context: ExtensionContext) {
 		options: {
 			env: {
 				...process.env,                    // 继承当前进程环境变量，并添加或覆盖其中的环境变量
-				RUST_LOG      : "debug,egg=off",   // rust 日志级别
+				RUST_LOG: "debug,egg=off",   // rust 日志级别
 				// RUST_BACKTRACE: 1                  // 开启 Rust panic 时的 backtrace 功能
 			},
 		},
@@ -105,6 +90,20 @@ export function activate(context: ExtensionContext) {
 
 	// 启动客户端。这也将启动服务器
 	client.start();
+
+	//* 注册命令 注意服务器和客户端的命令分开注册就行了
+
+	// 该命令已在package.json文件中定义
+	// 现在用registerCommand提供命令的实现
+	// commandId参数必须与package.json中的命令字段匹配
+	const disposable = commands.registerCommand('EgglanguageServer.restart', () => {
+		// 您放置在这里的代码将在每次执行命令时执行
+
+		// 向用户显示消息框
+		window.showInformationMessage('EgglanguageServer.restart! 但是是未实现的命令QAQ');
+	});
+
+	context.subscriptions.push(disposable);
 }
 
 // 消动函数

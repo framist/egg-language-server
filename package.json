@@ -26,7 +26,62 @@
 					"scope": "resource",
 					"type": "number",
 					"default": 100,
-					"description": "Controls the maximum number of problems produced by the server."
+					"minimum": 1,
+					"description": "Controls the maximum number of problems produced by the server.",
+					"markdownDescription": "控制最多报告问题的数量"
+				},				
+				"EgglanguageServer.ifExplanations": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Controls whether the server will show egg's explanations.",
+					"markdownDescription": "控制 是否显示 egg 重写方案解释"
+				},
+				"EgglanguageServer.ExplanationWithLet": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Controls whether the server will show egg's explanations with let.",
+					"markdownDescription": "控制 是否显示 egg let 风格的重写方案解释",
+					"dependencies": {
+						"EgglanguageServer.ifExplanations": true
+					}
+				},
+				"EgglanguageServer.ExplanationWithHighLevelPL": {
+					"scope": "resource",
+					"type": "string",
+					"enum": [
+						"off",
+						"same as source",
+						"same as out language"
+					],
+					"default": "same as source",
+					"description": "Controls whether the server will show egg's explanations with high level programming language.",
+					"markdownDescription": "控制 是否显示 egg 高级编程语言风格的重写方案解释",
+					"dependencies": {
+						"EgglanguageServer.ifExplanations": true
+					}
+				},
+				
+				"EgglanguageServer.ifEggIR": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Controls whether the server will show egg's IR.",
+					"markdownDescription": "控制 是否显示egg的中间表示"
+				},
+				"EgglanguageServer.outLanguage": {
+					"scope": "resource",
+					"type": "string",
+					"enum": [
+						"same as source",
+						"python",
+						"C",
+						"lisp"
+					],
+					"default": "same as source",
+					"description": "Controls the output language.",
+					"markdownDescription": "控制 输出的优化结果参考的编程语言类型"
 				},
 				"EgglanguageServer.trace.server": {
 					"scope": "window",
@@ -40,7 +95,17 @@
 					"description": "Traces the communication between VS Code and the language server."
 				}
 			}
-		}
+		},
+		"commands": [
+			{
+				"command": "EgglanguageServer.helloWorld",
+				"title": "helloWorld by EgglanguageServer"
+			},
+			{
+				"command": "EgglanguageServer.restart",
+				"title": "Restart EgglanguageServer"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
