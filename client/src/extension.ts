@@ -97,9 +97,6 @@ export function activate(context: ExtensionContext) {
 	// 现在用registerCommand提供命令的实现
 	// commandId参数必须与package.json中的命令字段匹配
 	const disposable = commands.registerCommand('EgglanguageServer.restart', () => {
-		// 您放置在这里的代码将在每次执行命令时执行
-
-		// 向用户显示消息框
 		window.showInformationMessage('EgglanguageServer.restart! 但是是未实现的命令QAQ');
 	});
 

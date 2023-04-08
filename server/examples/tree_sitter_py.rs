@@ -206,7 +206,6 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
 
 // python 额外注意空格与 tab 是不一样的！
 const CODE: &str = r#"
-# oh yeah
 def add1(x):
     x = x + 1
     return x
@@ -222,6 +221,7 @@ fn main() {
 
     println!("Root node: \n{:?}", &root_node);
     println!("sexp: \n{:?}", &root_node.to_sexp());
+    println!("source: \n{}", &root_node.utf8_text(CODE.as_bytes()).unwrap());
 
     let tree_cursor = tree.walk();
     println!("tree_cursor 方式打印:");

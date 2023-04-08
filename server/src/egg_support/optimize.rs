@@ -2,21 +2,14 @@
 println 等向标准输出流写入会影响 语言服务器和客户端的通信
 请使用 debug!
 */
+use egg::RecExpr;
+use super::lisp::LispLanguage;
 
-pub fn egg_violence(s: &str) -> Result<String, String> {
-    // let mut ans = String::from("");
-    // if let Ok(s1) = super::simple::simplify(s){
-    //     ans = ans + &s1;
-    // };
-    // if let Ok(s1) = super::math::simplify(s){
-    //     ans = ans + &s1;
-    // };
-    // if let Ok(s1) = super::lambda::simplify(s){
-    //     ans = ans + &s1;
-    // };
-    // if let Ok(s1) = super::prop::simplify(s){
-    //     ans = ans + &s1;
-    // };
-    
+pub fn egg_violence(s: &str) -> Result<String, String> {    
+    super::lisp::simplify_test(s)
+}
+
+pub fn simplify(s: &str) -> Result<Option<RecExpr<LispLanguage>>, String> {
     super::lisp::simplify(s)
 }
+

@@ -204,7 +204,7 @@ pub trait ToSexp {
     fn to_sexp(&self) -> Result<String, String>;
 }
 
-use crate::egg_support::optimize::egg_violence;
+use crate::egg_support::optimize::simplify;
 
 pub fn py_parser(s: &str) -> Result<String, String> {
     let mut parser = Parser::new();
@@ -219,7 +219,13 @@ pub fn py_parser(s: &str) -> Result<String, String> {
     debug!("tree_cursor 方式打印:");
     print_tree(&tree, &tree_cursor, s, 0);
 
-    egg_violence(ast_to_sexpr(&tree, &tree_cursor, s).as_str())
+    match simplify(ast_to_sexpr(&tree, &tree_cursor, s).as_str()) {
+        Ok(sexp) => match sexp {
+            Some(sexp) => Ok(sexp.to_string()),
+            None => Ok("已经最优了".to_string())
+        },
+        Err(e) => Err(format!("egg_violence error: {}", e))
+    }
 }
 
 #[test]

@@ -12,10 +12,29 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use serde_json::Value;
 use std::sync::RwLock;
 
+#[allow(dead_code)]
 #[derive(Debug)]
 struct Settings {
     max_number_of_problems: u32,
+    if_explanations: bool,
+    explanation_with_let: bool,
+    explanation_with_high_level_pl: String,
+    if_egg_ir: bool,
+    out_language: String,
 }
+impl Settings {
+    fn new() -> Self {
+        Settings {
+            max_number_of_problems: 100,
+            if_explanations: false,
+            explanation_with_let: false,
+            explanation_with_high_level_pl: String::from(""),
+            if_egg_ir: false,
+            out_language: String::from(""),
+        }
+    }
+}
+    
 
 #[derive(Debug)]
 struct Backend {
@@ -23,7 +42,7 @@ struct Backend {
     settings: RwLock<Settings>,
 }
 
-// 这里应该是 自己需实现的 LSP 后端接口
+// 需实现的 LSP 后端接口
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
     async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
@@ -256,9 +275,7 @@ async fn main() {
 
     let (service, socket) = LspService::build(|client| Backend {
         client,
-        settings: RwLock::new(Settings {
-            max_number_of_problems: 42,
-        }),
+        settings: RwLock::new(Settings::new()),
     })
     // .custom_method("custom/inlay_hint", Backend::inlay_hint)
     .finish();

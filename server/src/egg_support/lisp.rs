@@ -10,7 +10,7 @@ pub type Constant = NotNan<f64>;
 // 它包括 Num、加号"+"(Add、两个Id标志符参数)、
 // "*" 乘号(Mul、两个Id标志符参数)以及Symbol标记.
 define_language! {
-    enum LispLanguage {
+    pub enum LispLanguage {
         Num(i32),
         "+" = Add([Id; 2]),
         "*" = Mul([Id; 2]),
@@ -165,8 +165,7 @@ fn make_rules() -> Vec<Rewrite<LispLanguage, ()>> {
 
 
 /// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
-#[allow(unused)]
-pub fn simplify(s: &str) -> Result<String, String> {
+pub fn simplify_test(s: &str) -> Result<String, String> {
     // 解析表达式，类型注释(<Language>)告诉它使用哪种语言
     // let expr: RecExpr<Language> = s.parse().unwrap();
     let expr = match s.parse() {
@@ -187,18 +186,45 @@ pub fn simplify(s: &str) -> Result<String, String> {
     Ok(best.to_string())
 }
 
+/// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
+/// - 如果解析失败，则返回错误
+/// - 如果没有产生简化，则返回 None
+/// - 如果产生了简化，则返回 Some(简化后的 RecExpr 逆波兰表达式)
+pub fn simplify(s: &str) -> Result<Option<RecExpr<LispLanguage>>, String> {
+    let expr = match s.parse() {
+        Ok(expr) => expr,
+        Err(error) => return Err(format!("Failed to parse expression: {}", error)),
+    };
+
+    let runner = Runner::default().with_expr(&expr).run(&make_rules());
+
+    // Runner 知道用 with_expr 给出的表达式在哪个 e-class 中
+    let root = runner.roots[0];
+
+    // 使用提取器 extractor 选择 根 eclass 的最佳元素
+    let extractor = Extractor::new(&runner.egraph, AstSize);
+    let (best_cost, best) = extractor.find_best(root);
+
+    // cost  的变化
+    if best_cost < AstSize.cost_rec(&expr) {
+        Ok(Some(best))
+    } else {
+        Ok(None)
+    }
+}
+
 #[test]
 fn lisp_test() {
-    println!("{:?}", simplify("(+ 0 (* 1 foo))") );
-    println!("{:?}", simplify("(+ 1 1)") );
-    println!("{:?}", simplify("(+ 1 (- a (* (- 2 1) a)))") );
-    println!("{:?}", simplify("(lam x (+ 4
+    println!("{:?}", simplify_test("(+ 0 (* 1 foo))") );
+    println!("{:?}", simplify_test("(+ 1 1)") );
+    println!("{:?}", simplify_test("(+ 1 (- a (* (- 2 1) a)))") );
+    println!("{:?}", simplify_test("(lam x (+ 4
                                     (app (lam y (var y))
                                         4)))") );
 }
 
 #[test]
 fn lisp_temp_test() {
-    println!("{:?}", simplify("(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))") );
+    println!("{:?}", simplify_test("(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))") );
 }
 
