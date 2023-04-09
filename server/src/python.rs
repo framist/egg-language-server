@@ -200,11 +200,9 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
     }
 }
 
-pub trait ToSexp {
-    fn to_sexp(&self) -> Result<String, String>;
-}
 
-use crate::egg_support::optimize::simplify;
+
+use crate::egg_support::simplify;
 
 pub fn py_parser(s: &str) -> Result<String, String> {
     let mut parser = Parser::new();

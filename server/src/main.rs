@@ -1,7 +1,7 @@
 use log::*;
 
 // 实现的 lsp 功能
-use egg_language_server::egg_support::optimize::egg_violence;
+use egg_language_server::egg_support::egg_violence;
 use egg_language_server::python::py_parser;
 
 // 依赖
@@ -34,7 +34,6 @@ impl Settings {
         }
     }
 }
-    
 
 #[derive(Debug)]
 struct Backend {
@@ -125,7 +124,8 @@ impl LanguageServer for Backend {
     }
 
     async fn execute_command(&self, p: ExecuteCommandParams) -> Result<Option<Value>> {
-        self.log_info(format!("command executed! {:?}", p.command)).await;
+        self.log_info(format!("command executed! {:?}", p.command))
+            .await;
 
         // match self.client.apply_edit(WorkspaceEdit::default()).await {
         //     Ok(res) if res.applied => self.client.log_message(MessageType::INFO, "applied").await,
@@ -180,39 +180,39 @@ impl Backend {
             Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
             Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
         };
-
-        debug!("Egg: {} => {}", params.text.trim(), m);
-        if params.text.trim() != m {
-            let start_position = Position::new(0, 0);
-            let lines = params.text.lines();
-            let end_position = match (lines.clone().count(), lines.last()) {
-                (count, Some(last_line)) => Position::new(count as u32 - 1, last_line.len() as u32),
-                _ => Position::new(0, 0),
-            };
-
-            let diagnostic = Diagnostic::new(
-                Range::new(start_position, end_position), // 设置诊断范围
-                Some(diagnostic_type),                    // 设置诊断级别为 "Information"
-                None,
-                Some("egg-support".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
-                format!("可以优化为 => {}", m),
-                None,
-                None,
-            );
-            let diagnostics = vec![diagnostic];
-
-            // 发送诊断信息
-            self.client
-                .publish_diagnostics(params.uri.clone(), diagnostics, Some(params.version))
-                .await;
-
-            debug!("诊断已发送！{}", params.version);
-        } else {
-            // 否则，发送空诊断
+        if m.is_empty() {
+            // 发送空诊断
             self.client
                 .publish_diagnostics(params.uri.clone(), vec![], Some(params.version))
                 .await;
         }
+
+        debug!("Egg: {} => {}", params.text.trim(), m);
+
+        let start_position = Position::new(0, 0);
+        let lines = params.text.lines();
+        let end_position = match (lines.clone().count(), lines.last()) {
+            (count, Some(last_line)) => Position::new(count as u32 - 1, last_line.len() as u32),
+            _ => Position::new(0, 0),
+        };
+
+        let diagnostic = Diagnostic::new(
+            Range::new(start_position, end_position), // 设置诊断范围
+            Some(diagnostic_type),                    // 设置诊断级别为 "Information"
+            None,
+            Some("egg-support".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
+            format!("可以优化为 => {}", m),
+            None,
+            None,
+        );
+        let diagnostics = vec![diagnostic];
+
+        // 发送诊断信息
+        self.client
+            .publish_diagnostics(params.uri.clone(), diagnostics, Some(params.version))
+            .await;
+
+        debug!("诊断已发送！{}", params.version);
     }
 
     async fn get_ext(&self, params: &TextDocumentItem) -> Option<&str> {

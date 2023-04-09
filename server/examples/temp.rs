@@ -5,7 +5,7 @@ fn main() {
     let mut egraph: EGraph<SymbolLang, ()> = Default::default();
     let a = egraph.add(SymbolLang::leaf("a"));
     let b = egraph.add(SymbolLang::leaf("b"));
-    let foo = egraph.add(SymbolLang::new("foo", vec![a, b]));
+    let _foo = egraph.add(SymbolLang::new("foo", vec![a, b]));
 
     // rebuild the e-graph since we modified it
     egraph.rebuild();

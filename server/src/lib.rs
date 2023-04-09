@@ -5,4 +5,6 @@ pub mod python;
 // pub trait EggParser {
 // 	fn parse(&self, egg: &str) -> Option<String>;
 // }
-	
+pub trait CommonLanguageTrans {
+    fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor, code: &str) -> String;
+}
