@@ -17,25 +17,16 @@ define_language! {
         Symbol(Symbol),
 
         // * lambda
-
         Bool(bool),
-
         "var" = Var(Id),        // 声明之后为一个 var
-
         "=" = Eq([Id; 2]),
-
         "app" = App([Id; 2]),   // apply 使用lam函数 声明之后为一个lambda, 如果是函数名，则需var声明
         "lam" = Lambda([Id; 2]),
         "let" = Let([Id; 3]),
         "fix" = Fix([Id; 2]),
-
         "if" = If([Id; 3]),
 
         // * math
-
-        // "d" = Diff([Id; 2]),
-        // "i" = Integral([Id; 2]),
-
         "-" = Sub([Id; 2]),
         "/" = Div([Id; 2]),
         "pow" = Pow([Id; 2]),
@@ -44,15 +35,153 @@ define_language! {
 
         // Constant(Constant),
 
-        // // * Scheme
-        // "display" = Display(Id),
-
     }
 }
 
-// 这段代码的作用是创建一个 Vec，里面包含了4条重写规则，
+impl CommonLanguage {
+    fn num(&self) -> Option<i32> {
+        match self {
+            CommonLanguage::Num(n) => Some(*n),
+            _ => None,
+        }
+    }
+}
+
+type EGraph = egg::EGraph<CommonLanguage, LambdaAnalysis>;
+
+#[derive(Default)]
+struct LambdaAnalysis;
+
+use fxhash::FxHashSet as HashSet;
+
+#[derive(Debug)]
+struct Data {
+    free: HashSet<Id>,
+    constant: Option<(CommonLanguage, PatternAst<CommonLanguage>)>,
+}
+
+fn eval(
+    egraph: &EGraph,
+    enode: &CommonLanguage,
+) -> Option<(CommonLanguage, PatternAst<CommonLanguage>)> {
+    let x = |i: &Id| egraph[*i].data.constant.as_ref().map(|c| &c.0);
+    match enode {
+        CommonLanguage::Num(n) => Some((enode.clone(), format!("{}", n).parse().unwrap())),
+        CommonLanguage::Bool(b) => Some((enode.clone(), format!("{}", b).parse().unwrap())),
+        CommonLanguage::Add([a, b]) => Some((
+            CommonLanguage::Num(x(a)?.num()? + x(b)?.num()?),
+            format!("(+ {} {})", x(a)?, x(b)?).parse().unwrap(),
+        )),
+        CommonLanguage::Eq([a, b]) => Some((
+            CommonLanguage::Bool(x(a)? == x(b)?),
+            format!("(= {} {})", x(a)?, x(b)?).parse().unwrap(),
+        )),
+        _ => None,
+    }
+}
+
+impl Analysis<CommonLanguage> for LambdaAnalysis {
+    type Data = Data;
+    fn merge(&mut self, to: &mut Data, from: Data) -> DidMerge {
+        let before_len = to.free.len();
+        // to.free.extend(from.free);
+        to.free.retain(|i| from.free.contains(i));
+        // compare lengths to see if I changed to or from
+        DidMerge(
+            before_len != to.free.len(),
+            to.free.len() != from.free.len(),
+        ) | merge_option(&mut to.constant, from.constant, |a, b| {
+            assert_eq!(a.0, b.0, "Merged non-equal constants");
+            DidMerge(false, false)
+        })
+    }
+
+    fn make(egraph: &EGraph, enode: &CommonLanguage) -> Data {
+        let f = |i: &Id| egraph[*i].data.free.iter().cloned();
+        let mut free = HashSet::default();
+        match enode {
+            CommonLanguage::Var(v) => {
+                free.insert(*v);
+            }
+            CommonLanguage::Let([v, a, b]) => {
+                free.extend(f(b));
+                free.remove(v);
+                free.extend(f(a));
+            }
+            CommonLanguage::Lambda([v, a]) | CommonLanguage::Fix([v, a]) => {
+                free.extend(f(a));
+                free.remove(v);
+            }
+            _ => enode.for_each(|c| free.extend(&egraph[c].data.free)),
+        }
+        let constant = eval(egraph, enode);
+        Data { constant, free }
+    }
+
+    fn modify(egraph: &mut EGraph, id: Id) {
+        if let Some(c) = egraph[id].data.constant.clone() {
+            if egraph.are_explanations_enabled() {
+                egraph.union_instantiations(
+                    &c.0.to_string().parse().unwrap(),
+                    &c.1,
+                    &Default::default(),
+                    "analysis".to_string(),
+                );
+            } else {
+                let const_id = egraph.add(c.0);
+                egraph.union(id, const_id);
+            }
+        }
+    }
+}
+
+fn var(s: &str) -> Var {
+    s.parse().unwrap()
+}
+
+fn is_not_same_var(v1: Var, v2: Var) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    move |egraph, _, subst| egraph.find(subst[v1]) != egraph.find(subst[v2])
+}
+
+fn is_const(v: Var) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    move |egraph, _, subst| egraph[subst[v]].data.constant.is_some()
+}
+
+struct CaptureAvoid {
+    fresh: Var,
+    v2: Var,
+    e: Var,
+    if_not_free: Pattern<CommonLanguage>,
+    if_free: Pattern<CommonLanguage>,
+}
+
+impl Applier<CommonLanguage, LambdaAnalysis> for CaptureAvoid {
+    fn apply_one(
+        &self,
+        egraph: &mut EGraph,
+        eclass: Id,
+        subst: &Subst,
+        searcher_ast: Option<&PatternAst<CommonLanguage>>,
+        rule_name: Symbol,
+    ) -> Vec<Id> {
+        let e = subst[self.e];
+        let v2 = subst[self.v2];
+        let v2_free_in_e = egraph[e].data.free.contains(&v2);
+        if v2_free_in_e {
+            let mut subst = subst.clone();
+            let sym = CommonLanguage::Symbol(format!("_{}", eclass).into());
+            subst.insert(self.fresh, egraph.add(sym));
+            self.if_free
+                .apply_one(egraph, eclass, &subst, searcher_ast, rule_name)
+        } else {
+            self.if_not_free
+                .apply_one(egraph, eclass, subst, searcher_ast, rule_name)
+        }
+    }
+}
+
 // 用于对SimpleLanguage语言中的表达式进行重写。
-fn make_rules() -> Vec<Rewrite<CommonLanguage, ()>> {
+fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
     vec![
         // 交换加法运算数顺序
         rw!("commute-add"; "(+ ?a ?b)" => "(+ ?b ?a)"),
@@ -80,25 +209,24 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, ()>> {
         rw!("let-app";  "(let ?v ?e (app ?a ?b))" => "(app (let ?v ?e ?a) (let ?v ?e ?b))"),
         rw!("let-add";  "(let ?v ?e (+   ?a ?b))" => "(+   (let ?v ?e ?a) (let ?v ?e ?b))"),
         rw!("let-eq";   "(let ?v ?e (=   ?a ?b))" => "(=   (let ?v ?e ?a) (let ?v ?e ?b))"),
-        // rw!("let-const";
-        //     "(let ?v ?e ?c)" => "?c" if is_const(var("?c"))),
+        rw!("let-const";
+            "(let ?v ?e ?c)" => "?c" if is_const(var("?c"))),
         rw!("let-if";
             "(let ?v ?e (if ?cond ?then ?else))" =>
             "(if (let ?v ?e ?cond) (let ?v ?e ?then) (let ?v ?e ?else))"
         ),
         rw!("let-var-same"; "(let ?v1 ?e (var ?v1))" => "?e"),
-        // rw!("let-var-diff"; "(let ?v1 ?e (var ?v2))" => "(var ?v2)"
-        //     if is_not_same_var(var("?v1"), var("?v2"))),
+        rw!("let-var-diff"; "(let ?v1 ?e (var ?v2))" => "(var ?v2)"
+            if is_not_same_var(var("?v1"), var("?v2"))),
         rw!("let-lam-same"; "(let ?v1 ?e (lam ?v1 ?body))" => "(lam ?v1 ?body)"),
-        // rw!("let-lam-diff";
-        //     "(let ?v1 ?e (lam ?v2 ?body))" =>
-        //     { CaptureAvoid {
-        //         fresh: var("?fresh"), v2: var("?v2"), e: var("?e"),
-        //         if_not_free: "(lam ?v2 (let ?v1 ?e ?body))".parse().unwrap(),
-        //         if_free: "(lam ?fresh (let ?v1 ?e (let ?v2 (var ?fresh) ?body)))".parse().unwrap(),
-        //     }}
-        //     if is_not_same_var(var("?v1"), var("?v2"))),
-
+        rw!("let-lam-diff";
+            "(let ?v1 ?e (lam ?v2 ?body))" =>
+            { CaptureAvoid {
+                fresh: var("?fresh"), v2: var("?v2"), e: var("?e"),
+                if_not_free: "(lam ?v2 (let ?v1 ?e ?body))".parse().unwrap(),
+                if_free: "(lam ?fresh (let ?v1 ?e (let ?v2 (var ?fresh) ?body)))".parse().unwrap(),
+            }}
+            if is_not_same_var(var("?v1"), var("?v2"))),
         // * math
         rw!("comm-add";  "(+ ?a ?b)"        => "(+ ?b ?a)"),
         rw!("comm-mul";  "(* ?a ?b)"        => "(* ?b ?a)"),
@@ -123,34 +251,6 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, ()>> {
         // rw!("pow-recip"; "(pow ?x -1)" => "(/ 1 ?x)"
         //     if is_not_zero("?x")),
         // rw!("recip-mul-div"; "(* ?x (/ 1 ?x))" => "1" if is_not_zero("?x")),
-
-        // rw!("d-variable"; "(d ?x ?x)" => "1" if is_sym("?x")),
-        // rw!("d-constant"; "(d ?x ?c)" => "0" if is_sym("?x") if is_const_or_distinct_var("?c", "?x")),
-
-        // rw!("d-add"; "(d ?x (+ ?a ?b))" => "(+ (d ?x ?a) (d ?x ?b))"),
-        // rw!("d-mul"; "(d ?x (* ?a ?b))" => "(+ (* ?a (d ?x ?b)) (* ?b (d ?x ?a)))"),
-
-        // rw!("d-sin"; "(d ?x (sin ?x))" => "(cos ?x)"),
-        // rw!("d-cos"; "(d ?x (cos ?x))" => "(* -1 (sin ?x))"),
-
-        // rw!("d-ln"; "(d ?x (ln ?x))" => "(/ 1 ?x)" if is_not_zero("?x")),
-
-        // rw!("d-power";
-        //     "(d ?x (pow ?f ?g))" =>
-        //     "(* (pow ?f ?g)
-        //         (+ (* (d ?x ?f)
-        //               (/ ?g ?f))
-        //            (* (d ?x ?g)
-        //               (ln ?f))))"
-        // ),
-
-        // rw!("i-one"; "(i 1 ?x)" => "?x"),
-        // rw!("i-cos"; "(i (cos ?x) ?x)" => "(sin ?x)"),
-        // rw!("i-sin"; "(i (sin ?x) ?x)" => "(* -1 (cos ?x))"),
-        // rw!("i-sum"; "(i (+ ?f ?g) ?x)" => "(+ (i ?f ?x) (i ?g ?x))"),
-        // rw!("i-dif"; "(i (- ?f ?g) ?x)" => "(- (i ?f ?x) (i ?g ?x))"),
-        // rw!("i-parts"; "(i (* ?a ?b) ?x)" =>
-        //     "(- (* ?a (i ?b ?x)) (i (* (d ?x ?a) (i ?b ?x)) ?x))"),
     ]
 }
 
@@ -203,13 +303,15 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     }
 }
 
-
-fn rpn_to_string(rpn: &RecExpr<CommonLanguage>) -> Result<String, String> {
+fn rpn_to_string(
+    rpn: &RecExpr<CommonLanguage>,
+    rpn_helper: fn(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<String, String>,
+) -> Result<String, String> {
     let mut stack = Vec::new();
     let err = "RPN has invalid format".to_string();
     // println!("rpn = {:?}", rpn.as_ref());
     for token in rpn.as_ref() {
-        let exp = rpn_helper_math(token, &mut stack)?;
+        let exp = rpn_helper(token, &mut stack)?;
         stack.push(exp);
     }
 
@@ -286,21 +388,21 @@ fn rpn_helper_math(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<St
 
 #[test]
 fn rpn_to_string_test() {
-    println!("{}", rpn_to_string(&"(+ 1 2)".parse().unwrap()).unwrap());
+    println!("{}", rpn_to_string(&"(+ 1 2)".parse().unwrap(), rpn_helper_math).unwrap());
     println!(
         "{}",
-        rpn_to_string(&"(+ 1 (- a (* a (+ 2 -1))))".parse().unwrap()).unwrap()
+        rpn_to_string(&"(+ 1 (- a (* a (+ 2 -1))))".parse().unwrap(), rpn_helper_math).unwrap()
     );
     println!(
         "{}",
-        rpn_to_string(&"(lam x (+ x 4))".parse().unwrap()).unwrap()
+        rpn_to_string(&"(lam x (+ x 4))".parse().unwrap(), rpn_helper_math).unwrap()
     );
     println!(
         "{}",
         rpn_to_string(
             &"(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))"
                 .parse()
-                .unwrap()
+                .unwrap(), rpn_helper_math
         )
         .unwrap()
     );
@@ -324,10 +426,13 @@ fn lisp_test() {
 #[test]
 fn lisp_temp_test() {
     let s = "(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))";
-    println!("[*]pretty:\n{}", s.parse::<RecExpr<CommonLanguage>>().unwrap().pretty(20));
-    println!("[*]rpn_to_string:\n{}", rpn_to_string(&s.parse().unwrap()).unwrap());
     println!(
-        "{:?}",
-        simplify_test(s)
+        "[*]pretty:\n{}",
+        s.parse::<RecExpr<CommonLanguage>>().unwrap().pretty(20)
     );
+    println!(
+        "[*]rpn_to_string:\n{}",
+        rpn_to_string(&s.parse().unwrap(), rpn_helper_math).unwrap()
+    );
+    println!("{:?}", simplify_test(s));
 }
