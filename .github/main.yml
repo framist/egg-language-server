@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   run:
-    name: Spell Check with Typos
+    name: Spell Check with push
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Actions Repository
