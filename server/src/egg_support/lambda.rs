@@ -1,6 +1,18 @@
 use egg::{rewrite as rw, *};
 use fxhash::FxHashSet as HashSet;
 
+/*
+TODO 空 python 文件 栈溢出
+TODO
+def fib(x):
+    if x == 0 or x == 1:
+        return x
+    else:
+        return fib(x-1) + fib(x-2)
+fib(5)
+
+ */
+
 define_language! {
     enum Lambda {
         Bool(bool),

@@ -1,8 +1,9 @@
 use log::*;
 
 // 实现的 lsp 功能
-use egg_language_server::egg_support::egg_violence;
+use egg_language_server::egg_support::{direct_parser, simple_reparser};
 use egg_language_server::python::py_parser;
+use egg_language_server::repython::py_reparser;
 
 // 依赖
 use tower_lsp::jsonrpc::Result;
@@ -10,17 +11,22 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 use serde_json::Value;
-use std::sync::RwLock;
+use std::sync::RwLock; // TODO 是否会出现死锁？
 
 #[allow(dead_code)]
-#[derive(Debug)]
 struct Settings {
+    // 语言客户端配置
     max_number_of_problems: u32,
     if_explanations: bool,
     explanation_with_let: bool,
     explanation_with_high_level_pl: String,
     if_egg_ir: bool,
     out_language: String,
+    // 编辑器配置
+    target_language: String,
+    // 内部
+    f_parser: fn(&str) -> std::result::Result<String, String>,
+    f_reparser: fn(&String) -> std::result::Result<String, String>,
 }
 impl Settings {
     fn new() -> Self {
@@ -31,11 +37,14 @@ impl Settings {
             explanation_with_high_level_pl: String::from(""),
             if_egg_ir: false,
             out_language: String::from(""),
+            target_language: String::from("lisp"),
+            // 内部
+            f_parser: direct_parser,
+            f_reparser: simple_reparser,
         }
     }
 }
 
-#[derive(Debug)]
 struct Backend {
     client: Client,
     settings: RwLock<Settings>,
@@ -150,33 +159,7 @@ struct TextDocumentItem {
 /// TODO 增量更新方式
 impl Backend {
     async fn on_change(&self, params: TextDocumentItem) {
-        let target_language = match self.get_ext(&params).await {
-            Some(value) => value,
-            None => {
-                self.log_error(format!("不支持的文件类型: {}", params.uri))
-                    .await;
-                return;
-            }
-        };
-        self.client
-            .log_message(
-                MessageType::INFO,
-                format!("target_language: {}", target_language),
-            )
-            .await;
-
-        let f_parser: fn(&str) -> std::result::Result<String, String>;
-        if target_language == "lisp" {
-            f_parser = egg_violence;
-        } else if target_language == "python" {
-            f_parser = py_parser;
-        } else {
-            return self
-                .log_warn(format!("不支持的语言: {}", target_language))
-                .await;
-        }
-
-        let (m, diagnostic_type) = match f_parser(&params.text) {
+        let (m, diagnostic_type) = match &(self.settings.read().unwrap().f_parser)(&params.text) {
             Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
             Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
         };
@@ -186,8 +169,7 @@ impl Backend {
                 .publish_diagnostics(params.uri.clone(), vec![], Some(params.version))
                 .await;
         }
-
-        debug!("Egg: {} => {}", params.text.trim(), m);
+        let message = format!("可以优化为 => {}\n伪代码：\n{}", m, (self.settings.read().unwrap().f_reparser)(&m).unwrap());
 
         let start_position = Position::new(0, 0);
         let lines = params.text.lines();
@@ -201,7 +183,7 @@ impl Backend {
             Some(diagnostic_type),                    // 设置诊断级别为 "Information"
             None,
             Some("egg-support".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
-            format!("可以优化为 => {}", m),
+            message,                          // 诊断信息
             None,
             None,
         );
@@ -215,8 +197,8 @@ impl Backend {
         debug!("诊断已发送！{}", params.version);
     }
 
-    async fn get_ext(&self, params: &TextDocumentItem) -> Option<&str> {
-        let target_language = match params.uri.to_file_path().ok()?.extension()?.to_str()? {
+    async fn get_ext(&self, uri: &Url) -> Option<&str> {
+        let target_language = match uri.to_file_path().ok()?.extension()?.to_str()? {
             "py" => "python",
             "lisp" | "scm" => "lisp",
             _ => {
@@ -235,21 +217,81 @@ impl Backend {
                 section: Some("EgglanguageServer".to_string()),
             }])
             .await;
-        let old_set = self.settings.read().unwrap().max_number_of_problems;
-        self.log_info(format!("旧的客户端设置: {}", old_set)).await;
+        
         self.log_info(format!("获取到客户端设置{:?}", settings))
             .await;
         // 例如
-        // Ok([Object {"maxNumberOfProblems": Number(100), "trace": Object {"server": String("verbose")}}])
+        /* Ok([Object {
+                "ExplanationWithHighLevelPL": String("same as source"), 
+                "ExplanationWithLet": Bool(true), 
+                "ifEggIR": Bool(true), 
+                "ifExplanations": Bool(true), 
+                "maxNumberOfProblems": Number(200), 
+                "outLanguage": String("lisp"), 
+                "trace": Object {"server": String("verbose")}}])
+         */
         match settings {
             Ok(settings) => {
-                self.settings.write().unwrap().max_number_of_problems =
+                let mut s = self.settings.write().unwrap();
+                s.max_number_of_problems =
                     settings[0]["maxNumberOfProblems"].as_u64().unwrap_or(100) as u32;
+                s.if_explanations = settings[0]["ifExplanations"].as_bool().unwrap_or(true);
+                s.if_egg_ir = settings[0]["ifEggIR"].as_bool().unwrap_or(true);
+                s.explanation_with_let = settings[0]["ExplanationWithLet"].as_bool().unwrap_or(true);
+                s.explanation_with_high_level_pl = settings[0]["ExplanationWithHighLevelPL"]
+                    .as_str()
+                    .unwrap_or("same as source")
+                    .to_string();
+                s.out_language = settings[0]["outLanguage"]
+                    .as_str()
+                    .unwrap_or("lisp")
+                    .to_string();
             }
             Err(_) => {
                 self.log_error("获取客户端设置失败".to_string()).await;
             }
         };
+
+        // TODO 临时实现的目标语言检测
+        let target_language = match self.get_ext(&uri).await {
+            Some(value) => value,
+            None => {
+                self.log_error(format!("不支持的文件类型: {}", uri))
+                    .await;
+                return;
+            }
+        };
+        self.settings.write().unwrap().target_language = target_language.to_string();
+
+        // 根据设置配置内部设置
+        let f_parser: fn(&str) -> std::result::Result<String, String>;
+        if target_language == "lisp" {
+            f_parser = direct_parser;
+        } else if target_language == "python" {
+            f_parser = py_parser;
+        } else {
+            return self
+                .log_warn(format!("不支持的语言: {}", target_language))
+                .await;
+        }
+        // 更新配置 f_parser
+        self.settings.write().unwrap().f_parser = f_parser;
+
+        // 根据配置选择输出方式
+        // self.settings.write().unwrap().f_reparser = py_reparser;
+        let f_reparser: fn(&String) -> std::result::Result<String, String>;
+        let out_language = self.settings.read().unwrap().out_language.clone();
+        if out_language == "lisp" {
+            f_reparser = simple_reparser;
+        } else if out_language == "python" {
+            f_reparser = py_reparser;
+        } else {
+            return self
+                .log_warn(format!("不支持的输出语言: {}", out_language))
+                .await;
+        }
+        self.settings.write().unwrap().f_reparser = f_reparser;
+        
     }
 
     #[inline]

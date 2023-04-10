@@ -1,6 +1,10 @@
 name: Run typos to check spelling
 
-on: [push]
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   run:

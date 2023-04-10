@@ -6,5 +6,8 @@
 	"editor.codeActionsOnSave": {
 		"source.fixAll.eslint": true
 	},
-	"commentTranslate.hover.enabled": true
+	"commentTranslate.hover.enabled": true,
+	"rust-analyzer.linkedProjects": [
+		"./server/Cargo.toml"
+	]
 }

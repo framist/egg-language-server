@@ -47,10 +47,10 @@ impl CommonLanguage {
     }
 }
 
-type EGraph = egg::EGraph<CommonLanguage, LambdaAnalysis>;
 
 #[derive(Default)]
 struct LambdaAnalysis;
+type EGraph = egg::EGraph<CommonLanguage, LambdaAnalysis>;
 
 use fxhash::FxHashSet as HashSet;
 
@@ -303,110 +303,6 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     }
 }
 
-fn rpn_to_string(
-    rpn: &RecExpr<CommonLanguage>,
-    rpn_helper: fn(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<String, String>,
-) -> Result<String, String> {
-    let mut stack = Vec::new();
-    let err = "RPN has invalid format".to_string();
-    // println!("rpn = {:?}", rpn.as_ref());
-    for token in rpn.as_ref() {
-        let exp = rpn_helper(token, &mut stack)?;
-        stack.push(exp);
-    }
-
-    if stack.len() != 1 {
-        return Err(err);
-    }
-
-    stack.pop().ok_or(err)
-}
-
-fn rpn_helper_math(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<String, String> {
-    let err = format!("RPN has invalid format: token = {:?}", token);
-    let width = "    ";
-    use CommonLanguage::*;
-    Ok(match token {
-        Num(val) => val.to_string(),
-        Bool(val) => val.to_string(),
-        Symbol(s) => s.to_string(),
-        op @ (Add(_) | Sub(_) | Mul(_) | Div(_) | Pow(_)) => {
-            let right = stack.pop().ok_or(&err)?;
-            let left = stack.pop().ok_or(&err)?;
-            format!("({} {} {})", left, op.to_string(), right)
-        }
-        op @ (Ln(_) | Sqrt(_)) => {
-            let exp = stack.pop().ok_or(&err)?;
-            format!("({} {})", op.to_string(), exp)
-        }
-        Var(_) => {
-            let var = stack.pop().ok_or(&err)?;
-            format!("`{}`", var)
-        }
-        Lambda(_) => {
-            let body = stack.pop().ok_or(&err)?;
-            let var = stack.pop().ok_or(&err)?;
-            // 为 body 增加缩进
-            let body = body
-                .lines()
-                .map(|line| format!("{}{}", width, line))
-                .collect::<Vec<_>>()
-                .join("\n");
-            format!("(λ {}:\n{})", var, body)
-        }
-        App(_) => {
-            let right = stack.pop().ok_or(&err)?;
-            let f = stack.pop().ok_or(&err)?;
-
-            format!("{}({})", f, right)
-        }
-        Let(_) => {
-            let then = stack.pop().ok_or(&err)?;
-            let body = stack.pop().ok_or(&err)?;
-            let var = stack.pop().ok_or(&err)?;
-            format!("let {} = {};\n{}", var, body, then)
-        }
-        If(_) => {
-            let else_exp = stack.pop().ok_or(&err)?;
-            let then_exp = stack.pop().ok_or(&err)?;
-            let cond = stack.pop().ok_or(&err)?;
-            format!("({} {} {} {})", "if", cond, then_exp, else_exp)
-        }
-        Eq(_) => {
-            let right = stack.pop().ok_or(&err)?;
-            let left = stack.pop().ok_or(&err)?;
-            format!("({} {} {})", left, "==", right)
-        }
-        Fix(_) => {
-            // TODO
-            let body = stack.pop().ok_or(&err)?;
-            let then = stack.pop().ok_or(&err)?;
-            format!("({} {} {})", "fix", then, body)
-        }
-    })
-}
-
-#[test]
-fn rpn_to_string_test() {
-    println!("{}", rpn_to_string(&"(+ 1 2)".parse().unwrap(), rpn_helper_math).unwrap());
-    println!(
-        "{}",
-        rpn_to_string(&"(+ 1 (- a (* a (+ 2 -1))))".parse().unwrap(), rpn_helper_math).unwrap()
-    );
-    println!(
-        "{}",
-        rpn_to_string(&"(lam x (+ x 4))".parse().unwrap(), rpn_helper_math).unwrap()
-    );
-    println!(
-        "{}",
-        rpn_to_string(
-            &"(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))"
-                .parse()
-                .unwrap(), rpn_helper_math
-        )
-        .unwrap()
-    );
-}
 
 #[test]
 fn lisp_test() {
@@ -421,18 +317,4 @@ fn lisp_test() {
                     4)))"
         )
     );
-}
-
-#[test]
-fn lisp_temp_test() {
-    let s = "(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))";
-    println!(
-        "[*]pretty:\n{}",
-        s.parse::<RecExpr<CommonLanguage>>().unwrap().pretty(20)
-    );
-    println!(
-        "[*]rpn_to_string:\n{}",
-        rpn_to_string(&s.parse().unwrap(), rpn_helper_math).unwrap()
-    );
-    println!("{:?}", simplify_test(s));
 }
