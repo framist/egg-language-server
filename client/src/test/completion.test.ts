@@ -17,7 +17,7 @@ import { getDocUri, activate } from './helper';
 这段代码用于测试，它会首先通过 getDocUri() 函数得到一个文档 URI，
 然后调用 testCompletion() 并提供这个 URIL 和位置作为参数。
 函数 testCompletion() 会检查在文档的这个位置上有哪些补全项，
-这里应该有 JavaSccript 和 TypeScript。 
+这里应该有 JavaScript 和 TypeScript。 
 所以它会创建两个 vscode.CompletionItem，
 每个都有 label 和 kind 属性，并使用这两个条目去测试代码补全。
 */
