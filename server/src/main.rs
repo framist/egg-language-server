@@ -159,17 +159,18 @@ struct TextDocumentItem {
 /// TODO 增量更新方式
 impl Backend {
     async fn on_change(&self, params: TextDocumentItem) {
-        let (m, diagnostic_type) = match &(self.settings.read().unwrap().f_parser)(&params.text) {
-            Ok(s) => (format!("{}", s), DiagnosticSeverity::INFORMATION),
-            Err(s) => (format!("{}", s), DiagnosticSeverity::ERROR),
-        };
-        if m.is_empty() {
-            // 发送空诊断
-            self.client
-                .publish_diagnostics(params.uri.clone(), vec![], Some(params.version))
-                .await;
-        }
-        let message = format!("可以优化为 => {}\n伪代码：\n{}", m, (self.settings.read().unwrap().f_reparser)(&m).unwrap());
+        let (message, diagnostic_type) =
+            match &(self.settings.read().unwrap().f_parser)(&params.text) {
+                Ok(s) => (
+                    format!(
+                        "可以优化为 => {}\n伪代码：\n{}",
+                        s,
+                        (self.settings.read().unwrap().f_reparser)(s).unwrap()
+                    ),
+                    DiagnosticSeverity::INFORMATION,
+                ),
+                Err(s) => (format!("错误：{}", s), DiagnosticSeverity::ERROR),
+            };
 
         let start_position = Position::new(0, 0);
         let lines = params.text.lines();
@@ -183,7 +184,7 @@ impl Backend {
             Some(diagnostic_type),                    // 设置诊断级别为 "Information"
             None,
             Some("egg-support".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
-            message,                          // 诊断信息
+            message,                         // 诊断信息
             None,
             None,
         );
@@ -217,19 +218,19 @@ impl Backend {
                 section: Some("EgglanguageServer".to_string()),
             }])
             .await;
-        
+
         self.log_info(format!("获取到客户端设置{:?}", settings))
             .await;
         // 例如
         /* Ok([Object {
-                "ExplanationWithHighLevelPL": String("same as source"), 
-                "ExplanationWithLet": Bool(true), 
-                "ifEggIR": Bool(true), 
-                "ifExplanations": Bool(true), 
-                "maxNumberOfProblems": Number(200), 
-                "outLanguage": String("lisp"), 
-                "trace": Object {"server": String("verbose")}}])
-         */
+               "ExplanationWithHighLevelPL": String("same as source"),
+               "ExplanationWithLet": Bool(true),
+               "ifEggIR": Bool(true),
+               "ifExplanations": Bool(true),
+               "maxNumberOfProblems": Number(200),
+               "outLanguage": String("lisp"),
+               "trace": Object {"server": String("verbose")}}])
+        */
         match settings {
             Ok(settings) => {
                 let mut s = self.settings.write().unwrap();
@@ -237,7 +238,8 @@ impl Backend {
                     settings[0]["maxNumberOfProblems"].as_u64().unwrap_or(100) as u32;
                 s.if_explanations = settings[0]["ifExplanations"].as_bool().unwrap_or(true);
                 s.if_egg_ir = settings[0]["ifEggIR"].as_bool().unwrap_or(true);
-                s.explanation_with_let = settings[0]["ExplanationWithLet"].as_bool().unwrap_or(true);
+                s.explanation_with_let =
+                    settings[0]["ExplanationWithLet"].as_bool().unwrap_or(true);
                 s.explanation_with_high_level_pl = settings[0]["ExplanationWithHighLevelPL"]
                     .as_str()
                     .unwrap_or("same as source")
@@ -256,8 +258,7 @@ impl Backend {
         let target_language = match self.get_ext(&uri).await {
             Some(value) => value,
             None => {
-                self.log_error(format!("不支持的文件类型: {}", uri))
-                    .await;
+                self.log_error(format!("不支持的文件类型: {}", uri)).await;
                 return;
             }
         };
@@ -291,7 +292,6 @@ impl Backend {
                 .await;
         }
         self.settings.write().unwrap().f_reparser = f_reparser;
-        
     }
 
     #[inline]

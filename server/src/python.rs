@@ -1,5 +1,18 @@
 //! 用 tree-sitter 解析 python 代码
 //! note: 解析出的 IR 的树结构与 AST 不同。
+/*
+TODO 逻辑相关
+def fib(x):
+    if x < 0:
+        return -1
+    elif x == 0 or x == 1:
+        return x
+    else:
+        return fib(x-1) + fib(x-2)
+fib(5)
+
+ */
+
 
 use log::*;
 use tree_sitter::{Parser};
@@ -178,19 +191,22 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
         // 块
         "module" | "block" => {
             let mut children = tree_cursor.clone();
-            children.goto_first_child();
-
-            // 以下事务在 function_definition 或 assignment 中处理:
-            // 对于 块语句，应该由多个嵌套的 let ，最终由一个有返回值的表达式结束
-            // 返回例如 (let _ _ (let ... )) 形式的表达式
-            // 当 children 为 function_definition 或 assignment 时
-            //      将其转换为 let 形式
-            // 例如
-            // "a = 1;a" => "(let a 1 a)"
-            // "a = 1; b = a; b" => "(let a 1 (let b a b))"
-
-            // 所以只递归第一个元素就行
-            format!("{}", ast_to_sexpr(tree, &children, code))            
+            if children.goto_first_child() {
+                format!("{}", ast_to_sexpr(tree, &children, code))
+                
+                // 以下事务在 function_definition 或 assignment 中处理:
+                // 对于 块语句，应该由多个嵌套的 let ，最终由一个有返回值的表达式结束
+                // 返回例如 (let _ _ (let ... )) 形式的表达式
+                // 当 children 为 function_definition 或 assignment 时
+                //      将其转换为 let 形式
+                // 例如
+                // "a = 1;a" => "(let a 1 a)"
+                // "a = 1; b = a; b" => "(let a 1 (let b a b))"
+                
+                // 所以只递归第一个元素就行
+            } else {
+                format!("")
+            }     
             
         }
 

@@ -1,6 +1,6 @@
 use egg::{rewrite as rw, *};
 
-// TODO 目前 仅仅简单地混合 lambda 与 math
+// TODO prop
 // 不准备实现常数折叠
 
 use ordered_float::NotNan;
@@ -183,16 +183,6 @@ impl Applier<CommonLanguage, LambdaAnalysis> for CaptureAvoid {
 // 用于对SimpleLanguage语言中的表达式进行重写。
 fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
     vec![
-        // 交换加法运算数顺序
-        rw!("commute-add"; "(+ ?a ?b)" => "(+ ?b ?a)"),
-        // 交换乘法运算数顺序
-        rw!("commute-mul"; "(* ?a ?b)" => "(* ?b ?a)"),
-        // 加 0 = 本身
-        rw!("add-0"; "(+ ?a 0)" => "?a"),
-        // 乘 0 = 0
-        rw!("mul-0"; "(* ?a 0)" => "0"),
-        // 乘 1 = 本身
-        rw!("mul-1"; "(* ?a 1)" => "?a"),
         // * lambda
 
         // open term rules
