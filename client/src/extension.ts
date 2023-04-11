@@ -49,7 +49,7 @@ export function activate(context: ExtensionContext) {
 		options: {
 			env: {
 				...process.env,                    // 继承当前进程环境变量，并添加或覆盖其中的环境变量
-				RUST_LOG: "debug,egg=off",   // rust 日志级别
+				RUST_LOG: "egg_language_server=debug,egg=off",   // rust 日志级别；egg 似乎会匹配 egg*
 				// RUST_BACKTRACE: 1                  // 开启 Rust panic 时的 backtrace 功能
 			},
 		},

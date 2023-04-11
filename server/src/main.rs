@@ -79,6 +79,7 @@ impl LanguageServer for Backend {
     }
     async fn initialized(&self, _: InitializedParams) {
         self.log_info(format!("initialized!")).await;
+        debug!("DEBUG: initialized!");
     }
 
     async fn shutdown(&self) -> Result<()> {
@@ -308,9 +309,18 @@ impl Backend {
     }
 }
 
+
 #[tokio::main]
 async fn main() {
-    env_logger::init();
+    // 自定义日志格式
+    // std::env::set_var("RUST_LOG", "egg_language_server=debug,egg=off"); // 在客户端已设置环境变量
+    use std::io::Write;
+    env_logger::builder()
+        .format(|buf, record| {
+            writeln!(buf, "[{} - {}] {}", record.level(), record.target(), record.args())
+        })
+        .init();
+    // env_logger::init();  // 使用默认配置而非自定义
 
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
