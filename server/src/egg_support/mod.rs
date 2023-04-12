@@ -31,7 +31,7 @@ pub fn simplify(s: &str) -> Result<Option<EggIR>, String> {
 
 // }
 
-use common::CommonLanguage;
+pub use common::CommonLanguage;
 
 pub fn rpn_to_string(
     rpn: &EggIR,

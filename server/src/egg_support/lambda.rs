@@ -433,5 +433,5 @@ pub fn simplify(s: &str) -> Result<String, String> {
 #[test]
 fn my_tests() {
     println!("{}", simplify(
-        "(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))").unwrap());
+        "(let a 1 (pass))").unwrap());
 }

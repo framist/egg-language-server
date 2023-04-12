@@ -17,7 +17,7 @@ pub fn py_reparser(sexpr: &String) -> Result<String, String> {
     }
 }
 
-// TODO 做好 rpn_helper_simple 的测试
+// TODO 先做好 rpn_helper_simple 的测试
 use common::CommonLanguage;
 fn rpn_helper_py(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<String, String> {
     rpn_helper_simple(token, stack)
