@@ -4,11 +4,8 @@
 use crate::egg_support::*;
 
 /// 因为
-/// ```
-/// println!("rpn to string best: \n{:?}",
-/// 	rpn_to_string(&best.to_string().parse().unwrap()));
-/// ```
-/// 这里 `to_string().parse()` 是必要的
+/// 	rpn_to_string(&best.to_string().parse().unwrap())
+/// 这里 `to_string().parse()` 是必要的 ，RecExpr<> 可能遭到污染
 /// 所以输入直接是 String 形式的 egg-IR
 pub fn py_reparser(sexpr: &String) -> Result<String, String> {
     match sexpr.parse::<EggIR>() {

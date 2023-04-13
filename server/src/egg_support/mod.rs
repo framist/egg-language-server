@@ -1,5 +1,7 @@
 pub mod common;
 mod lambda;
+
+#[cfg(feature = "float")]
 mod math;
 mod prop;
 mod simple;
@@ -15,7 +17,6 @@ pub fn simple_reparser(s: &String) -> Result<String, String> {
         Ok(rpn) => rpn_to_string(&rpn, rpn_helper_simple),
         Err(e) => return Err(format!("egg-IR parse error: {}", e)),
     }
-    
 }
 
 pub fn simplify(s: &str) -> Result<Option<EggIR>, String> {
@@ -66,17 +67,24 @@ pub fn rpn_helper_simple(
     };
     use CommonLanguage::*;
     Ok(match token {
+        #[cfg(feature = "float")]
+        Constant(f64) => f64.to_string(),
         Num(val) => val.to_string(),
         Bool(val) => val.to_string(),
         Symbol(s) => s.to_string(),
-        op @ (Add(_) | Sub(_) | Mul(_) | Div(_) | Pow(_)) => {
-            let right = stack.pop().ok_or(&err)?;
-            let left = stack.pop().ok_or(&err)?;
-            format!("({} {} {})", left, op.to_string(), right)
-        }
         op @ (Ln(_) | Sqrt(_)) => {
             let exp = stack.pop().ok_or(&err)?;
             format!("({} {})", op.to_string(), exp)
+        }
+        op @ Not(_) => {
+            let exp = stack.pop().ok_or(&err)?;
+            format!("({} {})", op.to_string(), exp)
+        }
+        op @ (Add(_) | Sub(_) | Mul(_) | Div(_) | Pow(_) | And(_) 
+        | Or(_) | Gt(_) | Ge(_) | Lt(_) | Le(_) | Ne(_)) => {
+            let right = stack.pop().ok_or(&err)?;
+            let left = stack.pop().ok_or(&err)?;
+            format!("({} {} {})", left, op.to_string(), right)
         }
         Var(_) => {
             let var = stack.pop().ok_or(&err)?;
@@ -103,7 +111,12 @@ pub fn rpn_helper_simple(
             let else_exp = stack.pop().ok_or(&err)?;
             let then_exp = stack.pop().ok_or(&err)?;
             let cond = stack.pop().ok_or(&err)?;
-            format!("if {}:\n{}\nelse:\n{}", cond, add_widths(then_exp), add_widths(else_exp))
+            format!(
+                "if {}:\n{}\nelse:\n{}",
+                cond,
+                add_widths(then_exp),
+                add_widths(else_exp)
+            )
         }
         Eq(_) => {
             let right = stack.pop().ok_or(&err)?;
@@ -145,7 +158,7 @@ else:
     4"
         .to_string()
         .trim()
-    );    
+    );
     assert_eq!(
         rpn_to_string(&"(if (= 1 2) 3 4)".parse().unwrap(), rpn_helper_simple).unwrap(),
         r"
@@ -177,7 +190,9 @@ else:
                         (+ (var n) -1))
                     (app (var fib)
                         (+ (var n) -2)))))))
-                (app (var fib) 4))".parse().unwrap(),
+                (app (var fib) 4))"
+                .parse()
+                .unwrap(),
             rpn_helper_simple
         )
         .unwrap(),

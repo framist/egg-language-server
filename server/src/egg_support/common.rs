@@ -1,19 +1,13 @@
 use egg::{rewrite as rw, *};
+// TODO 更多的控制流 比如 While
 
-// TODO prop
-// 不准备实现常数折叠
-
-use ordered_float::NotNan;
-pub type Constant = NotNan<f64>;
-
-// 该函数定义语言: SimpleLanguage。
-// 它包括 Num、加号"+"(Add、两个Id标志符参数)、
-// "*" 乘号(Mul、两个Id标志符参数)以及Symbol标记.
+// 不准备实现浮点数的常数折叠
+#[cfg(feature = "float")]
+pub type Constant = ordered_float::NotNan<f64>;
+#[cfg(feature = "float")]
 define_language! {
     pub enum CommonLanguage {
         Num(i32),
-        "+" = Add([Id; 2]),
-        "*" = Mul([Id; 2]),
         Symbol(Symbol),
 
         // * lambda
@@ -27,21 +21,92 @@ define_language! {
         "if" = If([Id; 3]),
 
         // * math
+        "+" = Add([Id; 2]),
+        "*" = Mul([Id; 2]),
         "-" = Sub([Id; 2]),
         "/" = Div([Id; 2]),
         "pow" = Pow([Id; 2]),
         "ln" = Ln(Id),
         "sqrt" = Sqrt(Id),
+        
+        Constant(Constant),     // 浮点数常量
 
-        // Constant(Constant),
+        // * Prop
+        "&" = And([Id; 2]),
+        "~" = Not(Id),
+        "|" = Or([Id; 2]),
 
+        // * Relation
+        ">" = Gt([Id; 2]),
+        "<" = Lt([Id; 2]),
+        ">=" = Ge([Id; 2]),
+        "<=" = Le([Id; 2]),
+        "!=" = Ne([Id; 2]),
     }
 }
 
+// 该函数定义语言: SimpleLanguage。
+// 它包括 Num、加号"+"(Add、两个Id标志符参数)、
+// "*" 乘号(Mul、两个Id标志符参数)以及Symbol标记.
+#[cfg(not(feature = "float"))]
+define_language! {
+    pub enum CommonLanguage {
+        Num(i32),
+        Symbol(Symbol),
+
+        // * lambda
+        Bool(bool),
+        "var" = Var(Id),        // 声明之后为一个 var
+        "=" = Eq([Id; 2]),
+        "app" = App([Id; 2]),   // apply 使用lam函数 声明之后为一个lambda, 如果是函数名，则需var声明
+        "lam" = Lambda([Id; 2]),
+        "let" = Let([Id; 3]),
+        "fix" = Fix([Id; 2]),
+        "if" = If([Id; 3]),
+
+        // * math
+        "+" = Add([Id; 2]),
+        "*" = Mul([Id; 2]),
+        "-" = Sub([Id; 2]),
+        "/" = Div([Id; 2]),
+        "pow" = Pow([Id; 2]),
+        "ln" = Ln(Id),
+        "sqrt" = Sqrt(Id),
+        
+        // Constant(Constant),     // 浮点数常量
+
+        // * Prop
+        "&" = And([Id; 2]),
+        "~" = Not(Id),
+        "|" = Or([Id; 2]),
+
+        // * Relation
+        ">" = Gt([Id; 2]),
+        "<" = Lt([Id; 2]),
+        ">=" = Ge([Id; 2]),
+        "<=" = Le([Id; 2]),
+        "!=" = Ne([Id; 2]),
+    }
+}
+
+// 自定义的方法
 impl CommonLanguage {
     fn num(&self) -> Option<i32> {
         match self {
             CommonLanguage::Num(n) => Some(*n),
+            _ => None,
+        }
+    }
+    fn bool(&self) -> Option<bool> {
+        match self {
+            CommonLanguage::Bool(b) => Some(*b),
+            _ => None,
+        }
+    }
+    #[cfg(feature = "float")]
+    fn float_constant(&self) -> Option<Constant> {
+        match self {
+            CommonLanguage::Constant(c) => Some(*c),
             _ => None,
         }
     }
@@ -66,6 +131,7 @@ fn eval(
 ) -> Option<(CommonLanguage, PatternAst<CommonLanguage>)> {
     let x = |i: &Id| egraph[*i].data.constant.as_ref().map(|c| &c.0);
     match enode {
+        // * Lambda
         CommonLanguage::Num(n) => Some((enode.clone(), format!("{}", n).parse().unwrap())),
         CommonLanguage::Bool(b) => Some((enode.clone(), format!("{}", b).parse().unwrap())),
         CommonLanguage::Add([a, b]) => Some((
@@ -76,6 +142,68 @@ fn eval(
             CommonLanguage::Bool(x(a)? == x(b)?),
             format!("(= {} {})", x(a)?, x(b)?).parse().unwrap(),
         )),
+
+        // * math 不默认实现常数折叠
+        #[cfg(feature = "float")]
+        CommonLanguage::Constant(c) => Some((enode.clone(), format!("{}", c).parse().unwrap())),
+        #[cfg(feature = "float")]
+        CommonLanguage::Add([a, b]) => Some((
+            CommonLanguage::Constant(x(a)?.float_constant()? + x(b)?.float_constant()?),
+            format!("(+ {} {})", x(a)?, x(b)?).parse().unwrap(),
+        )),
+        #[cfg(feature = "float")]
+        CommonLanguage::Sub([a, b]) => Some((
+            CommonLanguage::Constant(x(a)?.float_constant()? - x(b)?.float_constant()?),
+            format!("(- {} {})", x(a)?, x(b)?).parse().unwrap(),
+        )),
+        #[cfg(feature = "float")]
+        CommonLanguage::Mul([a, b]) => Some((
+            CommonLanguage::Constant(x(a)?.float_constant()? * x(b)?.float_constant()?),
+            format!("(* {} {})", x(a)?, x(b)?).parse().unwrap(),
+        )),
+        #[cfg(feature = "float")]
+        CommonLanguage::Div([a, b]) 
+        if x(b)?.float_constant()? != (ordered_float::NotNan::new(0.0).unwrap()) => Some((
+            CommonLanguage::Constant(x(a)?.float_constant()? / x(b)?.float_constant()?),
+            format!("(/ {} {})", x(a)?, x(b)?).parse().unwrap(),
+        )),
+
+        // * Prop 
+        CommonLanguage::And([a, b]) => Some((            
+            CommonLanguage::Bool(x(a)?.bool()? && x(b)?.bool()?),
+            format!("(& {} {})", x(a)?.bool()?, x(b)?.bool()?).parse().unwrap(),
+        )),
+        CommonLanguage::Not(a) => Some((
+            CommonLanguage::Bool(!x(a)?.bool()?), 
+            format!("(~ {})", x(a)?.bool()?).parse().unwrap())),
+        CommonLanguage::Or([a, b]) => Some((
+            CommonLanguage::Bool(x(a)?.bool()? || x(b)?.bool()?),
+            format!("(| {} {})", x(a)?.bool()?, x(b)?.bool()?).parse().unwrap(),
+        )),
+        
+        // * Relation
+        CommonLanguage::Gt([a, b]) => Some((
+            CommonLanguage::Bool(x(a)?.num()? > x(b)?.num()?),
+            format!("(> {} {})", x(a)?, x(b)?).parse().unwrap(),
+        )),
+        // TODO 下面的其实可有可无
+        // CommonLanguage::Lt([a, b]) => Some((
+        //     CommonLanguage::Bool(x(a)?.num()? < x(b)?.num()?),
+        //     format!("(< {} {})", x(a)?, x(b)?).parse().unwrap(),
+        // )),
+        // CommonLanguage::Ge([a, b]) => Some((
+        //     CommonLanguage::Bool(x(a)?.num()? >= x(b)?.num()?),
+        //     format!("(>= {} {})", x(a)?, x(b)?).parse().unwrap(),
+        // )),
+        // CommonLanguage::Le([a, b]) => Some((
+        //     CommonLanguage::Bool(x(a)?.num()? <= x(b)?.num()?),
+        //     format!("(<= {} {})", x(a)?, x(b)?).parse().unwrap(),
+        // )),
+        // CommonLanguage::Ne([a, b]) => Some((
+        //     CommonLanguage::Bool(x(a)?.num()? != x(b)?.num()?),
+        //     format!("(!= {} {})", x(a)?, x(b)?).parse().unwrap(),
+        // )),
+
         _ => None,
     }
 }
@@ -180,11 +308,11 @@ impl Applier<CommonLanguage, LambdaAnalysis> for CaptureAvoid {
     }
 }
 
-// 用于对SimpleLanguage语言中的表达式进行重写。
+/// 对表达式进行重写。
+/// ? 重写实际上是不是可逆的，即 <==?==>
 fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
     vec![
         // * lambda
-
         // open term rules
         rw!("if-true";  "(if  true ?then ?else)" => "?then"),
         rw!("if-false"; "(if false ?then ?else)" => "?else"),
@@ -217,6 +345,7 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
                 if_free: "(lam ?fresh (let ?v1 ?e (let ?v2 (var ?fresh) ?body)))".parse().unwrap(),
             }}
             if is_not_same_var(var("?v1"), var("?v2"))),
+        
         // * math
         rw!("comm-add";  "(+ ?a ?b)"        => "(+ ?b ?a)"),
         rw!("comm-mul";  "(* ?a ?b)"        => "(* ?b ?a)"),
@@ -241,6 +370,49 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         // rw!("pow-recip"; "(pow ?x -1)" => "(/ 1 ?x)"
         //     if is_not_zero("?x")),
         // rw!("recip-mul-div"; "(* ?x (/ 1 ?x))" => "1" if is_not_zero("?x")),
+        
+        // * Logic 这里有些公理应该是多余的
+        rw!("double-neg-flip"; "(~ (~ ?a))" => "?a"),
+        rw!("assoc-or"; "(| ?a (| ?b ?c))" => "(| (| ?a ?b) ?c)"),
+        rw!("dist-and-or"; "(& ?a (| ?b ?c))" => "(| (& ?a ?b) (& ?a ?c))"),
+        rw!("dist-or-and"; "(| ?a (& ?b ?c))" => "(& (| ?a ?b) (| ?a ?c))"),
+        rw!("comm-or"; "(| ?a ?b)" => "(| ?b ?a)"),
+        rw!("comm-and"; "(& ?a ?b)" => "(& ?b ?a)"),
+        rw!("lem"; "(| ?a (~ ?a))" => "true"),
+        rw!("or-true"; "(| ?a true)" => "true"),
+        rw!("and-true"; "(& ?a true)" => "?a"),
+        // 官方示例少了关于 false 的规则
+        // 可能是因为在常数折叠中自动 make 相关规则
+        // 已经 加入 prop 的常数折叠 
+        // rw!("not-true"; "(~ true)" => "false"),
+        // rw!("not-false"; "(~ false)" => "true"),
+        rw!("or-false"; "(| ?a false)" => "?a"),
+        rw!("and-false"; "(& ?a false)" => "false"),
+        
+        // * 接下来是额外的自定义的规则 TODO 需仔细研究 加以精简
+        // * Relation
+        // TODO 加入 Relation 的常数折叠 
+        // 对称关系
+        // rw!("eq-comm"; "(= ?a ?b)" => "(= ?b ?a)"), 前面已经有了
+        rw!("gt-comm"; "(& (> ?a ?b) (> ?b ?a))" => "false"),
+        // 自反关系
+        rw!("eq-true"; "(= ?a ?a)" => "true"),
+        rw!("gt-reflexive"; "(> ?a ?a)" => "false"),
+        // 传递关系
+        // rw!("gt-transitive"; "(& (> ?a ?b) (> ?b ?c))" => "(> ?a ?c)"), 错误的规则！
+        // rw!("eq-transitive"; "(& (= ?a ?b) (= ?b ?c))" => "(= ?a ?c)"), 错误的规则！
+        // 转换 <, >=, <=, !=, =
+        rw!("gt-flip"; "(< ?b ?a)" => "(> ?a ?b)"),                     // < => >
+        rw!("ge-expand"; "(>= ?a ?b)" => "(~ (< ?a ?b))"),    // >= => not <
+        rw!("le-flip"; "(<= ?a ?b)" => "(>= ?b ?a)"),    // <= => >= 
+        rw!("ne-expand"; "(!= ?a ?b)" => "(~ (= ?a ?b))"),              // != => not =
+        // = => <= and >= 首尾相连，好像没什么用
+        // rw!("eq-expand"; "(= ?a ?b)" => "(& (<= ?a ?b) (>= ?a ?b))"),   
+
+        
+        // * List
+        
+    
     ]
 }
 
@@ -293,18 +465,92 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     }
 }
 
+#[test]
+fn simplify_explain_test() {
+    let expr = "(& (| (<= 233 666) (= 2 3)) true)".parse().unwrap();
+    // let expr = match start.parse() {
+    //     Ok(expr) => expr,
+    //     Err(error) => return Err(format!("Failed to parse expression: {}", error)),
+    // };
+
+    // 使用 Runner 简化表达式，该运行器创建带有
+    // 给定的表达式的 e-graph ，并在其上运行给定的规则
+    let mut runner = Runner::default()
+        .with_explanations_enabled()
+        .with_expr(&expr)
+        .run(&make_rules());
+
+    // Runner 知道用 with_expr 给出的表达式在哪个 e-class 中
+    let root = runner.roots[0];
+
+    // 使用提取器 extractor 选择 根 eclass 的最佳元素
+    let extractor = Extractor::new(&runner.egraph, AstSize);
+    let (_best_cost, end) = extractor.find_best(root);
+    
+    println!("best ================= \n{}", end.to_string());
+    
+    // TODO 获取解释性输出的时间很长，需要优化
+
+    println!(
+        "get_flat_string ================= \n{}",
+        runner.explain_equivalence(&expr, &end).get_flat_string()
+    );
+
+    println!(
+        "get_string ================= \n{}",
+        runner.explain_equivalence(&expr, &end).get_string()
+    );
+
+    println!(
+        "get_string_with_let ================= \n{}",
+        runner.explain_equivalence(&expr, &end).get_string_with_let()
+    )
+}
+
 
 #[test]
 fn lisp_test() {
-    println!("{:?}", simplify_test("(+ 0 (* 1 foo))"));
-    println!("{:?}", simplify_test("(+ 1 1)"));
-    println!("{:?}", simplify_test("(+ 1 (- a (* (- 2 1) a)))"));
-    println!(
-        "{:?}",
+    assert_eq!(simplify_test("(+ 0 (* 1 foo))"), Ok("foo".to_string()));
+    assert_eq!(simplify_test("(+ 1 1)"), Ok("2".to_string()));
+    assert_eq!(
+        simplify_test("(+ 1 (- a (* (- 2 1) a)))"),
+        Ok("1".to_string())
+    );
+    assert_eq!(
         simplify_test(
             "(lam x (+ 4
                 (app (lam y (var y))
                     4)))"
-        )
+        ),
+        Ok("(lam x 8)".to_string())
     );
+
+    assert_eq!(
+        simplify_test("(| (& false true) (& true false))"),
+        Ok("false".to_string())
+    );
+
+    // println!("{:?}", simplify_test("(+ 0.1 0.2)"));
+    #[cfg(feature = "float")]
+    assert_eq!(simplify_test("(+ 0.1 0.2)"), Ok("0.3".to_string()));
+    #[cfg(not(feature = "float"))]
+    assert_eq!(simplify_test("(+ 0.1 0.2)"), Ok("(+ 0.1 0.2)".to_string()));
+
+    assert_eq!(
+        simplify_test("(& (| (> 3 2) (= 1 2)) true)"),
+        Ok("true".to_string())
+    );
+    assert_eq!(
+        simplify_test("(& (| true (= 3 2)) true)"),
+        Ok("true".to_string())
+    );
+}
+
+#[test]
+fn debug_test1() {
+    println!("{:?}", simplify_test("(& (| (<= 233 666) (= 2 3)) true)"));
+}
+#[test]
+fn debug_test2() {
+    println!("{:?}", simplify_test("(= 1 2)"));
 }

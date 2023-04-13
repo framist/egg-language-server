@@ -16,7 +16,7 @@ define_language! {
         "let" = Let([Id; 3]),    // 注意是三个参数      (let 参数名 表达式 后续作用域)
         "fix" = Fix([Id; 2]),    // 递归函数 fixpoint 不动点 其实也是语法糖
 
-        "if" = If([Id; 3]),      // 其实是语法糖，不必须的，为了方便  (if 条件表达式 成立表达式 不成立表达式)
+        "if" = If([Id; 3]),      // (if 条件表达式 成立表达式 不成立表达式)
 
         Symbol(egg::Symbol),
     }
@@ -69,7 +69,9 @@ impl Analysis<Lambda> for LambdaAnalysis {
         DidMerge(
             before_len != to.free.len(),
             to.free.len() != from.free.len(),
-        ) | merge_option(&mut to.constant, from.constant, |a, b| {
+        ) | 
+        // TODO 为什么我注释掉上面的代码，还可以通过测试？？？
+        merge_option(&mut to.constant, from.constant, |a, b| {
             assert_eq!(a.0, b.0, "Merged non-equal constants");
             DidMerge(false, false)
         })
@@ -409,7 +411,7 @@ fn make_rules() -> Vec<Rewrite<Lambda, LambdaAnalysis>> {
 
 /// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
 #[allow(unused)]
-pub fn simplify(s: &str) -> Result<String, String> {
+fn simplify(s: &str) -> Result<String, String> {
     // 解析表达式，类型注释(<Language>)告诉它使用哪种语言
     // let expr: RecExpr<Language> = s.parse().unwrap();
     let expr = match s.parse() {
@@ -419,7 +421,10 @@ pub fn simplify(s: &str) -> Result<String, String> {
 
     // 使用 Runner 简化表达式，该运行器创建带有
     // 给定的表达式的 e-graph ，并在其上运行给定的规则
-    let runner = Runner::default().with_expr(&expr).run(&make_rules());
+    let mut runner = Runner::default()
+        .with_explanations_enabled()
+        .with_expr(&expr)
+        .run(&make_rules());
 
     // Runner 知道用 with_expr 给出的表达式在哪个 e-class 中
     let root = runner.roots[0];
@@ -427,6 +432,7 @@ pub fn simplify(s: &str) -> Result<String, String> {
     // 使用提取器 extractor 选择 根 eclass 的最佳元素
     let extractor = Extractor::new(&runner.egraph, AstSize);
     let (_best_cost, best) = extractor.find_best(root);
+    println!("{}", runner.explain_equivalence(&expr, &best));
     Ok(best.to_string())
 }
 

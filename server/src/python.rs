@@ -71,6 +71,19 @@ fn ast_to_sexpr(
             let var = node.utf8_text(code.as_bytes()).unwrap().to_string();
             format!("(var {})", var)
         }
+        // 一元表达式
+        "not_operator" => {
+            let mut children = tree_cursor.clone();
+            children.goto_first_child();
+            let op = children.node().utf8_text(code.as_bytes()).unwrap();
+            children.goto_next_sibling();
+            let value = ast_to_sexpr(tree, &children, code);
+            let op = match op {
+                "not" => "~",
+                _ => op
+            };
+            format!("({} {})", op, value)
+        }
 
         // 二元表达式
         "binary_operator" | "boolean_operator" | "comparison_operator" => {
@@ -81,6 +94,12 @@ fn ast_to_sexpr(
             let op = children.node().utf8_text(code.as_bytes()).unwrap();
             children.goto_next_sibling();
             let right = ast_to_sexpr(tree, &children, code);
+            let op = match op {
+                "and" => "&",
+                "or" => "|",
+                "==" => "=",
+                _ => op
+            };
             format!("({} {} {})", op, left, right)
         }
 
@@ -112,17 +131,12 @@ fn ast_to_sexpr(
                 return format!("assignment then 提取出错: goto_parent");
             }
             if !then_cursor.goto_next_sibling() {
-                then_ = "pass".to_string(); // 返回空
+                then_ = "assignment_pass".to_string(); // 返回空
             } else {
                 then_ = ast_to_sexpr(tree, &mut then_cursor, code);
             }
 
-            format!(
-                "(let {} {} {})",
-                name,
-                value,
-                then_
-            )
+            format!("(let {} {} {})", name, value, then_)
         }
 
         // function_definition
@@ -199,13 +213,13 @@ fn ast_to_sexpr(
         }
 
         // 流程控制语句
-        //"if_statement":128  [0:0 - 1:9] 
+        //"if_statement":128  [0:0 - 1:9]
         // |   "if":23  [0:0 - 0:2] if
         // |   "identifier":1  [0:3 - 0:4] t
         // |   ":":24  [0:4 - 0:5] :
-        // |   "block":154  [1:4 - 1:9] 
-        // |   |   "expression_statement":119  [1:4 - 1:9] 
-        // |   |   |   "assignment":178  [1:4 - 1:9] 
+        // |   "block":154  [1:4 - 1:9]
+        // |   |   "expression_statement":119  [1:4 - 1:9]
+        // |   |   |   "assignment":178  [1:4 - 1:9]
         // |   |   |   |   "identifier":1  [1:4 - 1:5] x
         // |   |   |   |   "=":46  [1:6 - 1:7] =
         // |   |   |   |   "integer":92  [1:8 - 1:9] 0
@@ -220,7 +234,7 @@ fn ast_to_sexpr(
             children.goto_next_sibling();
             let then = ast_to_sexpr(tree, &children, code); // "block"
             if children.goto_next_sibling() == false {
-                return format!("(if {} {} pass)", cond, then); // 返回空
+                return format!("(if {} {} else_pass)", cond, then); // 返回空
             } else {
                 let else_ = ast_to_sexpr(tree, &children, code);
                 return format!("(if {} {} {})", cond, then, else_);
@@ -262,7 +276,7 @@ fn ast_to_sexpr(
             format!("pass") // TODO 空值处理？
         }
         "comment" => {
-            format!("") 
+            format!("")
         }
 
         &_ => {
