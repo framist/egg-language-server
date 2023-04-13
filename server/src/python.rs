@@ -72,17 +72,17 @@ fn ast_to_sexpr(
             format!("(var {})", var)
         }
         // 一元表达式
-        "not_operator" => {
+        "not_operator" | "unary_operator" => {
             let mut children = tree_cursor.clone();
             children.goto_first_child();
             let op = children.node().utf8_text(code.as_bytes()).unwrap();
             children.goto_next_sibling();
             let value = ast_to_sexpr(tree, &children, code);
-            let op = match op {
-                "not" => "~",
-                _ => op
-            };
-            format!("({} {})", op, value)
+            match op {
+                "not" => format!("(not {})", value),
+                "-" => format!("(- 0 {})", value),
+                _ => format!("<错误 unhandled op kind: ({:?} {:?})>", op, value),
+            }
         }
 
         // 二元表达式
@@ -98,7 +98,7 @@ fn ast_to_sexpr(
                 "and" => "&",
                 "or" => "|",
                 "==" => "=",
-                _ => op
+                _ => op,
             };
             format!("({} {} {})", op, left, right)
         }

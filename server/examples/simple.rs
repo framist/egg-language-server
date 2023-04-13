@@ -69,3 +69,6 @@ fn my_tests() {
 //     a
     
 // }
+fn main() {
+    
+}

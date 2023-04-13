@@ -563,7 +563,7 @@ fn make_rules() -> Vec<Rewrite> {
 
 /// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
 #[allow(unused)]
-pub fn simplify(s: &str) -> Result<String, String> {
+fn simplify(s: &str) -> Result<String, String> {
     // 解析表达式，类型注释(<Language>)告诉它使用哪种语言
     // let expr: RecExpr<Language> = s.parse().unwrap();
     let expr = match s.parse() {
@@ -582,4 +582,7 @@ pub fn simplify(s: &str) -> Result<String, String> {
     let extractor = Extractor::new(&runner.egraph, AstSize);
     let (_best_cost, best) = extractor.find_best(root);
     Ok(best.to_string())
+}
+fn main() {
+    
 }

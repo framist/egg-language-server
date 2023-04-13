@@ -10,6 +10,8 @@
 
 ## 依赖
 
+参见 `Cargo.toml` 文件
+
 ## 设置
 
 此扩展提供以下设置:
@@ -44,9 +46,17 @@
    3. Press ▷ to run the launch config (F5).
 
 
-## Known Issues
+## 已知问题
 
-## Release Notes
+## 发行说明
+
+## 参考
+
+- 本项目同时也是作者的毕业设计，但是论文还未完成。
+- 本项目作者对 egg 的论文《Egg: Fast and Extensible Equality Saturation》进行了中文翻译，可以在 [这里](https://www.overleaf.com/read/jhnbztftxwhm) 查看目前翻译的进度。待翻译完成后，会将其放在本项目的 `doc` 文件夹中。
+- 作为本项目的学习基础，作者有以下笔记：
+  - [Software-Foundations-Note](https://github.com/framist/Software-Foundations-Note) 
+  - [CS61a-Note](https://framist.github.io/2022/12/19/CS61a-Note/)
 
 ---
 
@@ -89,3 +99,5 @@
 ## Known Issues
 
 ## Release Notes
+
+## References

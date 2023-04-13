@@ -432,12 +432,20 @@ fn simplify(s: &str) -> Result<String, String> {
     // 使用提取器 extractor 选择 根 eclass 的最佳元素
     let extractor = Extractor::new(&runner.egraph, AstSize);
     let (_best_cost, best) = extractor.find_best(root);
-    println!("{}", runner.explain_equivalence(&expr, &best));
+    println!("{}", runner.explain_equivalence(&expr, &best).get_flat_string());
     Ok(best.to_string())
 }
 
 #[test]
 fn my_tests() {
     println!("{}", simplify(
-        "(let a 1 (pass))").unwrap());
+        "(if (let x 2  (= (var x) 0) )
+        0
+        1)").unwrap());
+}
+fn main() {
+    println!("{}", simplify(
+        "(if (let x 2  (= (var x) 0) )
+        0
+        1)").unwrap());
 }

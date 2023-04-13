@@ -1,10 +1,4 @@
-pub mod common;
-mod lambda;
-
-#[cfg(feature = "float")]
-mod math;
-mod prop;
-mod simple;
+mod common;
 
 pub type EggIR = egg::RecExpr<common::CommonLanguage>;
 
@@ -72,14 +66,20 @@ pub fn rpn_helper_simple(
         Num(val) => val.to_string(),
         Bool(val) => val.to_string(),
         Symbol(s) => s.to_string(),
+        // 一元运算符
         op @ (Ln(_) | Sqrt(_)) => {
             let exp = stack.pop().ok_or(&err)?;
-            format!("({} {})", op.to_string(), exp)
+            format!("{}({})", op.to_string(), exp)
         }
-        op @ Not(_) => {
+        Not(_) => {
             let exp = stack.pop().ok_or(&err)?;
-            format!("({} {})", op.to_string(), exp)
+            format!("not {}", exp)
         }
+        // Neg(_) => {
+        //     let exp = stack.pop().ok_or(&err)?;
+        //     format!("-{}", exp)
+        // }
+        // 二元运算符
         op @ (Add(_) | Sub(_) | Mul(_) | Div(_) | Pow(_) | And(_) 
         | Or(_) | Gt(_) | Ge(_) | Lt(_) | Le(_) | Ne(_)) => {
             let right = stack.pop().ok_or(&err)?;

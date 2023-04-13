@@ -221,3 +221,7 @@ fn my_tests() {
         "(| (& false true) (& true false))").unwrap());
 }
 
+fn main() {
+    println!("{}", simplify(
+        "(| (& false true) (& true false))").unwrap());
+}

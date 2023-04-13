@@ -65,6 +65,7 @@ define_language! {
         "if" = If([Id; 3]),
 
         // * math
+        // "-" = Neg([Id; 1]),
         "+" = Add([Id; 2]),
         "*" = Mul([Id; 2]),
         "-" = Sub([Id; 2]),
@@ -370,6 +371,7 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         // rw!("pow-recip"; "(pow ?x -1)" => "(/ 1 ?x)"
         //     if is_not_zero("?x")),
         // rw!("recip-mul-div"; "(* ?x (/ 1 ?x))" => "1" if is_not_zero("?x")),
+        // rw!("neg-to-sub"; "(- ?a)" => "(0 - ?a)"),      // 取反运算符 (新增)
         
         // * Logic 这里有些公理应该是多余的
         rw!("double-neg-flip"; "(~ (~ ?a))" => "?a"),
@@ -546,11 +548,14 @@ fn lisp_test() {
     );
 }
 
+// TODO
 #[test]
 fn debug_test1() {
-    println!("{:?}", simplify_test("(& (| (<= 233 666) (= 2 3)) true)"));
+    println!("{:?}", simplify_test("(let x 2 (| (= (var x) 0) (= (var x) 1))) "));
 }
 #[test]
 fn debug_test2() {
-    println!("{:?}", simplify_test("(= 1 2)"));
+    println!("{:?}", simplify_test("(if (let x 2 (| (= (var x) 0) (= (var x) 1))) 
+    2 
+    0)"));
 }

@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chumsky = "1.0.0-alpha.3"
+chumsky = "1.0.0-alpha.3"	# 不再使用了
 env_logger = "^0.9.0"
 ropey = "^1.5.0"
 serde_json = "^1.0.78"
@@ -23,7 +23,7 @@ egg = "0.9.3"
 # 临时：egg 的依赖
 # [dev-dependencies]
 fxhash = "0.2.1"
-ordered-float = {version = "3.0.0", optional = true}
+ordered-float = {version = "3.0.0"}
 
 # tree_sitter
 tree-sitter = "0.20.9"
@@ -37,4 +37,4 @@ tree-sitter-java = "0.20.0"
 
 [features]
 # default = ["float"]
-float = ["ordered-float"]	# TODO 还没有完全实现
+float = []	# TODO 还没有完全实现
