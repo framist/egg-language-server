@@ -48,7 +48,7 @@ fn eval(egraph: &EGraph, enode: &Lambda) -> Option<(Lambda, PatternAst<Lambda>)>
         Lambda::Num(n) => Some((enode.clone(), format!("{}", n).parse().unwrap())),
         Lambda::Bool(b) => Some((enode.clone(), format!("{}", b).parse().unwrap())),
         Lambda::Add([a, b]) => Some((
-            Lambda::Num(x(a)?.num()? + x(b)?.num()?),
+            Lambda::Num(x(a)?.num()?.checked_add(x(b)?.num()?)?),   // ;-) 贡献了一个 debug
             format!("(+ {} {})", x(a)?, x(b)?).parse().unwrap(),
         )),
         Lambda::Eq([a, b]) => Some((
@@ -444,8 +444,7 @@ fn my_tests() {
         1)").unwrap());
 }
 fn main() {
-    println!("{}", simplify(
-        "(if (let x 2  (= (var x) 0) )
-        0
-        1)").unwrap());
+    // println!("{}", simplify(
+    //     "(+ 2147483647 1)").unwrap());     // TODO 提交这个bug
+        let expr: RecExpr<Lambda> = "(+ 2147483647 1)".parse().unwrap();
 }
