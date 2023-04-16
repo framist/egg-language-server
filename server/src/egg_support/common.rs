@@ -87,6 +87,12 @@ define_language! {
         ">=" = Ge([Id; 2]),
         "<=" = Le([Id; 2]),
         "!=" = Ne([Id; 2]),
+
+        // TODO * List
+
+        // TODO * Imp 指令式程序
+        // "skip" = Skip,
+        // "seq" = Seq([Id; 2]),
     }
 }
 
@@ -136,7 +142,7 @@ fn eval(
         CommonLanguage::Num(n) => Some((enode.clone(), format!("{}", n).parse().unwrap())),
         CommonLanguage::Bool(b) => Some((enode.clone(), format!("{}", b).parse().unwrap())),
         CommonLanguage::Add([a, b]) => Some((
-            CommonLanguage::Num(x(a)?.num()? + x(b)?.num()?),
+            CommonLanguage::Num(x(a)?.num()?.checked_add(x(b)?.num()?)?),
             format!("(+ {} {})", x(a)?, x(b)?).parse().unwrap(),
         )),
         CommonLanguage::Eq([a, b]) => Some((

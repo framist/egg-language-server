@@ -444,7 +444,5 @@ fn my_tests() {
         1)").unwrap());
 }
 fn main() {
-    // println!("{}", simplify(
-    //     "(+ 2147483647 1)").unwrap());     // TODO 提交这个bug
-        let expr: RecExpr<Lambda> = "(+ 2147483647 1)".parse().unwrap();
+    
 }

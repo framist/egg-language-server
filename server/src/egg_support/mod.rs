@@ -127,12 +127,12 @@ pub fn rpn_helper_simple(
             // TODO
             let body = stack.pop().ok_or(&err)?;
             let then = stack.pop().ok_or(&err)?;
-            format!("{} {} {}", "fixpoint", then, body)
+            format!("{} {}: {}", "Y", then, body)
         }
     })
 }
 
-// 正儿八经的测试
+/// rpn_to_string 测试
 #[test]
 fn rpn_to_string_test() {
     // 数学运算
