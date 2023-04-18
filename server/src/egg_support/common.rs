@@ -88,11 +88,18 @@ define_language! {
         "<=" = Le([Id; 2]),
         "!=" = Ne([Id; 2]),
 
-        // TODO * List
+        // TODO * List 注意，为了防止歧义，目前仅用于解决多参数问题；数据结构构建都应看作未定义的函数
+        "cons" = Cons([Id; 2]),
+        // "car" = Car(Id), 
+        // "cdr" = Cdr(Id),
+        "nil" = Nil,
+        // 多参 的函数 (laml (cons x (cons y nil)) (+ x y))
+        "laml" = LambdaL([Id; 2]),
+        "appl" = AppL([Id; 2]),
 
         // TODO * Imp 指令式程序
         // "skip" = Skip,
-        // "seq" = Seq([Id; 2]),
+        // "seq" = Seq([Id; 2]), 序列指令
     }
 }
 
@@ -150,8 +157,8 @@ fn eval(
             format!("(= {} {})", x(a)?, x(b)?).parse().unwrap(),
         )),
 
-        // * math 
-        CommonLanguage::Mul([a, b]) => Some((            
+        // * math
+        CommonLanguage::Mul([a, b]) => Some((
             CommonLanguage::Num(x(a)?.num()?.checked_mul(x(b)?.num()?)?),
             format!("(* {} {})", x(a)?, x(b)?).parse().unwrap(),
         )),
@@ -351,7 +358,8 @@ impl Applier<CommonLanguage, LambdaAnalysis> for CaptureAvoid {
 }
 
 /// 对表达式进行重写。
-/// ? 重写实际上是不是可逆的，即 <==?==>
+/// 重写实际上不是可逆的，即 ==>
+#[rustfmt::skip]
 fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
     vec![
         // * lambda
@@ -448,10 +456,16 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         rw!("ge-expand"; "(>= ?a ?b)" => "(~ (> ?b ?a))"), // >= => not >+flip
         rw!("le-flip"; "(<= ?a ?b)" => "(>= ?b ?a)"), // <= => >=
         rw!("ne-expand"; "(!= ?a ?b)" => "(~ (= ?a ?b))"),
-        // = => <= and >= 首尾相连，实测会让 simplify_test7 快很多 TODO 未知原理
-        rw!("eq-expand"; "(= ?a ?b)" => "(& (<= ?a ?b) (>= ?a ?b))"), // ?
+        // = => <= and >= 首尾相连，实测会让 simplify_test7 快很多
+        rw!("eq-expand"; "(= ?a ?b)" => "(& (<= ?a ?b) (>= ?a ?b))"), 
 
-                                                                      // * List
+        // * List
+        // 柯里化 currying
+        rw!("laml-currying-递归终止点"; "(laml (cons ?v nil) ?body)" => "(lam ?v ?body)"),
+        rw!("laml-currying-递归"; "(laml (cons ?v ?list) ?body)" => "(lam ?v (laml ?list ?body))"),
+        rw!("appl-currying-递归终止点"; "(appl ?f (cons ?v nil))" => "(app ?f ?v)"),
+        rw!("appl-currying-递归"; "(appl ?f (cons ?v ?list))" => "(appl (app ?f ?v) ?list)"),
+
     ]
 }
 
@@ -600,7 +614,6 @@ egg::test_fn! {
     "(+ 1 (- a (* (- 2 1) a)))" => "1"
 }
 
-// TODO common 未能通过
 egg::test_fn! {
     math_simplify_root, make_rules(),
     runner = Runner::default().with_node_limit(75_000),
@@ -614,12 +627,11 @@ egg::test_fn! {
     "(/ 1 (sqrt five))"
 }
 
-egg::test_fn! {
-    math_simplify_factor, make_rules(),
-    "(* (+ x 3) (+ x 1))"
-    =>
-    "(+ (+ (* x x) (* 4 x)) 3)"
-}
+egg::test_fn! {math_simplify_factor, make_rules(), "(* (+ x 3) (+ x 1))" => "(+ (+ (* x x) (* 4 x)) 3)"}
+
+egg::test_fn! {laml_curry1, make_rules(), "(laml (cons y nil) (+ 1 (var y)))" => "(lam y (+ 1 (var y)))" }
+egg::test_fn! {laml_curry2, make_rules(), "(laml (cons x (cons y nil)) (+ (var x) (var y)))" 
+                                       => "(lam x (lam y (+ (var x) (var y))))" }
 
 #[test]
 fn temp() {

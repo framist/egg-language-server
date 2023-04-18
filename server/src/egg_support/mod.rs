@@ -129,6 +129,25 @@ pub fn rpn_helper_simple(
             let then = stack.pop().ok_or(&err)?;
             format!("{} {}: {}", "Y", then, body)
         }
+        // List
+        Cons(_) => {
+            let right = stack.pop().ok_or(&err)?;
+            let left = stack.pop().ok_or(&err)?;
+            format!("{} :: {}", left, right)
+        }
+        Nil => "nil".to_string(),
+        LambdaL(_) => {
+            let body = stack.pop().ok_or(&err)?;
+            let varl = stack.pop().ok_or(&err)?;
+            format!("(λ {}:\n{})", varl, add_widths(body))
+        },
+        AppL(_) => {
+            let right = stack.pop().ok_or(&err)?;
+            let f = stack.pop().ok_or(&err)?;
+
+            format!("{}({})", f, right)
+        },
+        // op @ _ => return Err(format!("un imp token = {:?}", op)),
     })
 }
 
@@ -197,7 +216,7 @@ else:
         )
         .unwrap(),
         r"
-let fib = fixpoint fib (λ n:
+let fib = Y fib: (λ n:
     if `n` == 0:
         0
     else:
@@ -229,5 +248,35 @@ fn lisp_temp_test() {
         rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
     );
     // 优化后
-    println!("simply:\n{}", direct_parser(s).unwrap());
+    println!("[*]simply:\n{}", direct_parser(s).unwrap());
 }
+
+// #[test]
+// fn list_temp_test() {
+//     let s = "(car 
+//                 (cons 1 (cons 2 nil))
+//              )";
+//     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
+//     println!(
+//         "[*]rpn_to_string:\n{}",
+//         rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+//     );
+//     // 优化后
+//     println!("[*]simply:\n{}", direct_parser(s).unwrap());
+// }
+
+#[test]
+fn curry_temp_test() {
+    let s = "(let add 
+                (laml (cons x (cons y nil)) 
+                    (+ (var x) (var y)))
+                (appl (var add) (cons 1 (cons 2 nil)) ))";
+    println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
+    println!(
+        "[*]rpn_to_string:\n{}",
+        rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+    );
+    // 优化后
+    println!("[*]simply:\n{}", direct_parser(s).unwrap());
+} // (cons x (cons y nil)) 不能取代默认为原子Var的地方，不然有错误
+
