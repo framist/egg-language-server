@@ -24,6 +24,8 @@ define_language! {
 
         Constant(Constant),
         Symbol(Symbol),
+
+        "mutiargtest" = Muti,
     }
 }
 
@@ -584,6 +586,6 @@ fn simplify(s: &str) -> Result<String, String> {
     Ok(best.to_string())
 }
 fn main() {
-    let s = "(/ 0 0)";
+    let s = "(mutiargtest 1 0 0)";
     println!("{}", simplify(s).unwrap());    
 }

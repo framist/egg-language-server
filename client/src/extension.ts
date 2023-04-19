@@ -65,13 +65,14 @@ export function activate(context: ExtensionContext) {
 
 	// 控制语言客户端的选项
 	const clientOptions: LanguageClientOptions = {
-		// 注册 多 语言 服务器，注意还需要更改 activationEvents
+		// 注册 多 语言 服务器，注意还需要更改 activationEvents, in package.json
 		// TODO 暂时未完全实现：多语言支持 
 		// TODO The use of a string as a document filter is deprecated @since 3.16.0.
 		documentSelector: [
 			{ scheme: 'file', language: 'lisp' },
 			{ scheme: 'file', language: 'scheme' },
-			{ scheme: 'file', language: 'python' }
+			{ scheme: 'file', language: 'python' },
+			{ scheme: 'file', language: 'javascript' }
 		],
 		synchronize: {
 			// 当文件变动为'.clientrc'中那样时，通知服务器

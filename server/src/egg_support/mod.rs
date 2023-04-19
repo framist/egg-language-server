@@ -80,8 +80,8 @@ pub fn rpn_helper_simple(
         //     format!("-{}", exp)
         // }
         // 二元运算符
-        op @ (Add(_) | Sub(_) | Mul(_) | Div(_) | Pow(_) | And(_) 
-        | Or(_) | Gt(_) | Ge(_) | Lt(_) | Le(_) | Ne(_)) => {
+        op @ (Add(_) | Sub(_) | Mul(_) | Div(_) | Pow(_) | And(_) | Or(_) | Gt(_) | Ge(_)
+        | Lt(_) | Le(_) | Ne(_)) => {
             let right = stack.pop().ok_or(&err)?;
             let left = stack.pop().ok_or(&err)?;
             format!("({} {} {})", left, op.to_string(), right)
@@ -140,24 +140,24 @@ pub fn rpn_helper_simple(
             let body = stack.pop().ok_or(&err)?;
             let varl = stack.pop().ok_or(&err)?;
             format!("(λ {}:\n{})", varl, add_widths(body))
-        },
+        }
         AppL(_) => {
             let body = stack.pop().ok_or(&err)?;
             let f = stack.pop().ok_or(&err)?;
 
             format!("{}({})", f, body)
-        },
+        }
         Seq(_) => {
             let then = stack.pop().ok_or(&err)?;
             let body = stack.pop().ok_or(&err)?;
             format!("{};;\n{}", body, then)
-        },
+        }
         Skip => "SKIP".to_string(),
         SeqLet(_) => {
             let body = stack.pop().ok_or(&err)?;
             let var = stack.pop().ok_or(&err)?;
             format!("let {} = {}", var, body)
-        },
+        }
         // op @ _ => return Err(format!("un imp token = {:?}", op)),
     })
 }
@@ -264,7 +264,7 @@ fn lisp_temp_test() {
 
 // #[test]
 // fn list_temp_test() {
-//     let s = "(car 
+//     let s = "(car
 //                 (cons 1 (cons 2 nil))
 //              )";
 //     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
@@ -292,7 +292,7 @@ fn curry_temp_test() {
 } // (cons x (cons y nil)) 不能取代默认为原子Var的地方，不然有错误
 
 #[test]
-fn  imperative_temp_test() {
+fn imperative_temp_test() {
     let s = "(seq skip (seq skip nil))";
     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
     println!(
@@ -304,7 +304,7 @@ fn  imperative_temp_test() {
 }
 
 #[test]
-fn  imperative_temp_test2() {
+fn imperative_temp_test2() {
     let s = "(seq (seqlet a 1) (seq (var a) nil))";
     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
     println!(
@@ -315,4 +315,16 @@ fn  imperative_temp_test2() {
     println!("[*]simply:\n{}", direct_parser(s).unwrap());
 }
 
- 
+// TODO String
+#[test]
+fn temp_test2() {
+    let s = r#"(app (var print) "hello World (+ 1 1)")"#;
+    println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
+    println!(
+        "[*]rpn_to_string:\n{}",
+        rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+    );
+    // 优化后
+    println!("[*]simply:\n{}", direct_parser(s).unwrap());
+}
+

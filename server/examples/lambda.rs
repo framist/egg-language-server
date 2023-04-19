@@ -439,9 +439,7 @@ fn simplify(s: &str) -> Result<String, String> {
 #[test]
 fn my_tests() {
     println!("{}", simplify(
-        "(if (let x 2  (= (var x) 0) )
-        0
-        1)").unwrap());
+        "(let x 1 (+ 0 x))").unwrap());
 }
 fn main() {
     

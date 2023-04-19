@@ -2,7 +2,9 @@ use log::*;
 
 // 实现的 lsp 功能
 use egg_language_server::egg_support::{direct_parser, simple_reparser};
+use egg_language_server::javascript::js_parser;
 use egg_language_server::python::py_parser;
+use egg_language_server::rejavascript::js_reparser;
 use egg_language_server::repython::py_reparser;
 
 // 依赖
@@ -160,6 +162,7 @@ struct TextDocumentItem {
 /// TODO 增量更新方式
 impl Backend {
     async fn on_change(&self, params: TextDocumentItem) {
+        self.log_info(format!("file changed! {:?}", params.uri)).await;
         let (message, diagnostic_type) =
             match &(self.settings.read().unwrap().f_parser)(&params.text) {
                 Ok(s) => (
@@ -203,6 +206,7 @@ impl Backend {
         let target_language = match uri.to_file_path().ok()?.extension()?.to_str()? {
             "py" => "python",
             "lisp" | "scm" => "lisp",
+            "js" => "javascript",
             _ => {
                 return None;
             }
@@ -222,16 +226,7 @@ impl Backend {
 
         self.log_info(format!("获取到客户端设置{:?}", settings))
             .await;
-        // 例如
-        /* Ok([Object {
-               "ExplanationWithHighLevelPL": String("same as source"),
-               "ExplanationWithLet": Bool(true),
-               "ifEggIR": Bool(true),
-               "ifExplanations": Bool(true),
-               "maxNumberOfProblems": Number(200),
-               "outLanguage": String("lisp"),
-               "trace": Object {"server": String("verbose")}}])
-        */
+
         match settings {
             Ok(settings) => {
                 let mut s = self.settings.write().unwrap();
@@ -263,19 +258,23 @@ impl Backend {
                 return;
             }
         };
+        self.log_info(format!("目标语言: {}", target_language))
+            .await;
         self.settings.write().unwrap().target_language = target_language.to_string();
 
         // 根据设置配置内部设置
         let f_parser: fn(&str) -> std::result::Result<String, String>;
-        if target_language == "lisp" {
-            f_parser = direct_parser;
-        } else if target_language == "python" {
-            f_parser = py_parser;
-        } else {
-            return self
-                .log_warn(format!("不支持的语言: {}", target_language))
-                .await;
+        match target_language {
+            "lisp" => f_parser = direct_parser,
+            "python" => f_parser = py_parser,
+            "javascript" => f_parser = js_parser,
+            _ => {
+                return self
+                    .log_warn(format!("不支持的语言: {}", target_language))
+                    .await;
+            }
         }
+
         // 更新配置 f_parser
         self.settings.write().unwrap().f_parser = f_parser;
 
@@ -283,15 +282,25 @@ impl Backend {
         // self.settings.write().unwrap().f_reparser = py_reparser;
         let f_reparser: fn(&String) -> std::result::Result<String, String>;
         let out_language = self.settings.read().unwrap().out_language.clone();
-        if out_language == "lisp" {
-            f_reparser = simple_reparser;
-        } else if out_language == "python" {
-            f_reparser = py_reparser;
-        } else {
-            return self
-                .log_warn(format!("不支持的输出语言: {}", out_language))
-                .await;
-        }
+        // if out_language == "lisp" {
+        //     f_reparser = simple_reparser;
+        // } else if out_language == "python" {
+        //     f_reparser = py_reparser;
+        // } else {
+        //     return self
+        //         .log_warn(format!("不支持的输出语言: {}", out_language))
+        //         .await;
+        // }
+        f_reparser = match out_language.as_str() {
+            "lisp" => simple_reparser,
+            "python" => py_reparser,
+            "javascript" => js_reparser,
+            _ => {
+                return self
+                    .log_warn(format!("不支持的输出语言: {}", out_language))
+                    .await;
+            }
+        };
         self.settings.write().unwrap().f_reparser = f_reparser;
     }
 
@@ -309,7 +318,6 @@ impl Backend {
     }
 }
 
-
 #[tokio::main]
 async fn main() {
     // 自定义日志格式
@@ -317,7 +325,13 @@ async fn main() {
     use std::io::Write;
     env_logger::builder()
         .format(|buf, record| {
-            writeln!(buf, "[{} - {}] {}", record.level(), record.target(), record.args())
+            writeln!(
+                buf,
+                "[{} - {}] {}",
+                record.level(),
+                record.target(),
+                record.args()
+            )
         })
         .init();
     // env_logger::init();  // 使用默认配置而非自定义

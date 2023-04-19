@@ -1,4 +1,4 @@
-//! TODO
+// TODO
 use tree_sitter::{Parser, Node};
 
 fn print_node(node: Node, code: &str, indent_level: usize) {

@@ -90,6 +90,7 @@ define_language! {
 
         // TODO * List 注意，为了防止歧义，目前仅用于解决多参数问题；数据结构构建都应看作未定义的函数
         // (lam-cons x (lam-cons y nil)) 同时去除 cons laml 或许也是一种方法？也可同时再去掉 nil
+        // 不行，考虑到 cons 、 lam 第一个参数必须为原子
         "cons" = Cons([Id; 2]),
         // "car" = Car(Id), 
         // "cdr" = Cdr(Id),
@@ -100,8 +101,8 @@ define_language! {
 
         // TODO * Imp 指令式程序
         "skip" = Skip,
-        "seq" = Seq([Id; 2]), // 序列指令
-        "seqlet" = SeqLet([Id; 2]), 
+        "seq" = Seq([Id; 2]),           // 序列指令
+        "seqlet" = SeqLet([Id; 2]),     // (sqlet x 1)
     }
 }
 
@@ -774,6 +775,9 @@ egg::test_fn! {laml_curry2, make_rules(), "(laml (cons x (cons y nil)) (+ (var x
 
 egg::test_fn! {seqlet1, make_rules(), "(seq (seqlet a 1) (seq (var a) nil))" 
                                        => "1" }
+
+egg::test_fn! {skip1, make_rules(), "(seq (seq skip (seq (var a) skip)) skip)" 
+                                       => "(var a)" }
 
 #[test]
 fn temp() {
