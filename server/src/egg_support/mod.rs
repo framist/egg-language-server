@@ -142,10 +142,21 @@ pub fn rpn_helper_simple(
             format!("(λ {}:\n{})", varl, add_widths(body))
         },
         AppL(_) => {
-            let right = stack.pop().ok_or(&err)?;
+            let body = stack.pop().ok_or(&err)?;
             let f = stack.pop().ok_or(&err)?;
 
-            format!("{}({})", f, right)
+            format!("{}({})", f, body)
+        },
+        Seq(_) => {
+            let then = stack.pop().ok_or(&err)?;
+            let body = stack.pop().ok_or(&err)?;
+            format!("{};;\n{}", body, then)
+        },
+        Skip => "SKIP".to_string(),
+        SeqLet(_) => {
+            let body = stack.pop().ok_or(&err)?;
+            let var = stack.pop().ok_or(&err)?;
+            format!("let {} = {}", var, body)
         },
         // op @ _ => return Err(format!("un imp token = {:?}", op)),
     })
@@ -280,3 +291,28 @@ fn curry_temp_test() {
     println!("[*]simply:\n{}", direct_parser(s).unwrap());
 } // (cons x (cons y nil)) 不能取代默认为原子Var的地方，不然有错误
 
+#[test]
+fn  imperative_temp_test() {
+    let s = "(seq skip (seq skip nil))";
+    println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
+    println!(
+        "[*]rpn_to_string:\n{}",
+        rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+    );
+    // 优化后
+    println!("[*]simply:\n{}", direct_parser(s).unwrap());
+}
+
+#[test]
+fn  imperative_temp_test2() {
+    let s = "(seq (seqlet a 1) (seq (var a) nil))";
+    println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
+    println!(
+        "[*]rpn_to_string:\n{}",
+        rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+    );
+    // 优化后
+    println!("[*]simply:\n{}", direct_parser(s).unwrap());
+}
+
+ 

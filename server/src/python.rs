@@ -1,7 +1,7 @@
-//! 用 tree-sitter 解析 python 代码
-//! note: 解析出的 IR 的树结构与 AST 不同。
+// 用 tree-sitter 解析 python 代码
+// note: 解析出的 IR 的树结构与 AST 不同。
 /*
-TODO 逻辑相关
+TODO fixpoint、有时优化不彻底的问题
 def fib(x):
     if x < 0:
         return -1
@@ -53,10 +53,18 @@ fn print_tree(
     }
 }
 
-/// 类递归地转换为自定义的 s-expr
-/// 树指针的方式
+// 类递归地转换为自定义的 s-expr
+// 树指针的方式
+// TODO 随着 seq 的加入，可以用递归的方式了，不过还是用树指针实现（）
+// TODO 剔除无用变量 :
+// fn fa(a: i32,i: i32) {
+// if i == 0 {
+//     return;
+// }
+// fa(a, i-1)
+// }
 fn ast_to_sexpr(
-    tree: &tree_sitter::Tree,
+    tree: &tree_sitter::Tree, // 好像是无用变量
     tree_cursor: &tree_sitter::TreeCursor,
     code: &str,
 ) -> String {
@@ -351,3 +359,4 @@ add1(y)
 }
 
 // TODO 过滤 comment
+

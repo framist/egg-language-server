@@ -89,6 +89,7 @@ define_language! {
         "!=" = Ne([Id; 2]),
 
         // TODO * List 注意，为了防止歧义，目前仅用于解决多参数问题；数据结构构建都应看作未定义的函数
+        // (lam-cons x (lam-cons y nil)) 同时去除 cons laml 或许也是一种方法？也可同时再去掉 nil
         "cons" = Cons([Id; 2]),
         // "car" = Car(Id), 
         // "cdr" = Cdr(Id),
@@ -98,8 +99,9 @@ define_language! {
         "appl" = AppL([Id; 2]),
 
         // TODO * Imp 指令式程序
-        // "skip" = Skip,
-        // "seq" = Seq([Id; 2]), 序列指令
+        "skip" = Skip,
+        "seq" = Seq([Id; 2]), // 序列指令
+        "seqlet" = SeqLet([Id; 2]), 
     }
 }
 
@@ -465,6 +467,13 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         rw!("laml-currying-递归"; "(laml (cons ?v ?list) ?body)" => "(lam ?v (laml ?list ?body))"),
         rw!("appl-currying-递归终止点"; "(appl ?f (cons ?v nil))" => "(app ?f ?v)"),
         rw!("appl-currying-递归"; "(appl ?f (cons ?v ?list))" => "(appl (app ?f ?v) ?list)"),
+        // 序列 seq
+        rw!("seq-终止"; "(seq ?a nil)" => "?a"),
+        rw!("seq-let"; "(seq (seqlet ?v ?e) ?body)" => "(let ?v ?e ?body)"),
+        rw!("seq-assoc"; "(seq (seq ?a ?b) ?c)" => "(seq ?a (seq ?b ?c))"),
+        rw!("seq-skip-before"; "(seq skip ?a)" => "?a"),
+        rw!("seq-skip-after"; "(seq ?a skip)" => "?a"),
+        // TODO ...
 
     ]
 }
@@ -562,7 +571,7 @@ fn simplify_explain_test() {
     )
 }
 
-// * 以下是测试代码
+// * 以下是测试代码 *
 
 test_fn! { simplify_test1, make_rules(), "(+ 0 (* 1 foo))" => "foo" }
 test_fn! { simplify_test2, make_rules(), "(+ 1 1)" => "2" }
@@ -598,7 +607,7 @@ fn debug_test2() {
     );
 }
 
-// math
+// * math test *
 
 test_fn! {math_div_same,      make_rules(), "(/ x x)" => "(/ x x)"}
 test_fn! {math_div_one,       make_rules(), "(/ x 1)" => "x"}
@@ -629,9 +638,142 @@ egg::test_fn! {
 
 egg::test_fn! {math_simplify_factor, make_rules(), "(* (+ x 3) (+ x 1))" => "(+ (+ (* x x) (* 4 x)) 3)"}
 
+// * lambda test *
+
+egg::test_fn! {
+    lambda_under, make_rules(),
+    "(lam x (+ 4
+               (app (lam y (var y))
+                    4)))"
+    =>
+    // "(lam x (+ 4 (let y 4 (var y))))",
+    // "(lam x (+ 4 4))",
+    "(lam x 8))",
+}
+
+egg::test_fn! {
+    lambda_if_elim, make_rules(),
+    "(if (= (var a) (var b))
+         (+ (var a) (var a))
+         (+ (var a) (var b)))"
+    =>
+    "(+ (var a) (var b))"
+}
+
+egg::test_fn! {
+    lambda_let_simple, make_rules(),
+    "(let x 0
+     (let y 1
+     (+ (var x) (var y))))"
+    =>
+    // "(let ?a 0
+    //  (+ (var ?a) 1))",
+    // "(+ 0 1)",
+    "1",
+}
+
+egg::test_fn! {
+    #[should_panic(expected = "Could not prove goal 0")]
+    lambda_capture, make_rules(),
+    "(let x 1 (lam x (var x)))" => "(lam x 1)"
+}
+
+egg::test_fn! {
+    #[should_panic(expected = "Could not prove goal 0")]
+    lambda_capture_free, make_rules(),
+    "(let y (+ (var x) (var x)) (lam x (var y)))" => "(lam x (+ (var x) (var x)))"
+}
+
+egg::test_fn! {
+    #[should_panic(expected = "Could not prove goal 0")]
+    lambda_closure_not_seven, make_rules(),
+    "(let five 5
+     (let add-five (lam x (+ (var x) (var five)))
+     (let five 6
+     (app (var add-five) 1))))"
+    =>
+    "7"
+}
+
+egg::test_fn! {
+    lambda_compose, make_rules(),
+    "(let compose (lam f (lam g (lam x (app (var f)
+                                       (app (var g) (var x))))))
+     (let add1 (lam y (+ (var y) 1))
+     (app (app (var compose) (var add1)) (var add1))))"
+    =>
+    "(lam ?x (+ 1
+                (app (lam ?y (+ 1 (var ?y)))
+                     (var ?x))))",
+    "(lam ?x (+ (var ?x) 2))"
+}
+
+egg::test_fn! {
+    lambda_if_simple, make_rules(),
+    "(if (= 1 1) 7 9)" => "7"
+}
+
+// TODO: this is a bit slow
+egg::test_fn! {
+    lambda_compose_many, make_rules(),
+    "(let compose (lam f (lam g (lam x (app (var f)
+                                       (app (var g) (var x))))))
+     (let add1 (lam y (+ (var y) 1))
+     (app (app (var compose) (var add1))
+          (app (app (var compose) (var add1))
+               (app (app (var compose) (var add1))
+                    (app (app (var compose) (var add1))
+                         (app (app (var compose) (var add1))
+                              (app (app (var compose) (var add1))
+                                   (var add1)))))))))"
+    =>
+    "(lam ?x (+ (var ?x) 7))"
+}
+
+
+egg::test_fn! {
+    lambda_if, make_rules(),
+    "(let zeroone (lam x
+        (if (= (var x) 0)
+            0
+            1))
+        (+ (app (var zeroone) 0)
+        (app (var zeroone) 10)))"
+    =>
+    // "(+ (if false 0 1) (if true 0 1))",
+    // "(+ 1 0)",
+    "1",
+}
+
+egg::test_fn! {
+    #[cfg(not(debug_assertions))]
+    #[cfg_attr(feature = "test-explanations", ignore)]
+    lambda_fib, make_rules(),
+    runner = Runner::default()
+        .with_iter_limit(60)
+        .with_node_limit(500_000),
+    "(let fib (fix fib (lam n
+        (if (= (var n) 0)
+            0
+        (if (= (var n) 1)
+            1
+        (+ (app (var fib)
+                (+ (var n) -1))
+            (app (var fib)
+                (+ (var n) -2)))))))
+        (app (var fib) 4))"
+    => "3"
+}
+
+// * list test *
+
+
 egg::test_fn! {laml_curry1, make_rules(), "(laml (cons y nil) (+ 1 (var y)))" => "(lam y (+ 1 (var y)))" }
 egg::test_fn! {laml_curry2, make_rules(), "(laml (cons x (cons y nil)) (+ (var x) (var y)))" 
                                        => "(lam x (lam y (+ (var x) (var y))))" }
+
+egg::test_fn! {seqlet1, make_rules(), "(seq (seqlet a 1) (seq (var a) nil))" 
+                                       => "1" }
 
 #[test]
 fn temp() {

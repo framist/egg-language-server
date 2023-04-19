@@ -1,7 +1,35 @@
 //! 用 tree-sitter 解析 python 代码
 //! note: 解析出的 IR 的树结构与 AST 不同。
 
-use tree_sitter::{Parser};
+use tree_sitter::{Parser, Node};
+
+/// 树形递归打印
+#[allow(unused)]
+fn print_node(node: &Node, code: &str, indent_level: usize) {
+    let indent = "|   ".repeat(indent_level);
+    let start = node.start_position();
+    let end = node.end_position();
+    println!(
+        "{}{:?}:{}  [{}:{} - {}:{}] {}",
+        indent,
+        node.kind(),
+        node.kind_id(),
+        start.row,
+        start.column,
+        end.row,
+        end.column,
+        if node.child_count() == 0 {
+            node.utf8_text(code.as_bytes()).unwrap()
+        } else {
+            ""
+        }
+    );
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        print_node(&child, code, indent_level + 1);
+    }
+}
+
 
 /// 树指针的方式打印
 fn print_tree(tree: &tree_sitter::Tree, cursor: &tree_sitter::TreeCursor, code: &str, indent_level: usize) {
@@ -37,7 +65,7 @@ fn print_tree(tree: &tree_sitter::Tree, cursor: &tree_sitter::TreeCursor, code: 
 
 /// 类递归地转换为自定义的 s-expr
 /// 树指针的方式
-fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor, code: &str) -> String {
+fn ast_to_sexpr(tree_cursor: &tree_sitter::TreeCursor, code: &str) -> String {
     let node = tree_cursor.node();
     match node.kind() {
         "integer" => node.utf8_text(code.as_bytes()).unwrap().to_string(),
@@ -50,11 +78,11 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
         "binary_operator" => {
             let mut children = tree_cursor.clone();
             children.goto_first_child();
-            let left = ast_to_sexpr(tree, &children, code);
+            let left = ast_to_sexpr( &children, code);
             children.goto_next_sibling();
             let op = children.node().utf8_text(code.as_bytes()).unwrap();
             children.goto_next_sibling();
-            let right = ast_to_sexpr(tree, &children, code);
+            let right = ast_to_sexpr( &children, code);
             format!("({} {} {})", op, left, right)
         }
 
@@ -77,7 +105,7 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
             children.goto_next_sibling(); 
             // 跳过 `=` (python)
             children.goto_next_sibling();
-            let value = ast_to_sexpr(tree, &children, code);
+            let value = ast_to_sexpr( &children, code);
 
 
             // then 递归在不是 assignment 或 function_definition 中结束
@@ -93,7 +121,7 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
             format!("(let {} {} {})",
                 name,
                 value,
-                ast_to_sexpr(tree, &mut then_cursor, code)
+                ast_to_sexpr( &mut then_cursor, code)
             )
         },
 
@@ -107,11 +135,11 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
             children.goto_next_sibling();
             let name = children.node().utf8_text(code.as_bytes()).unwrap();
             children.goto_next_sibling();
-            let parameters = ast_to_sexpr(tree, &children, code);
+            let parameters = ast_to_sexpr( &children, code);
             children.goto_next_sibling();
             // 跳过 `{` | `:` (python)
             children.goto_next_sibling();
-            let body = ast_to_sexpr(tree, &children, code);
+            let body = ast_to_sexpr( &children, code);
 
             // then 递归在不是 assignment 或 function_definition 中结束
             let mut then_cursor = tree_cursor.clone();
@@ -123,7 +151,7 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
                 name,                                       // 函数名
                 parameters,                                 // 参数
                 body,                                       // 函数体
-                ast_to_sexpr(tree, &then_cursor, code)      // then
+                ast_to_sexpr( &then_cursor, code)      // then
             )
         },
         "parameters" => {
@@ -138,9 +166,9 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
         "call" => {
             let mut children = tree_cursor.clone();
             children.goto_first_child();
-            let name = ast_to_sexpr(tree, &children, code);
+            let name = ast_to_sexpr( &children, code);
             children.goto_next_sibling();
-            let args = ast_to_sexpr(tree, &children, code);
+            let args = ast_to_sexpr( &children, code);
             
             format!(
                 "(app {} {})",
@@ -154,7 +182,7 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
             // 跳过 `(` (python)
             children.goto_next_sibling();
             //TODO: 先假设只有一个参数 | 支持多个参数 通过柯里化实现
-            let arg = ast_to_sexpr(tree, &children, code);
+            let arg = ast_to_sexpr( &children, code);
             arg
         }
         "return_statement" => {
@@ -162,7 +190,7 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
             children.goto_first_child();
             // 跳过 `return` (python)
             children.goto_next_sibling();
-            let value = ast_to_sexpr(tree, &children, code);
+            let value = ast_to_sexpr( &children, code);
             format!("{}", value)
         }
 
@@ -170,7 +198,7 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
         "expression_statement" => {
             let mut children = tree_cursor.clone();
             children.goto_first_child();
-            format!("{}", ast_to_sexpr(tree, &children, code))
+            format!("{}", ast_to_sexpr( &children, code))
             
         }
 
@@ -189,7 +217,7 @@ fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor,
             // "a = 1; b = a; b" => "(let a 1 (let b a b))"
 
             // 所以只递归第一个元素就行
-            format!("{}", ast_to_sexpr(tree, &children, code))            
+            format!("{}", ast_to_sexpr( &children, code))            
             
         }
 
@@ -228,7 +256,7 @@ fn main() {
     print_tree(&tree, &tree_cursor, CODE, 0);
 
     // println!("my sexp: \n{:?}", my_ast_to_sexpr(&root_node, CODE));
-    println!("my sexp: \n{:?}", ast_to_sexpr(&tree, &tree_cursor, CODE));
+    println!("my sexp: \n{:?}", ast_to_sexpr(&tree_cursor, CODE));
 }
 
 
