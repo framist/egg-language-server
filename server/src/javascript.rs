@@ -75,12 +75,12 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
             let parameters = ast_to_sexpr(&children, code);
             children.goto_next_sibling();
             let body = ast_to_sexpr(&children, code);
-			assert_eq!(children.goto_next_sibling(), false);
+            assert_eq!(children.goto_next_sibling(), false);
             format!(
                 "(seqlet {} (lam {} {}))",
-                name,                                   // 函数名
-                parameters,                             // 参数
-                body                                    // 函数体
+                name,       // 函数名
+                parameters, // 参数
+                body        // 函数体
             )
         }
         "formal_parameters" => {
@@ -147,15 +147,13 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
                 return format!("(if {} {} {})", cond, then, else_);
             }
         }
-        // "else_clause" => {
-        //     let mut children = tree_cursor.clone();
-        //     children.goto_first_child();
-        //     // 跳过 `else` (python)
-        //     children.goto_next_sibling();
-        //     // 跳过 `:` (python)
-        //     children.goto_next_sibling();
-        //     return ast_to_sexpr(&children, code);
-        // }
+        "else_clause" => {
+            let mut children = tree_cursor.clone();
+            children.goto_first_child();
+            // 跳过 `else` (javascript)
+            children.goto_next_sibling();
+            return ast_to_sexpr(&children, code);
+        }
 
         // 块
         // seq 实现
@@ -283,6 +281,6 @@ fn ast_test() {
 
     println!(
         "pretty sexp: \n{}",
-        rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+        rpn_to_human(&s.parse().unwrap(), rpn_helper_simple).unwrap()
     );
 }

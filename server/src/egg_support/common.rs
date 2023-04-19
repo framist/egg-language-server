@@ -400,9 +400,9 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
             if is_not_same_var(var("?v1"), var("?v2"))),
 
         // * math
-        rw!("comm-add";  "(+ ?a ?b)"        => "(+ ?b ?a)"),
+        // rw!("comm-add";  "(+ ?a ?b)"        => "(+ ?b ?a)"),
         rw!("comm-mul";  "(* ?a ?b)"        => "(* ?b ?a)"),
-        rw!("assoc-add"; "(+ ?a (+ ?b ?c))" => "(+ (+ ?a ?b) ?c)"),
+        // rw!("assoc-add"; "(+ ?a (+ ?b ?c))" => "(+ (+ ?a ?b) ?c)"),
         rw!("assoc-mul"; "(* ?a (* ?b ?c))" => "(* (* ?a ?b) ?c)"),
         rw!("sub-canon"; "(- ?a ?b)" => "(+ ?a (* -1 ?b))"),
         rw!("div-canon"; "(/ ?a ?b)" => "(* ?a (pow ?b -1))" if is_not_zero(var("?b"))),
@@ -480,6 +480,7 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
 }
 
 /// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
+#[cfg(test)]
 pub fn simplify_test(s: &str) -> Result<String, String> {
     // 解析表达式，类型注释(<Language>)告诉它使用哪种语言
     // let expr: RecExpr<Language> = s.parse().unwrap();

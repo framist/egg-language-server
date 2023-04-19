@@ -47,23 +47,7 @@
 					"dependencies": {
 						"EgglanguageServer.ifExplanations": true
 					}
-				},
-				"EgglanguageServer.ExplanationWithHighLevelPL": {
-					"scope": "resource",
-					"type": "string",
-					"enum": [
-						"off",
-						"same as source",
-						"same as out language"
-					],
-					"default": "same as source",
-					"description": "Controls whether the server will show egg's explanations with high level programming language.",
-					"markdownDescription": "控制 是否显示 egg 高级编程语言风格的重写方案解释",
-					"dependencies": {
-						"EgglanguageServer.ifExplanations": true
-					}
-				},
-				
+				},				
 				"EgglanguageServer.ifEggIR": {
 					"scope": "resource",
 					"type": "boolean",
@@ -76,13 +60,15 @@
 					"type": "string",
 					"enum": [
 						"same as source",
+						"debug",
 						"python",
 						"C",
-						"lisp"
+						"lisp",
+						"javascript"
 					],
 					"default": "same as source",
-					"description": "Controls the output language.",
-					"markdownDescription": "控制 输出的优化结果参考的编程语言类型"
+					"description": "Controls the output pseudo-code style.",
+					"markdownDescription": "控制 输出的优化结果参考的伪代码语言类型"
 				},
 				"EgglanguageServer.trace.server": {
 					"scope": "window",

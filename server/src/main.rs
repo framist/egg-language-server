@@ -1,11 +1,7 @@
 use log::*;
 
 // 实现的 lsp 功能
-use egg_language_server::egg_support::{direct_parser, simple_reparser};
-use egg_language_server::javascript::js_parser;
-use egg_language_server::python::py_parser;
-use egg_language_server::rejavascript::js_reparser;
-use egg_language_server::repython::py_reparser;
+use egg_language_server::*;
 
 // 依赖
 use tower_lsp::jsonrpc::Result;
@@ -21,7 +17,6 @@ struct Settings {
     max_number_of_problems: u32,
     if_explanations: bool,
     explanation_with_let: bool,
-    explanation_with_high_level_pl: String,
     if_egg_ir: bool,
     out_language: String,
     // 编辑器配置
@@ -36,13 +31,12 @@ impl Settings {
             max_number_of_problems: 100,
             if_explanations: false,
             explanation_with_let: false,
-            explanation_with_high_level_pl: String::from(""),
             if_egg_ir: false,
             out_language: String::from(""),
             target_language: String::from("lisp"),
             // 内部
-            f_parser: direct_parser,
-            f_reparser: simple_reparser,
+            f_parser: lisp_parser,
+            f_reparser: lisp_reparser,
         }
     }
 }
@@ -236,10 +230,6 @@ impl Backend {
                 s.if_egg_ir = settings[0]["ifEggIR"].as_bool().unwrap_or(true);
                 s.explanation_with_let =
                     settings[0]["ExplanationWithLet"].as_bool().unwrap_or(true);
-                s.explanation_with_high_level_pl = settings[0]["ExplanationWithHighLevelPL"]
-                    .as_str()
-                    .unwrap_or("same as source")
-                    .to_string();
                 s.out_language = settings[0]["outLanguage"]
                     .as_str()
                     .unwrap_or("lisp")
@@ -265,7 +255,7 @@ impl Backend {
         // 根据设置配置内部设置
         let f_parser: fn(&str) -> std::result::Result<String, String>;
         match target_language {
-            "lisp" => f_parser = direct_parser,
+            "lisp" => f_parser = lisp_parser,
             "python" => f_parser = py_parser,
             "javascript" => f_parser = js_parser,
             _ => {
@@ -282,19 +272,12 @@ impl Backend {
         // self.settings.write().unwrap().f_reparser = py_reparser;
         let f_reparser: fn(&String) -> std::result::Result<String, String>;
         let out_language = self.settings.read().unwrap().out_language.clone();
-        // if out_language == "lisp" {
-        //     f_reparser = simple_reparser;
-        // } else if out_language == "python" {
-        //     f_reparser = py_reparser;
-        // } else {
-        //     return self
-        //         .log_warn(format!("不支持的输出语言: {}", out_language))
-        //         .await;
-        // }
+
         f_reparser = match out_language.as_str() {
-            "lisp" => simple_reparser,
+            "lisp" => lisp_reparser,
             "python" => py_reparser,
             "javascript" => js_reparser,
+            "debug" => debug_reparser,
             _ => {
                 return self
                     .log_warn(format!("不支持的输出语言: {}", out_language))

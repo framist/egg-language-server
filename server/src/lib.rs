@@ -1,20 +1,30 @@
 pub mod egg_support;
-pub mod python;
-pub mod repython;
-pub mod lisp;
-pub mod relisp;
 pub mod javascript;
+pub mod lisp;
+pub mod python;
 pub mod rejavascript;
+pub mod relisp;
+pub mod repython;
 
+pub use crate::javascript::js_parser;
+pub use crate::lisp::lisp_parser;
+pub use crate::python::py_parser;
+pub use crate::rejavascript::js_reparser;
+pub use crate::relisp::lisp_reparser;
+pub use crate::repython::py_reparser;
 
+use crate::egg_support::*;
 use log::*;
 
+pub fn debug_reparser(s: &String) -> Result<String, String> {
+    match s.parse::<EggIR>() {
+        Ok(rpn) => rpn_to_human(&rpn, rpn_helper_simple),
+        Err(e) => return Err(format!("egg-IR parse error: {}", e)),
+    }
+}
+
 /// 树指针的方式打印
-pub fn print_tree_sitter(
-    cursor: &tree_sitter::TreeCursor,
-    code: &str,
-    indent_level: usize,
-) {
+pub fn print_tree_sitter(cursor: &tree_sitter::TreeCursor, code: &str, indent_level: usize) {
     let indent = "|   ".repeat(indent_level);
     let node = cursor.node();
     let start = node.start_position();
@@ -44,7 +54,6 @@ pub fn print_tree_sitter(
         cursor.goto_parent();
     }
 }
-
 
 // 树形递归打印
 // pub fn print_tree_sitter_node(node: &Node, code: &str, indent_level: usize) {

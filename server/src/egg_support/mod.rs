@@ -2,33 +2,13 @@ mod common;
 
 pub type EggIR = egg::RecExpr<common::CommonLanguage>;
 
-pub fn direct_parser(s: &str) -> Result<String, String> {
-    common::simplify_test(s)
-}
-
-pub fn simple_reparser(s: &String) -> Result<String, String> {
-    match s.parse::<EggIR>() {
-        Ok(rpn) => rpn_to_string(&rpn, rpn_helper_simple),
-        Err(e) => return Err(format!("egg-IR parse error: {}", e)),
-    }
-}
-
 pub fn simplify(s: &str) -> Result<Option<EggIR>, String> {
     common::simplify(s)
 }
 
-// trait CommonLanguageTrans {
-//     fn ast_to_sexpr(tree: &tree_sitter::Tree, tree_cursor: &tree_sitter::TreeCursor, code: &str) -> String;
-//     fn rpn_helper(token: &common::CommonLanguage, stack: &mut Vec<String>) -> Result<String, String>;
-// }
-
-// pub struct SimpleLanguage {
-
-// }
-
 pub use common::CommonLanguage;
 
-pub fn rpn_to_string(
+pub fn rpn_to_human(
     rpn: &EggIR,
     rpn_helper: fn(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<String, String>,
 ) -> Result<String, String> {
@@ -162,16 +142,29 @@ pub fn rpn_helper_simple(
     })
 }
 
+#[cfg(test)]
+fn direct_parser(s: &str) -> Result<String, String> {
+    common::simplify_test(s)
+}
+
+#[cfg(test)]
+fn simple_reparser(s: &String) -> Result<String, String> {
+    match s.parse::<EggIR>() {
+        Ok(rpn) => rpn_to_human(&rpn, rpn_helper_simple),
+        Err(e) => return Err(format!("egg-IR parse error: {}", e)),
+    }
+}
+
 /// rpn_to_string 测试
 #[test]
 fn rpn_to_string_test() {
     // 数学运算
     assert_eq!(
-        rpn_to_string(&"(+ 1 2)".parse().unwrap(), rpn_helper_simple).unwrap(),
+        rpn_to_human(&"(+ 1 2)".parse().unwrap(), rpn_helper_simple).unwrap(),
         "(1 + 2)"
     );
     assert_eq!(
-        rpn_to_string(
+        rpn_to_human(
             &"(+ 1 (- a (* a (+ 2 -1))))".parse().unwrap(),
             rpn_helper_simple
         )
@@ -180,7 +173,7 @@ fn rpn_to_string_test() {
     );
     // 控制流
     assert_eq!(
-        rpn_to_string(&"(if (= 1 2) 3 4)".parse().unwrap(), rpn_helper_simple).unwrap(),
+        rpn_to_human(&"(if (= 1 2) 3 4)".parse().unwrap(), rpn_helper_simple).unwrap(),
         r"
 if 1 == 2:
     3
@@ -190,7 +183,7 @@ else:
         .trim()
     );
     assert_eq!(
-        rpn_to_string(&"(if (= 1 2) 3 4)".parse().unwrap(), rpn_helper_simple).unwrap(),
+        rpn_to_human(&"(if (= 1 2) 3 4)".parse().unwrap(), rpn_helper_simple).unwrap(),
         r"
 if 1 == 2:
     3
@@ -201,7 +194,7 @@ else:
     );
     // lambda
     assert_eq!(
-        rpn_to_string(&"(lam x (+ x 4))".parse().unwrap(), rpn_helper_simple).unwrap(),
+        rpn_to_human(&"(lam x (+ x 4))".parse().unwrap(), rpn_helper_simple).unwrap(),
         r"
 (λ x:
     (x + 4))"
@@ -210,7 +203,7 @@ else:
     );
     // mix
     assert_eq!(
-        rpn_to_string(
+        rpn_to_human(
             &"(let fib (fix fib (lam n
                 (if (= (var n) 0)
                     0
@@ -256,7 +249,7 @@ fn lisp_temp_test() {
     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
     println!(
         "[*]rpn_to_string:\n{}",
-        rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+        rpn_to_human(&s.parse().unwrap(), rpn_helper_simple).unwrap()
     );
     // 优化后
     println!("[*]simply:\n{}", direct_parser(s).unwrap());
@@ -285,7 +278,7 @@ fn curry_temp_test() {
     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
     println!(
         "[*]rpn_to_string:\n{}",
-        rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+        rpn_to_human(&s.parse().unwrap(), rpn_helper_simple).unwrap()
     );
     // 优化后
     println!("[*]simply:\n{}", direct_parser(s).unwrap());
@@ -297,7 +290,7 @@ fn imperative_temp_test() {
     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
     println!(
         "[*]rpn_to_string:\n{}",
-        rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+        rpn_to_human(&s.parse().unwrap(), rpn_helper_simple).unwrap()
     );
     // 优化后
     println!("[*]simply:\n{}", direct_parser(s).unwrap());
@@ -309,7 +302,7 @@ fn imperative_temp_test2() {
     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
     println!(
         "[*]rpn_to_string:\n{}",
-        rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+        rpn_to_human(&s.parse().unwrap(), rpn_helper_simple).unwrap()
     );
     // 优化后
     println!("[*]simply:\n{}", direct_parser(s).unwrap());
@@ -322,7 +315,7 @@ fn temp_test2() {
     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
     println!(
         "[*]rpn_to_string:\n{}",
-        rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+        simple_reparser(&s.to_string()).unwrap()
     );
     // 优化后
     println!("[*]simply:\n{}", direct_parser(s).unwrap());

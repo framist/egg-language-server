@@ -9,7 +9,7 @@ use crate::egg_support::*;
 /// 所以输入直接是 String 形式的 egg-IR
 pub fn py_reparser(sexpr: &String) -> Result<String, String> {
     match sexpr.parse::<EggIR>() {
-        Ok(rpn) => rpn_to_string(&rpn, rpn_helper_py),
+        Ok(rpn) => rpn_to_human(&rpn, rpn_helper_py),
         Err(e) => return Err(format!("egg-IR parse error: {}", e)),
     }
 }
@@ -25,6 +25,6 @@ fn lisp_temp_test() {
     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
     println!(
         "[*]rpn_to_string:\n{}",
-        rpn_to_string(&s.parse().unwrap(), rpn_helper_py).unwrap()
+        rpn_to_human(&s.parse().unwrap(), rpn_helper_py).unwrap()
     );
 }
