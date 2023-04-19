@@ -507,6 +507,9 @@ pub fn simplify_test(s: &str) -> Result<String, String> {
 /// - 如果没有产生简化，则返回 None
 /// - 如果产生了简化，则返回 Some(简化后的 RecExpr 逆波兰表达式)
 pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
+    if s.is_empty() {
+        return Ok(None);
+    }
     let expr = match s.parse() {
         Ok(expr) => expr,
         Err(error) => return Err(format!("Failed to parse expression: {}", error)),

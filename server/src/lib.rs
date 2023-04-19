@@ -13,8 +13,17 @@ pub use crate::rejavascript::js_reparser;
 pub use crate::relisp::lisp_reparser;
 pub use crate::repython::py_reparser;
 
+pub use tower_lsp::lsp_types::{DiagnosticSeverity, Range, Position};
 use crate::egg_support::*;
 use log::*;
+
+#[derive(Debug)]
+pub struct EggDiagnostic {
+    pub span: Range,
+    pub reason: String,
+    pub sexpr: Option<String>,
+    pub label: DiagnosticSeverity,    // Error, Warning, Info, Hint
+}
 
 pub fn debug_reparser(s: &String) -> Result<String, String> {
     match s.parse::<EggIR>() {
@@ -56,27 +65,27 @@ pub fn print_tree_sitter(cursor: &tree_sitter::TreeCursor, code: &str, indent_le
 }
 
 // 树形递归打印
-// pub fn print_tree_sitter_node(node: &Node, code: &str, indent_level: usize) {
-//     let indent = "|   ".repeat(indent_level);
-//     let start = node.start_position();
-//     let end = node.end_position();
-//     debug!(
-//         "{}{:?}:{}  [{}:{} - {}:{}] {}",
-//         indent,
-//         node.kind(),
-//         node.kind_id(),
-//         start.row,
-//         start.column,
-//         end.row,
-//         end.column,
-//         if node.child_count() == 0 {
-//             node.utf8_text(code.as_bytes()).unwrap()
-//         } else {
-//             ""
-//         }
-//     );
-//     let mut cursor = node.walk();
-//     for child in node.children(&mut cursor) {
-//         print_tree_sitter_node(&child, code, indent_level + 1);
-//     }
-// }
+pub fn print_tree_sitter_node(node: &tree_sitter::Node, code: &str, indent_level: usize) {
+    let indent = "|   ".repeat(indent_level);
+    let start = node.start_position();
+    let end = node.end_position();
+    debug!(
+        "{}{:?}:{}  [{}:{} - {}:{}] {}",
+        indent,
+        node.kind(),
+        node.kind_id(),
+        start.row,
+        start.column,
+        end.row,
+        end.column,
+        if node.child_count() == 0 {
+            node.utf8_text(code.as_bytes()).unwrap()
+        } else {
+            ""
+        }
+    );
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        print_tree_sitter_node(&child, code, indent_level + 1);
+    }
+}

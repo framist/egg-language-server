@@ -22,7 +22,7 @@ struct Settings {
     // 编辑器配置
     target_language: String,
     // 内部
-    f_parser: fn(&str) -> std::result::Result<String, String>,
+    f_parser: fn(&str) -> Vec<EggDiagnostic>,
     f_reparser: fn(&String) -> std::result::Result<String, String>,
 }
 impl Settings {
@@ -156,44 +156,40 @@ struct TextDocumentItem {
 /// TODO 增量更新方式
 impl Backend {
     async fn on_change(&self, params: TextDocumentItem) {
-        self.log_info(format!("file changed! {:?}", params.uri)).await;
-        let (message, diagnostic_type) =
-            match &(self.settings.read().unwrap().f_parser)(&params.text) {
-                Ok(s) => (
-                    format!(
-                        "可以优化为 => {}\n伪代码：\n{}",
-                        s,
-                        (self.settings.read().unwrap().f_reparser)(s).unwrap()
-                    ),
-                    DiagnosticSeverity::INFORMATION,
-                ),
-                Err(s) => (format!("错误：{}", s), DiagnosticSeverity::ERROR),
-            };
+        self.log_info(format!("file changed! {:?}", params.uri))
+            .await;
 
-        let start_position = Position::new(0, 0);
-        let lines = params.text.lines();
-        let end_position = match (lines.clone().count(), lines.last()) {
-            (count, Some(last_line)) => Position::new(count as u32 - 1, last_line.len() as u32),
-            _ => Position::new(0, 0),
-        };
-
-        let diagnostic = Diagnostic::new(
-            Range::new(start_position, end_position), // 设置诊断范围
-            Some(diagnostic_type),                    // 设置诊断级别为 "Information"
-            None,
-            Some("egg-support".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
-            message,                         // 诊断信息
-            None,
-            None,
-        );
-        let diagnostics = vec![diagnostic];
+        let diagnostics = (self.settings.read().unwrap().f_parser)(&params.text)
+            .into_iter()
+            .map(|d| {
+                Diagnostic::new(
+                    d.span,
+                    Some(d.label),
+                    None,
+                    Some("egg-support".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
+                    {
+                        match d.sexpr {
+                            Some(s) => format!(
+                                "{} => {}\n[pseudo code]\n{}",
+                                d.reason,
+                                s,
+                                (self.settings.read().unwrap().f_reparser)(&s).unwrap()
+                            ),
+                            None => d.reason,
+                        }
+                    },
+                    None,
+                    None,
+                )
+            })
+            .collect::<Vec<_>>();
 
         // 发送诊断信息
         self.client
             .publish_diagnostics(params.uri.clone(), diagnostics, Some(params.version))
             .await;
 
-        debug!("诊断已发送！{}", params.version);
+        debug!("诊断已发送 version={}", params.version);
     }
 
     async fn get_ext(&self, uri: &Url) -> Option<&str> {
@@ -253,7 +249,7 @@ impl Backend {
         self.settings.write().unwrap().target_language = target_language.to_string();
 
         // 根据设置配置内部设置
-        let f_parser: fn(&str) -> std::result::Result<String, String>;
+        let f_parser: fn(&str) -> Vec<EggDiagnostic>;
         match target_language {
             "lisp" => f_parser = lisp_parser,
             "python" => f_parser = py_parser,

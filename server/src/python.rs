@@ -15,7 +15,7 @@ fib(5)
 
 use crate::*;
 use log::*;
-use tree_sitter::Parser;
+use tree_sitter::{Parser, TreeCursor};
 
 // 类递归地转换为自定义的 s-expr
 // 树指针的方式
@@ -26,7 +26,7 @@ use tree_sitter::Parser;
 // }
 // fa(a, i-1)
 // }
-fn ast_to_sexpr(tree_cursor: &tree_sitter::TreeCursor, code: &str) -> String {
+fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
     let node = tree_cursor.node();
     match node.kind() {
         // 逻辑常量
@@ -81,7 +81,7 @@ fn ast_to_sexpr(tree_cursor: &tree_sitter::TreeCursor, code: &str) -> String {
             // 跳过 `=` (python)
             children.goto_next_sibling();
             let value = ast_to_sexpr(&children, code);
-            assert_eq!(children.goto_next_sibling(), false);
+            children.goto_next_sibling();
             format!("(seqlet {} {})", name, value)
         }
 
@@ -100,12 +100,12 @@ fn ast_to_sexpr(tree_cursor: &tree_sitter::TreeCursor, code: &str) -> String {
             // 跳过 `{` | `:` (python)
             children.goto_next_sibling();
             let body = ast_to_sexpr(&children, code);
-			assert_eq!(children.goto_next_sibling(), false);
+            children.goto_next_sibling();
             format!(
                 "(seqlet {} (lam {} {}))",
-                name,                                   // 函数名
-                parameters,                             // 参数
-                body                                    // 函数体
+                name,       // 函数名
+                parameters, // 参数
+                body        // 函数体
             )
         }
         "parameters" => {
@@ -219,7 +219,8 @@ fn ast_to_sexpr(tree_cursor: &tree_sitter::TreeCursor, code: &str) -> String {
 
 use crate::egg_support::simplify;
 
-pub fn py_parser(s: &str) -> Result<String, String> {
+#[cfg(test)]
+fn py_parser_all(s: &str) -> Result<String, String> {
     let mut parser = Parser::new();
     parser.set_language(tree_sitter_python::language()).unwrap();
     let tree = parser.parse(s, None).unwrap();
@@ -243,8 +244,90 @@ pub fn py_parser(s: &str) -> Result<String, String> {
     }
 }
 
+// 分块 语法分析
+// 解决粒度问题
+pub fn py_parser(s: &str) -> Vec<EggDiagnostic> {
+    let mut parser = Parser::new();
+    parser.set_language(tree_sitter_python::language()).unwrap();
+    let tree = parser.parse(s, None).unwrap();
+    let root_node = tree.root_node();
+
+    debug!("Root node: \n{:?}", &root_node);
+    debug!("sexp: \n{:?}", &root_node.to_sexp());
+
+    let tree_cursor = tree.walk();
+    debug!("tree_cursor 方式打印:");
+    print_tree_sitter(&&tree_cursor, s, 0);
+
+    let d = parser_batch_helper(&tree_cursor, s);
+    debug!("diagnostics: \n{:?}", &d);
+    d
+}
+
+fn parser_batch_helper(tree_cursor: &TreeCursor, code: &str) -> Vec<EggDiagnostic> {
+    let node = tree_cursor.node();
+    let mut diagnostics: Vec<EggDiagnostic> = Vec::new();
+
+    let mut children = tree_cursor.clone();
+    if children.goto_first_child() {
+        loop {
+            diagnostics.append(&mut parser_batch_helper(&children, code));
+            if children.goto_next_sibling() == false {
+                break;
+            }
+        }
+    }
+
+    match node.kind() {
+        "module" | "block" | "expression_statement" | "comparison_operator"
+            if diagnostics.is_empty() =>
+        {
+            let sexpr = ast_to_sexpr(&tree_cursor, code);
+            debug!("sexpr: \n{}", &sexpr);
+            let tspan = node.range();
+            let span = Range {
+                start: Position {
+                    line: tspan.start_point.row as u32,
+                    character: tspan.start_point.column as u32,
+                },
+                end: Position {
+                    line: tspan.end_point.row as u32,
+                    character: tspan.end_point.column as u32,
+                },
+            };
+            match simplify(&sexpr.as_str()) {
+                Ok(sexp) => match sexp {
+                    Some(s) => {
+                        diagnostics.push(EggDiagnostic {
+                            span,
+                            reason: "Can be simplified".to_string(),
+                            sexpr: Some(s.to_string()),
+                            label: DiagnosticSeverity::INFORMATION,
+                        });
+                        return diagnostics;
+                    }
+                    None => {
+                        return vec![];
+                    }
+                },
+                Err(e) => {
+                    diagnostics.push(EggDiagnostic {
+                        span,
+                        reason: format!("egg error: {}", e),
+                        sexpr: None,
+                        label: DiagnosticSeverity::ERROR,
+                    });
+                    return diagnostics;
+                }
+            }
+        }
+        _ => diagnostics,
+    }
+}
+
 // * test *
 
+// TODO 性能还是一个很大的问题，需要优化
 #[test]
 fn test_py_parser() {
     // python 额外注意空格与 tab 是不一样的！
@@ -255,7 +338,7 @@ def add1(x):
 y = 1
 add1(y)
 "#;
-    assert_eq!(py_parser(code).unwrap(), "2");
+    assert_eq!(py_parser_all(code).unwrap(), "2");
 }
 
 #[test]
@@ -286,5 +369,3 @@ add1(y)
         ast_to_sexpr(&tree_cursor, CODE)
     );
 }
-
-// TODO 过滤 comment

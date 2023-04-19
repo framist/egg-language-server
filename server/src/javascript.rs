@@ -155,7 +155,7 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
             return ast_to_sexpr(&children, code);
         }
 
-        // 块
+        // * 块
         // seq 实现
         // (seq ... (seq ...))
         "program" => {
@@ -188,7 +188,8 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
             children.goto_next_sibling();
             return ast_to_sexpr(&children, code);
         }
-        // 面向对象特性
+
+        // * 面向对象特性
         // 变成函数调用
         // "member_expression":193  [10:0 - 10:11]
         // |   "identifier":1  [10:0 - 10:7] console
@@ -205,7 +206,7 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
             format!("(var {}.{})", identifier, property_identifier)
         }
 
-        // 杂项 & 语言特性
+        // * 杂项 & 语言特性
         "comment" | "empty_statement" => {
             format!("skip") // 最好是返回空
         }
@@ -218,7 +219,8 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
 
 use crate::egg_support::simplify;
 
-pub fn js_parser(s: &str) -> Result<String, String> {
+#[cfg(test)]
+fn js_parser_all(s: &str) -> Result<String, String> {
     let mut parser = Parser::new();
     parser
         .set_language(tree_sitter_javascript::language())
@@ -242,6 +244,94 @@ pub fn js_parser(s: &str) -> Result<String, String> {
         },
         Err(e) => Err(format!("egg error: {}", e)),
     }
+}
+
+// 分块 语法分析
+// 解决粒度问题
+pub fn js_parser(s: &str) -> Vec<EggDiagnostic> {
+    let mut parser = Parser::new();
+    parser
+        .set_language(tree_sitter_javascript::language())
+        .unwrap();
+    let tree = parser.parse(s, None).unwrap();
+    let root_node = tree.root_node();
+
+    debug!("Root node: \n{:?}", &root_node);
+    debug!("sexp: \n{:?}", &root_node.to_sexp());
+
+    let tree_cursor = tree.walk();
+    debug!("tree_cursor 方式打印:");
+    print_tree_sitter(&tree_cursor, s, 0);
+
+    parser_batch_helper(&tree_cursor, s)
+}
+
+fn parser_batch_helper(tree_cursor: &TreeCursor, code: &str) -> Vec<EggDiagnostic> {
+    let node = tree_cursor.node();
+    let mut diagnostics: Vec<EggDiagnostic> = Vec::new();
+
+    let mut children = tree_cursor.clone();
+    if children.goto_first_child() {
+        loop {
+            diagnostics.append(&mut parser_batch_helper(&children, code));
+            if children.goto_next_sibling() == false {
+                break;
+            }
+        }
+    }
+
+    match node.kind() {
+        "program" | "statement_block" | "expression_statement" if diagnostics.is_empty() => {
+            let sexpr = ast_to_sexpr(&tree_cursor, code);
+            debug!("sexpr: \n{}", &sexpr);
+            let tspan = node.range();
+            let span = Range {
+                start: Position {
+                    line: tspan.start_point.row as u32,
+                    character: tspan.start_point.column as u32,
+                },
+                end: Position {
+                    line: tspan.end_point.row as u32,
+                    character: tspan.end_point.column as u32,
+                },
+            };
+            match simplify(&sexpr.as_str()) {
+                Ok(sexp) => match sexp {
+                    Some(s) => {
+                        diagnostics.push(EggDiagnostic {
+                            span,
+                            reason: "can be simplified".to_string(),
+                            sexpr: Some(s.to_string()),
+                            label: DiagnosticSeverity::INFORMATION,
+                        });
+                        return diagnostics;
+                    }
+                    None => {
+                        return vec![];
+                    }
+                },
+                Err(e) => {
+                    diagnostics.push(EggDiagnostic {
+                        span,
+                        reason: format!("egg error: {}", e),
+                        sexpr: None,
+                        label: DiagnosticSeverity::ERROR,
+                    });
+                    return diagnostics;
+                }
+            }
+        }
+        _ => diagnostics,
+    }
+}
+
+#[test]
+fn test_js_parser() {
+    // python 额外注意空格与 tab 是不一样的！
+    let code: &str = r#"
+1 + 1
+"#;
+    assert_eq!(js_parser_all(code).unwrap(), "2");
 }
 
 #[test]
