@@ -13,44 +13,9 @@ fib(5)
 
  */
 
+use crate::*;
 use log::*;
 use tree_sitter::Parser;
-
-/// 树指针的方式打印
-fn print_tree(
-    cursor: &tree_sitter::TreeCursor,
-    code: &str,
-    indent_level: usize,
-) {
-    let indent = "|   ".repeat(indent_level);
-    let node = cursor.node();
-    let start = node.start_position();
-    let end = node.end_position();
-    debug!(
-        "{}{:?}:{}  [{}:{} - {}:{}] {} {}",
-        indent,
-        node.kind(),
-        node.kind_id(),
-        start.row,
-        start.column,
-        end.row,
-        end.column,
-        if node.child_count() == 0 {
-            node.utf8_text(code.as_bytes()).unwrap()
-        } else {
-            ""
-        },
-        if node.is_extra() { "extra" } else { "" }
-    );
-    let mut cursor = cursor.clone();
-    if cursor.goto_first_child() {
-        print_tree(&cursor, code, indent_level + 1);
-        while cursor.goto_next_sibling() {
-            print_tree(&cursor, code, indent_level + 1);
-        }
-        cursor.goto_parent();
-    }
-}
 
 // 类递归地转换为自定义的 s-expr
 // 树指针的方式
@@ -61,10 +26,7 @@ fn print_tree(
 // }
 // fa(a, i-1)
 // }
-fn ast_to_sexpr(
-    tree_cursor: &tree_sitter::TreeCursor,
-    code: &str,
-) -> String {
+fn ast_to_sexpr(tree_cursor: &tree_sitter::TreeCursor, code: &str) -> String {
     let node = tree_cursor.node();
     match node.kind() {
         // 逻辑常量
@@ -109,17 +71,8 @@ fn ast_to_sexpr(
         }
 
         // let
-        // 应该形如 (let _ _ (...))
-        // 最后一个参数 `then` 是上一级`expression_statement`的下一个同级节点
-        // 例如
-        // "module":105  [1:0 - 3:0]
-        // |   "expression_statement":119  [1:0 - 1:5]
-        // |   |   "assignment":178  [1:0 - 1:5]
-        // |   |   |   "identifier":1  [1:0 - 1:1] x
-        // |   |   |   "=":46  [1:2 - 1:3] =
-        // |   |   |   "integer":92  [1:4 - 1:5] 1
-        // |   "expression_statement":119  [2:0 - 2:1]
-        // |   |   "identifier":1  [2:0 - 2:1] x
+        // 目前用 seqlet
+        // (seq (seqlet a 1) (var a))
         "assignment" => {
             let mut children = tree_cursor.clone();
             children.goto_first_child();
@@ -128,25 +81,13 @@ fn ast_to_sexpr(
             // 跳过 `=` (python)
             children.goto_next_sibling();
             let value = ast_to_sexpr(&children, code);
-
-            // then 递归在不是 assignment 或 function_definition 中结束
-            let then_;
-            let mut then_cursor = tree_cursor.clone();
-            if !then_cursor.goto_parent() {
-                return format!("assignment then 提取出错: goto_parent");
-            }
-            if !then_cursor.goto_next_sibling() {
-                then_ = "assignment_pass".to_string(); // 返回空
-            } else {
-                then_ = ast_to_sexpr(&mut then_cursor, code);
-            }
-
-            format!("(let {} {} {})", name, value, then_)
+            assert_eq!(children.goto_next_sibling(), false);
+            format!("(seqlet {} {})", name, value)
         }
 
         // function_definition
-        // 应该形如 (let _ (lam _ _) (...))
-        // 最后一个参数 `then` 是上一级`expression_statement`的下一个同级节点
+        // 目前用 seqlet
+        // (seqlet a (lam _ _))
         "function_definition" => {
             let mut children = tree_cursor.clone();
             children.goto_first_child();
@@ -159,19 +100,12 @@ fn ast_to_sexpr(
             // 跳过 `{` | `:` (python)
             children.goto_next_sibling();
             let body = ast_to_sexpr(&children, code);
-
-            // then 递归在不是 assignment 或 function_definition 中结束
-            let mut then_cursor = tree_cursor.clone();
-            if !then_cursor.goto_next_sibling() {
-                return format!("function_definition then 提取出错: goto_next_sibling");
-            }
-
+			assert_eq!(children.goto_next_sibling(), false);
             format!(
-                "(let {} (lam {} {}) {})",
+                "(seqlet {} (lam {} {}))",
                 name,                                   // 函数名
                 parameters,                             // 参数
-                body,                                   // 函数体
-                ast_to_sexpr(&then_cursor, code)  // then
+                body                                    // 函数体
             )
         }
         "parameters" => {
@@ -259,18 +193,11 @@ fn ast_to_sexpr(
         "module" | "block" => {
             let mut children = tree_cursor.clone();
             if children.goto_first_child() {
-                format!("{}", ast_to_sexpr(&children, code))
-
-                // 以下事务在 function_definition 或 assignment 中处理:
-                // 对于 块语句，应该由多个嵌套的 let ，最终由一个有返回值的表达式结束
-                // 返回例如 (let _ _ (let ... )) 形式的表达式
-                // 当 children 为 function_definition 或 assignment 时
-                //      将其转换为 let 形式
-                // 例如
-                // "a = 1;a" => "(let a 1 a)"
-                // "a = 1; b = a; b" => "(let a 1 (let b a b))"
-
-                // 所以只递归第一个元素就行
+                let mut sexpr = format!("{}", ast_to_sexpr(&children, code));
+                while children.goto_next_sibling() {
+                    sexpr = format!("(seq {} {})", sexpr, ast_to_sexpr(&children, code));
+                }
+                sexpr
             } else {
                 format!("")
             }
@@ -278,7 +205,7 @@ fn ast_to_sexpr(
 
         // 杂项 & 语言特性
         "pass_statement" => {
-            format!("pass") // TODO 空值处理？
+            format!("skip") // TODO 空值处理？
         }
         "comment" => {
             format!("")
@@ -303,7 +230,7 @@ pub fn py_parser(s: &str) -> Result<String, String> {
 
     let tree_cursor = tree.walk();
     debug!("tree_cursor 方式打印:");
-    print_tree(&&tree_cursor, s, 0);
+    print_tree_sitter(&&tree_cursor, s, 0);
 
     let sexpr = ast_to_sexpr(&tree_cursor, s);
     info!("sexpr: \n{}", &sexpr);
@@ -328,10 +255,7 @@ def add1(x):
 y = 1
 add1(y)
 "#;
-    assert_eq!(
-        py_parser(code).unwrap(),
-        "2"
-    );
+    assert_eq!(py_parser(code).unwrap(), "2");
 }
 
 #[test]
@@ -354,12 +278,13 @@ add1(y)
 
     let tree_cursor = tree.walk();
     println!("tree_cursor 方式打印:");
-    print_tree(&tree_cursor, CODE, 0);
+    print_tree_sitter(&tree_cursor, CODE, 0);
 
     println!("my sexp: \n{:?}", ast_to_sexpr(&tree_cursor, CODE));
-    assert_eq!("(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))",
-               ast_to_sexpr(&tree_cursor, CODE));
+    assert_eq!(
+        "(seq (seq (seqlet add1 (lam x (seq (seqlet x (+ (var x) 1)) (var x)))) (seqlet y 1)) (app (var add1) (var y)))",
+        ast_to_sexpr(&tree_cursor, CODE)
+    );
 }
 
 // TODO 过滤 comment
-
