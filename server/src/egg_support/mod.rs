@@ -138,7 +138,7 @@ pub fn rpn_helper_simple(
             let var = stack.pop().ok_or(&err)?;
             format!("let {} = {}", var, body)
         }
-        // op @ _ => return Err(format!("un imp token = {:?}", op)),
+        op @ _ => return Err(format!("un imp token = {:?}", op)),
     })
 }
 

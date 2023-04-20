@@ -53,7 +53,6 @@ define_language! {
 define_language! {
     pub enum CommonLanguage {
         Num(i32),
-        Symbol(Symbol),
 
         // * lambda
         Bool(bool),
@@ -104,6 +103,31 @@ define_language! {
         "skip" = Skip,
         "seq" = Seq([Id; 2]),           // 序列指令
         "seqlet" = SeqLet([Id; 2]),     // (sqlet x 1)
+
+        
+        // can also do a variable number of children in a boxed slice
+        // this will only match if the lengths are the same
+        // 但是涉及 Multi-matching patterns (ex: `?a...`)  egg 还没有实现 参加 Egg CHANGELOG
+        // TODO "list" = List(Box<[Id]>),
+
+        Symbol(Symbol),  // language items are parsed in order
+
+    }
+}
+
+struct CommonLanguageCostFn;
+impl CostFunction<CommonLanguage> for CommonLanguageCostFn {
+    type Cost = f64;
+    fn cost<C>(&mut self, enode: &CommonLanguage, mut costs: C) -> Self::Cost
+    where
+        C: FnMut(Id) -> Self::Cost,
+    {
+        let op_cost = match enode {
+            CommonLanguage::Cons(..) => 0.01,
+            CommonLanguage::Nil => 0.01,
+            _ => 1.0,
+        };
+        enode.fold(op_cost, |sum, i| sum + costs(i))
     }
 }
 
@@ -499,7 +523,7 @@ pub fn simplify_test(s: &str) -> Result<String, String> {
     let root = runner.roots[0];
 
     // 使用提取器 extractor 选择 根 eclass 的最佳元素
-    let extractor = Extractor::new(&runner.egraph, AstSize);
+    let extractor = Extractor::new(&runner.egraph, CommonLanguageCostFn);
     let (_best_cost, best) = extractor.find_best(root);
     Ok(best.to_string())
 }
@@ -523,12 +547,12 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     let root = runner.roots[0];
 
     // 使用提取器 extractor 选择 根 eclass 的最佳元素
-    let extractor = Extractor::new(&runner.egraph, AstSize);
+    let extractor = Extractor::new(&runner.egraph, CommonLanguageCostFn);
     let (best_cost, best) = extractor.find_best(root);
 
     // cost  的变化
-    debug!("cost: {} -> {}", AstSize.cost_rec(&expr), best_cost);
-    if best_cost <= AstSize.cost_rec(&expr) - 1 {
+    debug!("cost: {} -> {}", CommonLanguageCostFn.cost_rec(&expr), best_cost);
+    if best_cost <= CommonLanguageCostFn.cost_rec(&expr) - 1.0 {
         Ok(Some(best))
     } else {
         Ok(None)

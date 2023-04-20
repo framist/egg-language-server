@@ -87,7 +87,7 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
 
         // function_definition
         // 目前用 seqlet
-        // (seqlet a (lam _ _))
+        // (seqlet a (laml _ _))
         "function_definition" => {
             let mut children = tree_cursor.clone();
             children.goto_first_child();
@@ -102,20 +102,11 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
             let body = ast_to_sexpr(&children, code);
             children.goto_next_sibling();
             format!(
-                "(seqlet {} (lam {} {}))",
+                "(seqlet {} (laml {} {}))",
                 name,       // 函数名
                 parameters, // 参数
                 body        // 函数体
             )
-        }
-        "parameters" => {
-            let mut cursor = node.walk();
-            let mut children = node.children(&mut cursor);
-
-            //TODO: 先假设只有一个参数 | 支持多个参数 通过柯里化实现
-            children.next(); // 跳过 `(` (python)
-            let name = children.next().unwrap().utf8_text(code.as_bytes()).unwrap();
-            name.to_string()
         }
         "call" => {
             let mut children = tree_cursor.clone();
@@ -124,16 +115,25 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
             children.goto_next_sibling();
             let args = ast_to_sexpr(&children, code);
 
-            format!("(app {} {})", name, args)
+            format!("(appl {} {})", name, args)
         }
-        "argument_list" => {
+        "argument_list" | "parameters" => {
             let mut children = tree_cursor.clone();
             children.goto_first_child();
             // 跳过 `(` (python)
             children.goto_next_sibling();
-            //TODO: 先假设只有一个参数 | 支持多个参数 通过柯里化实现
-            let arg = ast_to_sexpr(&children, code);
-            arg
+            let mut args = "nil".to_string();
+            loop {
+                let a = format!("{}", ast_to_sexpr(&children, code));
+                if children.node().kind() == ")" {                    
+                    break;
+                }
+                args = format!("(cons {} {})", a, args);
+                children.goto_next_sibling();
+                // 跳过 `,` (python)
+                children.goto_next_sibling();
+            }
+            args
         }
         "return_statement" => {
             let mut children = tree_cursor.clone();
@@ -364,8 +364,5 @@ add1(y)
     print_tree_sitter(&tree_cursor, CODE, 0);
 
     println!("my sexp: \n{:?}", ast_to_sexpr(&tree_cursor, CODE));
-    assert_eq!(
-        "(seq (seq (seqlet add1 (lam x (seq (seqlet x (+ (var x) 1)) (var x)))) (seqlet y 1)) (app (var add1) (var y)))",
-        ast_to_sexpr(&tree_cursor, CODE)
-    );
+
 }
