@@ -166,7 +166,7 @@ impl Backend {
                     d.span,
                     Some(d.label),
                     None,
-                    Some("egg-support".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
+                    Some("egg-language-server".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
                     {
                         match d.sexpr {
                             Some(s) => format!(

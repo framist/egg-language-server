@@ -1,4 +1,5 @@
 use egg::{rewrite as rw, *};
+use log::*;
 // TODO 更多的控制流 比如 While
 
 // 不准备实现浮点数的常数折叠
@@ -442,6 +443,7 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         // rw!("not-false"; "(~ false)" => "true"),
         rw!("or-false"; "(| ?a false)" => "?a"),
         rw!("and-false"; "(& ?a false)" => "false"),
+        
         // * 接下来是额外的自定义的规则 TODO 需仔细研究 加以精简
         // * Relation
         // TODO 加入 Relation 的常数折叠
@@ -525,7 +527,8 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     let (best_cost, best) = extractor.find_best(root);
 
     // cost  的变化
-    if best_cost < AstSize.cost_rec(&expr) {
+    debug!("cost: {} -> {}", AstSize.cost_rec(&expr), best_cost);
+    if best_cost <= AstSize.cost_rec(&expr) - 1 {
         Ok(Some(best))
     } else {
         Ok(None)
@@ -769,6 +772,7 @@ egg::test_fn! {
         (app (var fib) 4))"
     => "3"
 }
+
 
 // * list test *
 

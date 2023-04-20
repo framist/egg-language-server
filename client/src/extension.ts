@@ -84,7 +84,7 @@ export function activate(context: ExtensionContext) {
 	// 创建语言客户端并启动客户端。
 	client = new LanguageClient(
 		'EgglanguageServer', // 它是客户端的名称，与服务端配置文件中指定的名称相同。
-		'Egg support Language Server', // 对客户端的描述, 将会在用户界面中显示。
+		'Egg Language Server', // 对客户端的描述, 将会在用户界面中显示。
 		serverOptions,
 		clientOptions
 	);

@@ -1,6 +1,6 @@
 {
-	"name": "egg-support",
-	"displayName": "egg-support",
+	"name": "egg-language-server",
+	"displayName": "egg-language-server",
 	"description": "language support with egg support",
 	"license": "MIT",
 	"version": "0.0.1",
@@ -21,7 +21,7 @@
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "egg-support configuration",
+			"title": "egg-language-server configuration",
 			"properties": {
 				"EgglanguageServer.maxNumberOfProblems": {
 					"scope": "resource",

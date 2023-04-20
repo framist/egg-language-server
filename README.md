@@ -1,12 +1,26 @@
-[*中文*](#egg-support-介绍) | [*English*](#egg-support-readme)
+[*中文*](#egg-language-server-介绍) | [*English*](#egg-language-server-readme)
 
-# egg-support 介绍
+
+**仍在开发中**
+
+<p align="center">
+  <img src="./doc/asserts/cog-egg.png" alt="temp logo" width="33%" />
+</p>
+
+
+# egg-language-server 介绍
 
 基于 egg 驱动的编写时代码优化插件
 
-现在还在开发阶段，但是已经可以勉强使用了。
-
 ## 特性
+
+egg 的源码优化主要分为以下过程：
+
+1. Code -> AST：基于 Tree-sitter
+2. AST -> IR：针对特定目标语言分别实现的 `ast_to_sexpr`
+3. IR <-> IR: 构造基本元素抽象、过程抽象和数据抽象的 `CommonLanguage`。通过 egg 进行 Rewrite。
+4. IR -> AST：Common Language 自动派生方法
+5. AST -> Code：针对特定目标语言分别实现的 `rpn_to_human`
 
 ## 依赖
 
@@ -26,9 +40,9 @@
 ```
 .
 ├── client // 语言客户端
-│   ├── src
-│   │   ├── test // 语言客户端/服务器的端到端测试
-│   │   └── extension.ts // 语言客户端入口点
+│   └── src
+│       ├── test // 语言客户端/服务器的端到端测试
+│       └── extension.ts // 语言客户端入口点
 ├── package.json // 扩展清单
 └── server // 语言服务器
     └── src
@@ -62,7 +76,7 @@
 
 *English*
 
-# egg-support README
+# egg-language-server README
 
 ## Features
 
@@ -77,9 +91,9 @@
 ```
 .
 ├── client // Language Client
-│   ├── src
-│   │   ├── test // End to End tests for Language Client / Server
-│   │   └── extension.ts // Language Client entry point
+│   └── src
+│       ├── test // End to End tests for Language Client / Server
+│       └── extension.ts // Language Client entry point
 ├── package.json // The extension manifest.
 └── server // Language Server
     └── src

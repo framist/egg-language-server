@@ -25,7 +25,6 @@ define_language! {
         Constant(Constant),
         Symbol(Symbol),
 
-        "mutiargtest" = Muti,
     }
 }
 
