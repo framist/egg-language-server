@@ -14,6 +14,8 @@
 
 ## 特性
 
+![demo](./doc/asserts/example1.png)
+
 egg 的源码优化主要分为以下过程：
 
 1. Code -> AST：基于 Tree-sitter
