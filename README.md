@@ -10,11 +10,19 @@
 
 # egg-language-server 介绍
 
-基于 egg 驱动的编写时代码优化插件
+egg 驱动的编写时代码优化 语言服务器及 Visual Studio Code 插件。
 
 ## 特性
 
 ![demo](./doc/asserts/example1.png)
+
+egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。
+
+egg-language-server 可以帮助您：
+
+- 优化程序结构，提升代码性能。具体的方法有，简化运行逻辑，增加代码复用等。
+- 简化源码本身。源码除了需要编译成可执行文件或直接执行的目的之外，还负担起可读可交流传播的作用。相比在编译时或运行时修改源码以提升性能的方式，在编写时提供的源码优化对程序员更加有参考价值，在后续的交流和传播中也不失易读性。
+- 提升您的能力和代码质量。人不是全能的，编程时提供的解决方案不一定是最优的，而且总避免不了犯下一些错误。在编写时提供的源码优化应对程序员有启发作用，能让程序员写出质量更优的代码。
 
 egg 的源码优化主要分为以下过程：
 
@@ -32,8 +40,49 @@ egg 的源码优化主要分为以下过程：
 
 此扩展提供以下设置:
 
-* 'myExtension.enable': 启用/禁用此扩展。
-* 'myExtension.thing': 设置为 'blah' 做某事。
+- `EgglanguageServer.maxNumberOfProblems`: 
+  - 类型：`number`
+  - 描述：控制最多报告问题的数量
+  - 默认值：`100`
+  - 最小值：`1`
+
+- `EgglanguageServer.ifExplanations`: 
+  - 类型：`boolean`
+  - 描述：控制 是否显示 egg 重写方案解释
+  - 默认值：`true`
+
+- `EgglanguageServer.ExplanationWithLet`: 
+  - 类型：`boolean`
+  - 描述：控制 是否显示 egg let 风格的重写方案解释
+  - 默认值：`true`
+  - 依赖项：`EgglanguageServer.ifExplanations: true`
+
+- `EgglanguageServer.ifEggIR`: 
+  - 类型：`boolean`
+  - 描述：控制 是否显示egg的中间表示
+  - 默认值：`true`
+
+- `EgglanguageServer.outLanguage`: 
+  - 类型：`string`
+  - 枚举：
+    - `same as source`
+    - `debug`
+    - `python`
+    - `C`
+    - `lisp`
+    - `javascript`
+  - 描述：控制 输出的优化结果参考的伪代码语言类型
+  - 默认值：`same as source`
+
+- `EgglanguageServer.trace.server`: 
+  - 类型：`string`
+  - 枚举：
+    - `off`
+    - `messages`
+    - `verbose`
+  - 描述：跟踪 VS Code 和语言服务器之间的通信
+  - 默认值：`off`
+
 
 ## 开发
 
@@ -69,7 +118,7 @@ egg 的源码优化主要分为以下过程：
 ## 参考
 
 - 本项目同时也是作者的毕业设计，但是论文还未完成。
-- 本项目作者对 egg 的论文《Egg: Fast and Extensible Equality Saturation》进行了中文翻译，可以在 [这里](https://www.overleaf.com/read/jhnbztftxwhm) 查看目前翻译的进度。待翻译完成后，会将其放在本项目的 `doc` 文件夹中。
+- 本项目作者对 egg 的论文《Egg: Fast and Extensible Equality Saturation》进行了中文翻译，可以在 [这里](https://www.overleaf.com/read/jhnbztftxwhm) 查看目前翻译的进度。待翻译完成后，会将其放在本项目的 `doc` 文件夹中。 [预览](./doc/asserts/Fast_and_Extensible_Equality_Saturation_zh_cn.pdf)
 - 作为本项目的学习基础，作者有以下笔记：
   - [Software-Foundations-Note](https://github.com/framist/Software-Foundations-Note) 
   - [CS61a-Note](https://framist.github.io/2022/12/19/CS61a-Note/)
