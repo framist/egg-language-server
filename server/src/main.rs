@@ -14,7 +14,7 @@ use std::sync::RwLock; // TODO 是否会出现死锁？
 #[allow(dead_code)]
 struct Settings {
     // 语言客户端配置
-    max_number_of_problems: u32,
+    max_number_of_problems: usize,
     if_explanations: bool,
     explanation_with_let: bool,
     if_egg_ir: bool,
@@ -167,21 +167,21 @@ impl Backend {
                     Some(d.label),
                     None,
                     Some("egg-language-server".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
-                    {
-                        match d.sexpr {
-                            Some(s) => format!(
-                                "{} => {}\n[pseudo code]\n{}",
-                                d.reason,
-                                s,
-                                (self.settings.read().unwrap().f_reparser)(&s).unwrap()
-                            ),
-                            None => d.reason,
-                        }
+                    match d.sexpr {
+                        Some(s) => format!(
+                            "{} => {}\npseudo code ({}-like):\n{}",
+                            d.reason,
+                            s,
+                            self.settings.read().unwrap().out_language,
+                            (self.settings.read().unwrap().f_reparser)(&s).unwrap()
+                        ),
+                        None => d.reason,
                     },
                     None,
                     None,
                 )
             })
+            .take(self.settings.read().unwrap().max_number_of_problems)
             .collect::<Vec<_>>();
 
         // 发送诊断信息
@@ -221,7 +221,7 @@ impl Backend {
             Ok(settings) => {
                 let mut s = self.settings.write().unwrap();
                 s.max_number_of_problems =
-                    settings[0]["maxNumberOfProblems"].as_u64().unwrap_or(100) as u32;
+                    settings[0]["maxNumberOfProblems"].as_u64().unwrap_or(100) as usize;
                 s.if_explanations = settings[0]["ifExplanations"].as_bool().unwrap_or(true);
                 s.if_egg_ir = settings[0]["ifEggIR"].as_bool().unwrap_or(true);
                 s.explanation_with_let =
@@ -250,23 +250,28 @@ impl Backend {
 
         // 根据设置配置内部设置
         let f_parser: fn(&str) -> Vec<EggDiagnostic>;
+        let mut f_reparser: fn(&String) -> std::result::Result<String, String>;
+
         match target_language {
-            "lisp" => f_parser = lisp_parser,
-            "python" => f_parser = py_parser,
-            "javascript" => f_parser = js_parser,
+            "lisp" => {
+                f_parser = lisp_parser;
+                f_reparser = lisp_reparser;
+            }
+            "python" => {
+                f_parser = py_parser;
+                f_reparser = py_reparser;
+            }
+            "javascript" => {
+                f_parser = js_parser;
+                f_reparser = js_reparser;
+            }
             _ => {
                 return self
                     .log_warn(format!("不支持的语言: {}", target_language))
                     .await;
             }
-        }
-
-        // 更新配置 f_parser
-        self.settings.write().unwrap().f_parser = f_parser;
-
+        };
         // 根据配置选择输出方式
-        // self.settings.write().unwrap().f_reparser = py_reparser;
-        let f_reparser: fn(&String) -> std::result::Result<String, String>;
         let out_language = self.settings.read().unwrap().out_language.clone();
 
         f_reparser = match out_language.as_str() {
@@ -274,12 +279,16 @@ impl Backend {
             "python" => py_reparser,
             "javascript" => js_reparser,
             "debug" => debug_reparser,
+            "same as source" => f_reparser,
             _ => {
-                return self
+                self
                     .log_warn(format!("不支持的输出语言: {}", out_language))
                     .await;
+                debug_reparser
             }
         };
+        // 更新配置 f_parser
+        self.settings.write().unwrap().f_parser = f_parser;
         self.settings.write().unwrap().f_reparser = f_reparser;
     }
 

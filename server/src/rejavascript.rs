@@ -16,7 +16,115 @@ pub fn js_reparser(sexpr: &String) -> Result<String, String> {
 
 // TODO 先做好 rpn_helper_simple 的测试
 fn rpn_helper_js(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<String, String> {
-    rpn_helper_simple(token, stack)
+    let err = format!("RPN has invalid format: token = {:?}", token);
+    let width = "    "; // 后续考虑需从编辑器环境中获取 width 信息
+    let add_widths = |s: String| {
+        s.lines()
+            .map(|line| format!("{}{}", width, line))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    use CommonLanguage::*;
+    Ok(match token {
+        #[cfg(feature = "float")]
+        Constant(f64) => f64.to_string(),
+        Num(val) => val.to_string(),
+        Bool(val) => val.to_string(),
+        Symbol(s) => s.to_string(),
+        // 一元运算符
+        op @ (Ln(_) | Sqrt(_)) => {
+            let exp = stack.pop().ok_or(&err)?;
+            format!("{}({})", op.to_string(), exp)
+        }
+        Not(_) => {
+            let exp = stack.pop().ok_or(&err)?;
+            format!("not {}", exp)
+        }
+        // Neg(_) => {
+        //     let exp = stack.pop().ok_or(&err)?;
+        //     format!("-{}", exp)
+        // }
+        // 二元运算符
+        op @ (Add(_) | Sub(_) | Mul(_) | Div(_) | Pow(_) | And(_) | Or(_) | Gt(_) | Ge(_)
+        | Lt(_) | Le(_) | Ne(_)) => {
+            let right = stack.pop().ok_or(&err)?;
+            let left = stack.pop().ok_or(&err)?;
+            format!("({} {} {})", left, op.to_string(), right)
+        }
+        Var(_) => {
+            let var = stack.pop().ok_or(&err)?;
+            format!("{}", var)
+        }
+        Lambda(_) => {
+            let body = stack.pop().ok_or(&err)?;
+            let var = stack.pop().ok_or(&err)?;
+            format!("({}) => {{\n{}\n}}", var, add_widths(body))
+        }
+        App(_) => {
+            let right = stack.pop().ok_or(&err)?;
+            let f = stack.pop().ok_or(&err)?;
+
+            format!("{}({})", f, right)
+        }
+        Let(_) => {
+            let then = stack.pop().ok_or(&err)?;
+            let body = stack.pop().ok_or(&err)?;
+            let var = stack.pop().ok_or(&err)?;
+            format!("let {} = {};\n{}", var, body, then)
+        }
+        If(_) => {
+            let else_exp = stack.pop().ok_or(&err)?;
+            let then_exp = stack.pop().ok_or(&err)?;
+            let cond = stack.pop().ok_or(&err)?;
+            format!(
+                "if {} {{\n{}\n}}else {{\n{}\n}}",
+                cond,
+                add_widths(then_exp),
+                add_widths(else_exp)
+            )
+        }
+        Eq(_) => {
+            let right = stack.pop().ok_or(&err)?;
+            let left = stack.pop().ok_or(&err)?;
+            format!("{} {} {}", left, "==", right)
+        }
+        Fix(_) => {
+            // TODO
+            let body = stack.pop().ok_or(&err)?;
+            let then = stack.pop().ok_or(&err)?;
+            format!("{} {}: {}", "Y", then, body)
+        }
+        // List
+        Cons(_) => {
+            let right = stack.pop().ok_or(&err)?;
+            let left = stack.pop().ok_or(&err)?;
+            format!("{}, {}", left, right)
+        }
+        Nil => "".to_string(),
+        LambdaL(_) => {
+            let body = stack.pop().ok_or(&err)?;
+            let varl = stack.pop().ok_or(&err)?;
+            format!("({}) => \n{{{}}})", varl, add_widths(body))
+        }
+        AppL(_) => {
+            let body = stack.pop().ok_or(&err)?;
+            let f = stack.pop().ok_or(&err)?;
+
+            format!("{}({})", f, body)
+        }
+        Seq(_) => {
+            let then = stack.pop().ok_or(&err)?;
+            let body = stack.pop().ok_or(&err)?;
+            format!("{};\n{}", body, then)
+        }
+        Skip => ";".to_string(),
+        SeqLet(_) => {
+            let body = stack.pop().ok_or(&err)?;
+            let var = stack.pop().ok_or(&err)?;
+            format!("let {} = {};", var, body)
+        }
+        // op @ _ => return Err(format!("un imp token = {:?}", op)),
+    })
 }
 
 #[test]

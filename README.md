@@ -4,7 +4,7 @@
 **仍在开发中**
 
 <p align="center">
-  <img src="./doc/asserts/cog-egg.png" alt="temp logo" width="33%" />
+  <img src="./doc/asserts/cog-egg.png" alt="temp logo" width="10%" />
 </p>
 
 
@@ -134,6 +134,10 @@ egg 的源码优化主要分为以下过程：
 ## Requirements
 
 ## Extension Settings
+
+* 'myExtension.enable': 启用/禁用此扩展。
+* 'myExtension.thing': 设置为 'blah' 做某事。
+
 
 ## Development
 
