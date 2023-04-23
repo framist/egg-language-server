@@ -66,13 +66,14 @@ export function activate(context: ExtensionContext) {
 	// 控制语言客户端的选项
 	const clientOptions: LanguageClientOptions = {
 		// 注册 多 语言 服务器，注意还需要更改 activationEvents, in package.json
-		// TODO 暂时未完全实现：多语言支持 
 		// TODO The use of a string as a document filter is deprecated @since 3.16.0.
 		documentSelector: [
 			{ scheme: 'file', language: 'lisp' },
 			{ scheme: 'file', language: 'scheme' },
+			{ scheme: 'file', language: 'c' },
 			{ scheme: 'file', language: 'python' },
-			{ scheme: 'file', language: 'javascript' }
+			{ scheme: 'file', language: 'javascript' },
+			{ scheme: 'file', language: 'rust' },
 		],
 		synchronize: {
 			// 当文件变动为'.clientrc'中那样时，通知服务器
@@ -111,84 +112,3 @@ export function deactivate(): Thenable<void> | undefined {
 	}
 	return client.stop();
 }
-
-// TODO 暂未实现的附加功能：行内 hints 
-export function activateInlayHints(ctx: ExtensionContext) {
-	const maybeUpdater = {
-		hintsProvider: null as Disposable | null,
-		updateHintsEventEmitter: new EventEmitter<void>(),
-
-		async onConfigChange() {
-			this.dispose();
-
-			const event = this.updateHintsEventEmitter.event;
-			// this.hintsProvider = languages.registerInlayHintsProvider(
-			//   { scheme: "file", language: "nrs" },
-			//   // new (class implements InlayHintsProvider {
-			//   //   onDidChangeInlayHints = event;
-			//   //   resolveInlayHint(hint: InlayHint, token: CancellationToken): ProviderResult<InlayHint> {
-			//   //     const ret = {
-			//   //       label: hint.label,
-			//   //       ...hint,
-			//   //     };
-			//   //     return ret;
-			//   //   }
-			//   //   async provideInlayHints(
-			//   //     document: TextDocument,
-			//   //     range: Range,
-			//   //     token: CancellationToken
-			//   //   ): Promise<InlayHint[]> {
-			//   //     const hints = (await client
-			//   //       .sendRequest("custom/inlay_hint", { path: document.uri.toString() })
-			//   //       .catch(err => null)) as [number, number, string][];
-			//   //     if (hints == null) {
-			//   //       return [];
-			//   //     } else {
-			//   //       return hints.map(item => {
-			//   //         const [start, end, label] = item;
-			//   //         let startPosition = document.positionAt(start);
-			//   //         let endPosition = document.positionAt(end);
-			//   //         return {
-			//   //           position: endPosition,
-			//   //           paddingLeft: true,
-			//   //           label: [
-			//   //             {
-			//   //               value: `${label}`,
-			//   //               // location: {
-			//   //               //   uri: document.uri,
-			//   //               //   range: new Range(1, 0, 1, 0)
-			//   //               // }
-			//   //               command: {
-			//   //                 title: "hello world",
-			//   //                 command: "helloworld.helloWorld",
-			//   //                 arguments: [document.uri],
-			//   //               },
-			//   //             },
-			//   //           ],
-			//   //         };
-			//   //       });
-			//   //     }
-			//   //   }
-			//   // })()
-			// );
-		},
-
-		onDidChangeTextDocument({ contentChanges, document }: TextDocumentChangeEvent) {
-			// debugger
-			// this.updateHintsEventEmitter.fire();
-		},
-
-		dispose() {
-			this.hintsProvider?.dispose();
-			this.hintsProvider = null;
-			this.updateHintsEventEmitter.dispose();
-		},
-	};
-
-	workspace.onDidChangeConfiguration(maybeUpdater.onConfigChange, maybeUpdater, ctx.subscriptions);
-	workspace.onDidChangeTextDocument(maybeUpdater.onDidChangeTextDocument, maybeUpdater, ctx.subscriptions);
-
-	maybeUpdater.onConfigChange().catch(console.error);
-}
-
-

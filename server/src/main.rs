@@ -197,6 +197,10 @@ impl Backend {
             "py" => "python",
             "lisp" | "scm" => "lisp",
             "js" => "javascript",
+            // "ts" => "typescript",
+            // "java" => "java",
+            "c" | "cpp" => "c",
+            "rs" => "rust",
             _ => {
                 return None;
             }

@@ -14,8 +14,10 @@
 		"onLanguage:lisp",
 		"onLanguage:common-lisp",
 		"onLanguage:scheme",
+		"onLanguage:c",
 		"onLanguage:python",
-		"onLanguage:javascript"
+		"onLanguage:javascript",
+		"onLanguage:rust"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
@@ -64,7 +66,8 @@
 						"python",
 						"C",
 						"lisp",
-						"javascript"
+						"javascript",
+						"rust"
 					],
 					"default": "same as source",
 					"description": "Controls the output pseudo-code style.",

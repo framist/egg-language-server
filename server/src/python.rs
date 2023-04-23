@@ -125,7 +125,7 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
             let mut args = "nil".to_string();
             loop {
                 let a = format!("{}", ast_to_sexpr(&children, code));
-                if children.node().kind() == ")" {                    
+                if children.node().kind() == ")" {
                     break;
                 }
                 args = format!("(cons {} {})", a, args);
@@ -264,21 +264,35 @@ pub fn py_parser(s: &str) -> Vec<EggDiagnostic> {
     d
 }
 
+// TODO 并行化 函数返回 simplify 的 vec handle， 在调用处 join
+// use rayon::prelude::*;
+
 fn parser_batch_helper(tree_cursor: &TreeCursor, code: &str) -> Vec<EggDiagnostic> {
     let node = tree_cursor.node();
     let mut diagnostics: Vec<EggDiagnostic> = Vec::new();
 
-    let mut children = tree_cursor.clone();
-    if children.goto_first_child() {
-        loop {
-            diagnostics.append(&mut parser_batch_helper(&children, code));
-            if children.goto_next_sibling() == false {
-                break;
-            }
-        }
+    // 原始
+    // let mut children = tree_cursor.clone();
+    // if children.goto_first_child() {
+    //     loop {
+    //         diagnostics.append(&mut parser_batch_helper(&children, code));
+    //         if children.goto_next_sibling() == false {
+    //             break;
+    //         }
+    //     }
+    // }
+
+    // 迭代器
+    let children_diagnostics: Vec<Vec<EggDiagnostic>> = node
+        .children(&mut node.walk())
+        .map(|child| parser_batch_helper(&child.walk(), &code))
+        .collect();
+    for mut child_diagnostics in children_diagnostics {
+        diagnostics.append(&mut child_diagnostics);
     }
 
     match node.kind() {
+        // 递归终止点
         "module" | "block" | "expression_statement" | "comparison_operator"
             if diagnostics.is_empty() =>
         {
@@ -364,5 +378,4 @@ add1(y)
     print_tree_sitter(&tree_cursor, CODE, 0);
 
     println!("my sexp: \n{:?}", ast_to_sexpr(&tree_cursor, CODE));
-
 }

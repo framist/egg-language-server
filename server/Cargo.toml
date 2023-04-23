@@ -20,6 +20,8 @@ im-rc = "15.0.0"
 # egg
 egg = "0.9.3"
 
+rayon = "1.7"
+
 # 临时：egg 的依赖
 # [dev-dependencies]
 fxhash = "0.2.1"
