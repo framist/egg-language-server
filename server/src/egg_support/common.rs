@@ -88,18 +88,17 @@ define_language! {
         "<=" = Le([Id; 2]),
         "!=" = Ne([Id; 2]),
 
-        // TODO * List 注意，为了防止歧义，目前仅用于解决多参数问题；数据结构构建都应看作未定义的函数
-        // (lam-cons x (lam-cons y nil)) 同时去除 cons laml 或许也是一种方法？也可同时再去掉 nil
-        // 不行，考虑到 cons 、 lam 第一个参数必须为原子
+        // * List 
+        // 注意，为了防止歧义，目前仅用于解决多参数问题；数据结构构建都应看作未定义的函数
         "cons" = Cons([Id; 2]),
         // "car" = Car(Id), 
         // "cdr" = Cdr(Id),
         "nil" = Nil,
-        // 多参 的函数 (laml (cons x (cons y nil)) (+ x y))
+        // 多参 的函数 例如 (laml (cons x (cons y nil)) (+ x y))
         "laml" = LambdaL([Id; 2]),
         "appl" = AppL([Id; 2]),
 
-        // TODO * Imp 指令式程序
+        // * Imp 指令式程序
         "skip" = Skip,
         "seq" = Seq([Id; 2]),           // 序列指令
         "seqlet" = SeqLet([Id; 2]),     // (sqlet x 1)
@@ -166,7 +165,7 @@ struct Data {
     constant: Option<(CommonLanguage, PatternAst<CommonLanguage>)>,
 }
 
-// TODO 要仔细检查算术溢出的情况 https://course.rs/compiler/pitfalls/arithmetic-overflow.html
+// 要仔细检查算术溢出的情况 https://course.rs/compiler/pitfalls/arithmetic-overflow.html
 fn eval(
     egraph: &EGraph,
     enode: &CommonLanguage,
@@ -250,22 +249,22 @@ fn eval(
             format!("(> {} {})", x(a)?, x(b)?).parse().unwrap(),
         )),
         // TODO 下面的其实可有可无
-        // CommonLanguage::Lt([a, b]) => Some((
-        //     CommonLanguage::Bool(x(a)?.num()? < x(b)?.num()?),
-        //     format!("(< {} {})", x(a)?, x(b)?).parse().unwrap(),
-        // )),
-        // CommonLanguage::Ge([a, b]) => Some((
-        //     CommonLanguage::Bool(x(a)?.num()? >= x(b)?.num()?),
-        //     format!("(>= {} {})", x(a)?, x(b)?).parse().unwrap(),
-        // )),
-        // CommonLanguage::Le([a, b]) => Some((
-        //     CommonLanguage::Bool(x(a)?.num()? <= x(b)?.num()?),
-        //     format!("(<= {} {})", x(a)?, x(b)?).parse().unwrap(),
-        // )),
-        // CommonLanguage::Ne([a, b]) => Some((
-        //     CommonLanguage::Bool(x(a)?.num()? != x(b)?.num()?),
-        //     format!("(!= {} {})", x(a)?, x(b)?).parse().unwrap(),
-        // )),
+        CommonLanguage::Lt([a, b]) => Some((
+            CommonLanguage::Bool(x(a)?.num()? < x(b)?.num()?),
+            format!("(< {} {})", x(a)?, x(b)?).parse().unwrap(),
+        )),
+        CommonLanguage::Ge([a, b]) => Some((
+            CommonLanguage::Bool(x(a)?.num()? >= x(b)?.num()?),
+            format!("(>= {} {})", x(a)?, x(b)?).parse().unwrap(),
+        )),
+        CommonLanguage::Le([a, b]) => Some((
+            CommonLanguage::Bool(x(a)?.num()? <= x(b)?.num()?),
+            format!("(<= {} {})", x(a)?, x(b)?).parse().unwrap(),
+        )),
+        CommonLanguage::Ne([a, b]) => Some((
+            CommonLanguage::Bool(x(a)?.num()? != x(b)?.num()?),
+            format!("(!= {} {})", x(a)?, x(b)?).parse().unwrap(),
+        )),
         _ => None,
     }
 }
@@ -470,16 +469,12 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         
         // * 接下来是额外的自定义的规则 TODO 需仔细研究 加以精简
         // * Relation
-        // TODO 加入 Relation 的常数折叠
         // 对称关系
         // rw!("eq-comm"; "(= ?a ?b)" => "(= ?b ?a)"), 前面已经有了
         rw!("gt-comm"; "(& (> ?a ?b) (> ?b ?a))" => "false"),
         // 自反关系
         rw!("eq-true"; "(= ?a ?a)" => "true"),
         rw!("gt-reflexive"; "(> ?a ?a)" => "false"),
-        // 传递关系
-        // rw!("gt-transitive"; "(& (> ?a ?b) (> ?b ?c))" => "(> ?a ?c)"), 错误的规则！
-        // rw!("eq-transitive"; "(& (= ?a ?b) (= ?b ?c))" => "(= ?a ?c)"), 错误的规则！
         // 转换 <, >=, <=, !=, =
         rw!("gt-flip"; "(< ?b ?a)" => "(> ?a ?b)"), // < => >
         rw!("ge-expand"; "(>= ?a ?b)" => "(~ (> ?b ?a))"), // >= => not >+flip
@@ -490,12 +485,12 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
 
         // * List
         // 柯里化 currying
-        rw!("laml-currying-递归终止点"; "(laml (cons ?v nil) ?body)" => "(lam ?v ?body)"),
-        rw!("laml-currying-递归"; "(laml (cons ?v ?list) ?body)" => "(lam ?v (laml ?list ?body))"),
-        rw!("appl-currying-递归终止点"; "(appl ?f (cons ?v nil))" => "(app ?f ?v)"),
-        rw!("appl-currying-递归"; "(appl ?f (cons ?v ?list))" => "(appl (app ?f ?v) ?list)"),
+        rw!("laml-currying-end"; "(laml (cons ?v nil) ?body)" => "(lam ?v ?body)"),
+        rw!("laml-currying-fix"; "(laml (cons ?v ?list) ?body)" => "(lam ?v (laml ?list ?body))"),
+        rw!("appl-currying-end"; "(appl ?f (cons ?v nil))" => "(app ?f ?v)"),
+        rw!("appl-currying-fix"; "(appl ?f (cons ?v ?list))" => "(appl (app ?f ?v) ?list)"),
         // 序列 seq
-        rw!("seq-终止"; "(seq ?a nil)" => "?a"),
+        rw!("seq-end"; "(seq ?a nil)" => "?a"),
         rw!("seq-let"; "(seq (seqlet ?v ?e) ?body)" => "(let ?v ?e ?body)"),
         rw!("seq-assoc"; "(seq (seq ?a ?b) ?c)" => "(seq ?a (seq ?b ?c))"),
         rw!("seq-skip-before"; "(seq skip ?a)" => "?a"),
