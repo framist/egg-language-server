@@ -1,0 +1,182 @@
+\documentclass
+  [ acmsmall
+  , xetex
+  , dvipsnames
+  % , review
+  , nonacm
+  , screen
+  % , authordraft
+  ]{acmart}
+
+% framist 翻译中... 由 ChatGP 与 DeepL 赋能
+% ChatGP prompt: 请翻译以下文本到中文，保留 latex 的格式，中英文之间添加空格，适当换行避免一行过长，将输出放在代码框中。不要画蛇添足，你只需翻译我输入的内容。
+
+
+\usepackage{xeCJK} % 中文支持
+\usepackage{fontspec}
+\setmonofont[Mapping=tex-text]{Inconsolata} % 修复 mono bug
+\setlength{\parindent}{2em} %首行二字符缩进
+% \linespread{1.2} % 行距
+
+\usepackage{hyperref}
+
+\authorsaddresses{}
+\setcopyright{none}
+\settopmatter{
+  printfolios=true,
+  printccs=false,
+  printacmref=false
+}
+
+\bibliographystyle{ACM-Reference-Format}
+\citestyle{acmauthoryear}
+
+\usepackage{graphics}
+\graphicspath{{_build/}{fig/}}
+
+\makeatletter
+\def\@ACM@badge@width{8mm}
+\makeatother
+\acmBadgeL{egg.png}
+
+
+% \title{\egg: Fast and Extensible Equality Saturation}
+\title{\egg: 快速和可拓展的等式饱和}
+% \egg: 快速和可拓展的等式饱和
+
+\usepackage{xspace}
+\usepackage{xargs}
+\usepackage[
+  colorinlistoftodos,
+  prependcaption,
+  % disable,
+]{todonotes}
+\usepackage{fontenc}
+
+
+\usepackage{subcaption}
+
+% \usepackage{hyperref}
+\def\sectionautorefname{Section}
+\def\subsectionautorefname{Section}
+\def\subsubsectionautorefname{Section}
+
+\usepackage{listings}
+\lstset{
+  columns=flexible,
+  keepspaces=true,
+  showstringspaces=false,
+  stringstyle=\slshape\color{green!40!black},
+  basicstyle=\ttfamily\small,
+  language=Python,
+  morekeywords={*, self},
+  commentstyle=\slshape\color{black!60},
+  tabsize=2,
+}
+
+\lstdefinelanguage{Rust}{
+  sensitive,
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  moredelim=[s][{\itshape\color[rgb]{0,0,0.75}}]{\#[}{]},
+  morestring=[b]{"},
+  alsodigit={},
+  alsoother={},
+  alsoletter={!},
+  % keywords
+  otherkeywords={=>},
+  morekeywords={break, continue, else, for, if, in, loop, match, return, while},
+  morekeywords={as, const, let, move, mut, ref, static, unsafe},
+  morekeywords={dyn, enum, fn, impl, Self, self, struct, trait, type, use, where},
+  morekeywords={crate, extern, mod, pub, super},
+  morekeywords={abstract, alignof, become, box, do, final, macro,
+    offsetof, override, priv, proc, pure, sizeof, typeof, unsized, virtual, yield},
+  % traits
+  morekeywords=[2]{Send},
+  % types
+  morekeywords=[3]{bool, char, f32, f64, i8, i16, i32, i64, isize, str, u8, u16, u32, u64, unit, usize, i128, u128},
+}%
+
+
+\author{Max Willsey}
+\affiliation{\institution{University of Washington, Seattle} \country{USA}}
+\author{Chandrakana Nandi}
+\affiliation{\institution{University of Washington, Seattle} \country{USA}}
+\author{Yisu Remy Wang}
+\affiliation{\institution{University of Washington, Seattle} \country{USA}}
+\author{Oliver Flatt}
+\affiliation{\institution{University of Utah, Salt Lake City} \country{USA}}
+\author{Zachary Tatlock}
+\affiliation{\institution{University of Washington, Seattle} \country{USA}}
+\author{Pavel Panchekha}
+\affiliation{\institution{University of Utah, Salt Lake City} \country{USA}}
+
+\input{macros}
+\input{results}
+
+\begin{abstract}
+  \input{00-abstract}
+\end{abstract}
+
+\begin{document}
+
+\maketitle
+\renewcommand{\shortauthors}{Willsey et al.}
+
+% \listoftodos does not work with acmart by default
+% https://groups.google.com/forum/#!topic/comp.text.tex/jiA1XWJc3ck
+\makeatletter
+\providecommand\@dotsep{5}
+\makeatother
+
+% If you have a multi-paragraph TODO, use the all-capitals version
+% your TODO macro to avoid breaking the build (the \listoftodos above
+% does not like paragraph breaks).
+%
+% Example:
+%
+%    \ZACH{%
+%      This TODO has two parts after this brief introduction:
+%
+%      Here is the first part in one paragraph.
+%
+%      This is the second part in another paragraph.
+%    }
+
+\input{01-intro}
+\input{02-background}
+\input{03-rebuilding}
+\input{04-tricks}
+\input{05-impl}
+\input{06-case-studies}
+% numbering break, these must come last
+\input{09-related}
+\input{10-conclusion}
+
+%\newpage
+%\listoftodos[\textbf{TODOs}]\relax
+
+
+\begin{acks}
+  % Thanks to our anonymous paper and artifact reviewers for their feedback. 
+  感谢我们的匿名论文和工件审稿人的反馈。
+  % Special thanks to our shepherd Simon Peyton Jones,
+  %   Leonardo de Moura,
+  %   and many
+  %   members of the \href{https://uwplse.org}{PLSE} group.
+  特别感谢我们的指导人 Simon Peyton Jones, Leonardo de Moura, 
+  和~\href{https://uwplse.org}{PLSE}~小组的许多成员。
+  % This work was supported in part by
+  %   the Applications Driving Architectures (ADA) Research Center,
+  %   a JUMP Center co-sponsored by SRC and DARPA,
+  %   as well as the National Science Foundation
+  %   under Grant Nos. 1813166 and 1749570.
+  这项工作得到了由 SRC 和 DARPA 共同赞助的 JUMP 中心的
+    应用驱动体系结构（Applications Driving Architectures, ADA）研究中心的部分支持，
+  以及 Grant Nos. 1813166 和 1749570 号国家科学基金会的支持。
+\end{acks}
+
+
+\bibliography{references}
+
+\end{document}

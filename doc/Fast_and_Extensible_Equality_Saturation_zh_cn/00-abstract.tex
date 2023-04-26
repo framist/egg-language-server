@@ -1,0 +1,122 @@
+% 翻译完成
+% 原文：
+% An \egraph efficiently represents
+%   a congruence relation over many expressions.
+% Although they were originally developed in the late 1970s
+%   for use in automated theorem provers,
+%   a more recent technique known as \textit{equality saturation}
+%   repurposes \egraphs to implement state-of-the-art,
+%   rewrite-driven compiler optimizations and program synthesizers.
+% However, \egraphs remain unspecialized for this newer use case.
+% Equality saturation workloads exhibit distinct characteristics and
+%   often require ad~hoc \egraph extensions to
+%   incorporate transformations beyond purely syntactic rewrites.
+一个 \egraph （e 图）可以有效地表示许多表达式上的同构关系。
+虽然它最初是在 20 世纪 70 年代末为用于自动定理证明器而开发的，
+  最近的一项技术被称为 \textit{等式饱和（equality saturation）}。
+  重新利用了 \egraphs 来实现最先进的技术（SOTA），用于
+  重写驱动的编译器优化和程序综合器（program synthesizers）。
+然而，对于这种新的使用情况，\egraphs 仍然没有被专门化。
+等式饱和的工作量表现出明显的特征，并且
+  往往需要专门的 \egraph 扩展来纳入纯语法重写之外的转换。
+
+% This work contributes two techniques that make
+%   \egraphs fast and extensible, specializing them to equality saturation.
+% A new amortized invariant restoration technique called \textit{rebuilding}
+%   takes advantage of equality saturation's distinct workload,
+%   providing asymptotic speedups over current techniques in practice.
+% A general mechanism called \textit{\eclass analyses}
+%   integrates domain-specific analyses into the \egraph,
+%   reducing the need for ad hoc manipulation.
+我们的工作提供了两项技术，使 \egraphs 快速和方便扩展，
+  使其专门用于等式饱和。
+一是新的摊销的不变性恢复技术，称为 \textit{重建（rebuilding）} 。
+  利用了等式饱和的独特工作量。
+  在实践中提供了比目前技术更多的渐进式加速（asymptotic speedups）。
+二是一个名为 \textit{\eclass analyses} （e类分析）的通用机制，它
+  将特定领域的分析整合到 \egraph 中，减少了临时操作的需要。         
+
+% We implemented these techniques in
+%   a new open-source library called \egg.
+% Our case studies on
+%   three previously published applications of equality saturation
+%   highlight how \egg's performance and flexibility
+%   enable state-of-the-art results across diverse domains.
+我们将这些技术在一个新的开源库实现，叫做 \egg。
+我们对以前发表的三个等式饱和的应用进行了案例研究，
+  它突出了 \egg 的性能和灵活性，在不同的领域可达到最先进的效果。
+
+
+%% --------------------------------------------------------------------------
+
+%% \Egraphs are data structures originally developed in the 1970s
+%%   for automated theorem provers to
+%%   efficiently encode congruence relations over many expressions.
+%% More recently, a technique known as \textit{equality saturation}
+%%   has demonstrated promising results using \egraphs to implement
+%%   rewrite-driven compiler optimizations and program synthesizers.
+%% However, \egraphs have not been specialized to this use case.
+%% Equality saturation workloads have distinct characteristics
+%%   compared to the more general setting and
+%%   often require \textit{ad hoc} extensions to
+%%   incorporate transformations beyond syntactic rewrites.
+
+%% In this work, we contribute two new techniques to make
+%%   \egraphs fast and extensible for equality saturation.
+%% We introduce \textit{rebuilding},
+%%   a new, amortized algorithm for maintaining congruence closure
+%%   that is specialized to the equality saturation workload,
+%%   achieving super-linear speedups over current techniques in practice.
+%% We also propose \textit{\eclass analyses},
+%%   a general mechanism for integrating program analyses into the \egraph,
+%%   reducing the need for \textit{ad hoc} manipulation.
+
+%% We implemented these techniques in
+%%   a new open-source library called \egg.
+%% Our case studies on
+%%   three previously published applications of equality saturation
+%%   highlight how the flexibility of \eclass analysis
+%%   supports diverse domains and
+%%   how \egg can provide up to $3000\times$ speed ups.
+
+%% --------------------------------------------------------------------------
+
+
+%% An \egraph is a data structure originating from automated theorem provers that
+%%   efficiently encodes a congruence relation over many expressions.
+%% A more recent technique called \textit{equality saturation}
+%%   achieves promising results
+%%   using \egraphs to implement rewrite-driven compiler optimizations.
+%% However, \egraphs ultimately remain better designed for their original use case.
+%% Equality saturation implementations
+%%   have not specialized \egraphs to a workload that is
+%%   very different from that of theorem provers.
+%% Users also frequently resort to \textit{ad hoc} manipulation to implement
+%%   program analyses over the \egraph.
+%% \Max{still not 100\% about the last sentence}
+
+%% In this work, we contribute two new techniques to make equality saturation fast
+%%   and extensible.
+%% We introduce \textit{rebuilding}, a new, simpler algorithm for maintaining
+%%   congruence closure that is specialized to the equality saturation workload,
+%%   achieving an asymptotic speedup over current techniques.
+%% We also propose \textit{\eclass analyses}, a general mechanism for
+%%   integrating program analyses into the \egraph
+%%   that can replace \textit{ad hoc} manipulation.
+
+%% We realize these techniques in an open-source implementation called
+%%   \egg, an easy, efficient, and extensible \egraph library.
+%% With these contributions, we re-propose \egraphs and equality saturation as a
+%%   solution to a diverse set of optimization and synthesis problems.
+%% We highlight three applications in published works that rely on \egg's
+%%   flexibility and speed to
+%%   easily implement robust optimizers,
+%%   add powerful analyses to them,
+%%   and achieve up to $3000\times$ speed up.
+%% \Max{still a little awkward, this sentence is saying a lot}
+
+
+
+%%% Local Variables:
+%%% TeX-master: "egg"
+%%% End:

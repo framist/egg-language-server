@@ -1,0 +1,225 @@
+% 翻译完成；代码注释未翻译
+\begin{figure}
+\begin{minipage}[t]{0.49\linewidth}
+  \begin{lstlisting}[language=Rust, basicstyle=\tiny\ttfamily, numbers=left]
+type EGraph = egg::EGraph<Lambda, LambdaAnalysis>;
+struct LambdaAnalysis;
+struct FC {
+  free: HashSet<Id>,    // 我们的分析数据存储自由变量
+  constant: Option<Lambda>, // 以及常量值（如果有）
+}
+
+// 帮助函数，用于制作模式元变量（pattern meta-variables）
+fn var(s: &str) -> Var { s.parse().unwrap() }
+
+impl Analysis<Lambda> for LambdaAnalysis {
+  type Data = FC; // 将 FC 附加到每个 eclass
+  // merge 通过合并到 “to” 实现半格联并 (semilattice join)
+  // 如果 “to” 数据被修改，则返回 true
+  fn merge(&self, to: &mut FC, from: FC) -> bool {
+    let before_len = to.free.len();
+    // union the free variables 联并自由变量
+    to.free.extend(from.free.iter().copied());
+    if to.constant.is_none() && from.constant.is_some() {
+      to.constant = from.constant;
+      true
+    } else {
+      before_len != to.free.len()
+    }
+  }
+
+  fn make(egraph: &EGraph, enode: &Lambda) -> FC {
+    let f = |i: &Id| egraph[*i].data.free.iter().copied();
+    let mut free = HashSet::default();
+    match enode {
+      Use(v) => { free.insert(*v); }
+      Let([v, a, b]) => {
+        free.extend(f(b)); free.remove(v); free.extend(f(a));
+      }
+      Lambda([v, b]) | Fix([v, b]) => {
+        free.extend(f(b)); free.remove(v);
+      }
+      _ => enode.for_each_child(
+             |c| free.extend(&egraph[c].data.free)),
+    }
+    FC { free: free, constant: eval(egraph, enode) }
+  }
+
+  fn modify(egraph: &mut EGraph, id: Id) {
+    if let Some(c) = egraph[id].data.constant.clone() {
+      let const_id = egraph.add(c);
+      egraph.union(id, const_id);
+    }
+  }
+}\end{lstlisting}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.46\linewidth}
+  \begin{lstlisting}[language=Rust, basicstyle=\tiny\ttfamily, escapechar=@, numbers=left, firstnumber=51]
+// 如果子元素有常量，评估 enode
+// Rust的 `?` 提取一个 Option，如果是 None，则提前返回。
+fn eval(eg: &EGraph, enode: &Lambda) -> Option<Lambda> {
+  let c = |i: &Id| eg[*i].data.constant.clone();
+  match enode {
+    Num(_) | Bool(_) => Some(enode.clone()),
+    Add([x, y]) => Some(Num(c(x)? + c(y)?)),
+    Eq([x, y]) => Some(Bool(c(x)? == c(y)?)),
+    _ => None,
+  }
+}
+
+// 这种类型的函数可以作为重写的条件
+trait ConditionFn = Fn(&mut EGraph, Id, &Subst) -> bool;
+
+// 以下两个函数返回正确签名的闭包，
+// 它可用作 @\autoref{fig:lambda-rules}@ 中的条件
+fn is_not_same_var(v1: Var, v2: Var) -> impl ConditionFn {
+    |eg, _, subst| eg.find(subst[v1]) != eg.find(subst[v2])
+}
+fn is_const(v: Var) -> impl ConditionFn {
+     // check the LambdaAnalysis data
+    |eg, _, subst| eg[subst[v]].data.constant.is_some()
+}
+
+struct CaptureAvoid {
+  fresh: Var, v2: Var, e: Var,
+  if_not_free: Pattern<Lambda>, if_free: Pattern<Lambda>,
+}
+
+impl Applier<Lambda, LambdaAnalysis> for CaptureAvoid {
+  // 给定egraph、匹配的 eclass id 和匹配生成的替换，
+  // 应用重写
+  fn apply_one(&self, egraph: &mut EGraph,
+               id: Id, subst: &Subst) -> Vec<Id>
+  {
+    let (v2, e) = (subst[self.v2], subst[self.e]);
+    let v2_free_in_e = egraph[e].data.free.contains(&v2);
+    if v2_free_in_e {
+      let mut subst = subst.clone();
+      // 使用eclass id制作新的符号 (fresh symbol)
+      let sym = Lambda::Symbol(format!("_{}", id).into());
+      subst.insert(self.fresh, egraph.add(sym));
+      // 使用修改后的 subst 应用于给定的模式
+      self.if_free.apply_one(egraph, id, &subst)
+    } else {
+      self.if_not_free.apply_one(egraph, id, &subst)
+    }
+  }
+}\end{lstlisting}
+  % \caption{
+  %   Some of the rewrites in \autoref{fig:lambda-rules} are conditional,
+  %     requiring conditions like \texttt{is\_not\_same\_var} or \texttt{is\_const}.
+  %   Others are fully dynamic, using a custom applier like \texttt{CaptureAvoid}
+  %     instead of a syntactic right-hand side.
+  %   Both conditions and custom appliers can use the computed data from the
+  %     \eclass analysis; for example, \texttt{CaptureAvoid} only $\alpha$-renames if
+  %     there might be a name collision.
+  % }
+\end{minipage}
+\caption[\Eclass analysis and conditional/dynamic rewrites for the lambda calculus]{
+% Our partial evaluator example highlights three important features \egg provides
+%   for extensibility: \eclass analyses, conditional rewrites, and dynamic
+%   rewrites.
+我们的部分评估器示例突出了 \egg 提供扩展性的三个重要特性：\eclass 分析、条件重写和动态重写。
+  
+% The \texttt{LambdaAnalysis} type, which implements the \texttt{Analysis} trait,
+%   represents the \eclass analysis.
+% Its associated data (\texttt{FC}) stores
+%   the constant term from that \eclass (if any) and
+%   an over-approximation of the free variables used by terms in that \eclass.
+% The constant term is used to perform constant folding.
+% The \texttt{merge} operation implements the semilattice join, combining the free
+%   variable sets and taking a constant if one exists.
+% In \texttt{make}, the analysis computes the free variable sets based on the
+%   \enode and the free variables of its children;
+%   the \texttt{eval} generates the new constants if possible.
+% The \texttt{modify} hook of \texttt{Analysis} adds the constant to the \egraph.
+\texttt{LambdaAnalysis} 类型实现了 \texttt{Analysis} trait
+  %\footnote{【译注】\; trait，类似抽象接口或泛型约束，是 Rust 语言中的概念}
+  ，表示 \eclass 分析。 %？
+它的关联数据 (\texttt{FC}) 存储来自该 \eclass 的常量项（如果有）
+  和该 \eclass 中项目使用的自由变量的上近似（over-approximation）。
+常量项用于进行常量折叠。
+\texttt{merge} 操作实现了半格联并（semilattice join），
+  结合自由变量集并采用常量（如果存在）。
+在 \texttt{make} 中，分析基于 \enode 和它的子节点的自由变量集计算自由变量集；
+  如果可能，\texttt{eval} 生成新的常量。
+\texttt{Analysis} 的 \texttt{modify} 钩子将常量添加到 \egraph 中。
+
+
+% Some of the conditional rewrites in \autoref{fig:lambda-rules} depend on
+%   conditions defined here.
+% Any function with the correct signature may serve as a condition.
+\autoref{fig:lambda-rules} 中的一些条件重写取决于这里定义的条件。
+任何具有正确签名的函数都可以作为条件。
+
+% The \texttt{CaptureAvoid} type implements the \texttt{Applier} trait, allowing
+%   it to serve as the right-hand side of a rewrite.
+% \texttt{CaptureAvoid} takes two patterns and some pattern variables.
+% It checks the free variable set to determine if a capture-avoiding substitution
+%   is required, applying the \texttt{if\_free} pattern if so and the
+%   \texttt{if\_not\_free} pattern otherwise.
+\texttt{CaptureAvoid} 类型实现了 \texttt{Applier} trait，允许它作为重写的右式。
+\texttt{CaptureAvoid} 接受两个模式和一些模式变量。
+它检查自由变量集来确定是否需要捕获避免的替换，
+  如果需要，则应用 \texttt{if\_free} 模式，
+  否则应用 \texttt{if\_not\_free} 模式。
+}
+\label{fig:lambda-applier}
+\label{fig:lambda-analysis}
+\end{figure}
+
+% 【注释翻译原文】
+%   free: HashSet<Id>,    // our analysis data stores free vars
+%   constant: Option<Lambda>, // and the constant value, if any
+
+% // helper function to make pattern meta-variables
+
+% impl Analysis<Lambda> for LambdaAnalysis {
+%   type Data = FC; // attach an FC to each eclass
+%   // merge implements semilattice join by joining into `to`
+%   // returning true if the `to` data was modified
+%   fn merge(&self, to: &mut FC, from: FC) -> bool {
+%     let before_len = to.free.len();
+%     // union the free variables
+%     to.free.extend(from.free.iter().copied());
+%     if to.constant.is_none() && from.constant.is_some() {
+%       to.constant = from.constant;
+%       true
+%     } else {
+%       before_len != to.free.len()
+%     }
+%   }
+
+% // evaluate an enode if the children have constants
+% // Rust's `?` extracts an Option, early returning if None
+
+% // Functions of this type can be conditions for rewrites
+
+% // The following two functions return closures of the
+% // correct signature to be used as conditions in @\autoref{fig:lambda-rules}@.
+
+% impl Applier<Lambda, LambdaAnalysis> for CaptureAvoid {
+%   // Given the egraph, the matching eclass id, and the
+%   // substitution generated by the match, apply the rewrite
+%   fn apply_one(&self, egraph: &mut EGraph,
+%                id: Id, subst: &Subst) -> Vec<Id>
+%   {
+%     let (v2, e) = (subst[self.v2], subst[self.e]);
+%     let v2_free_in_e = egraph[e].data.free.contains(&v2);
+%     if v2_free_in_e {
+%       let mut subst = subst.clone();
+%       // make a fresh symbol using the eclass id
+%       let sym = Lambda::Symbol(format!("_{}", id).into());
+%       subst.insert(self.fresh, egraph.add(sym));
+%       // apply the given pattern with the modified subst
+%       self.if_free.apply_one(egraph, id, &subst)
+%     } else {
+%       self.if_not_free.apply_one(egraph, id, &subst)
+%     }
+%   }
+% }
+
+%%% Local Variables:
+%%% TeX-master: "egg"
+%%% End:

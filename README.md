@@ -105,10 +105,10 @@ egg 的源码优化主要分为以下过程：
 0. 在此文件夹上打开 VS Code
 1. 在此文件夹中运行 `npm install` , 这将在客户端文件夹中安装所有必要的 npm 模块
 2. `cargo build`
-3. press <kbd>F5</kbd> or
+3. 按下 <kbd>F5</kbd> 或者
    1. 切换到侧栏中的运行和调试视图 (Ctrl+Shift+D).
-   2. Select `Launch Client` from the drop down (if it is not already).
-   3. Press ▷ to run the launch config (F5).
+   2. 从下拉列表中选择 `Run Extension (Debug Build)` (如果尚未默认选择)。
+   3. 点击 ▷ 运行启动配置 (F5).
 
 
 ## 已知问题

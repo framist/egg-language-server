@@ -1,0 +1,199 @@
+% 翻译完成
+\begin{figure}
+\begin{subfigure}[t]{0.48\linewidth}
+  \begin{lstlisting}[language=Rust, basicstyle=\tiny\ttfamily, numbers=left, escapechar=|]
+define_language! {
+  enum Lambda {
+    // 枚举变量具有数据或子元素（eclass Ids）
+    // [Id; N] 是 N 个 Id 的数组
+
+    // 基础类型操作符
+    "+" = Add([Id; 2]), "=" = Eq([Id; 2]),
+    "if" = If([Id; 3]),
+
+    // 函数和绑定
+    "app" = App([Id; 2]), "lam" = Lambda([Id; 2]),
+    "let" = Let([Id; 3]), "fix" = Fix([Id; 2]),
+
+    // （var x）是使用`x`作为表达式
+    "var" = Use(Id),
+    // （subst a x b）在 b 中替换（var x）的 a
+    "subst" = Subst([Id; 3]),
+
+    // 基础类型没有子元素，只有数据
+    Bool(bool), Num(i32), Symbol(String),
+  }
+}
+
+// 示例项和它们简化为的内容
+// 直接从 |\egg| 测试套件中提取
+
+test_fn! { lambda_under, rules(),
+  "(lam x (+ 4 (app (lam y (var y)) 4)))"
+  => "(lam x 8))",
+}
+
+test_fn! { lambda_compose_many, rules(),
+  "(let compose (lam f (lam g (lam x
+                (app (var f)
+                     (app (var g) (var x))))))
+   (let add1 (lam y (+ (var y) 1))
+   (app (app (var compose) (var add1))
+        (app (app (var compose) (var add1))
+             (app (app (var compose) (var add1))
+                  (app (app (var compose) (var add1))
+                       (var add1)))))))"
+  => "(lam ?x (+ (var ?x) 5))"
+}
+
+test_fn! { lambda_if_elim, rules(),
+  "(if (= (var a) (var b))
+       (+ (var a) (var a))
+       (+ (var a) (var b)))"
+  => "(+ (var a) (var b))"
+}\end{lstlisting}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.48\linewidth}
+  \begin{lstlisting}[language=Rust, basicstyle=\tiny\ttfamily, escapechar=|, numbers=left, firstnumber=51]
+// 返回重写规则列表
+fn rules() -> Vec<Rewrite<Lambda, LambdaAnalysis>> { vec![
+
+ // open term rules 开放项规则
+ rw!("if-true";  "(if  true ?then ?else)" => "?then"),
+ rw!("if-false"; "(if false ?then ?else)" => "?else"),
+ rw!("if-elim";  "(if (= (var ?x) ?e) ?then ?else)" => "?else"
+     if ConditionEqual::parse("(let ?x ?e ?then)",
+                              "(let ?x ?e ?else)")),
+ rw!("add-comm";  "(+ ?a ?b)"        => "(+ ?b ?a)"),
+ rw!("add-assoc"; "(+ (+ ?a ?b) ?c)" => "(+ ?a (+ ?b ?c))"),
+ rw!("eq-comm";   "(= ?a ?b)"        => "(= ?b ?a)"),
+
+ // substitution introduction 替换引入
+ rw!("fix";     "(fix ?v ?e)" =>
+                "(let ?v (fix ?v ?e) ?e)"),
+ rw!("beta";    "(app (lam ?v ?body) ?e)" =>
+                "(let ?v ?e ?body)"),
+
+ // substitution propagation 替换传播
+ rw!("let-app"; "(let ?v ?e (app ?a ?b))" =>
+                "(app (let ?v ?e ?a) (let ?v ?e ?b))"),
+ rw!("let-add"; "(let ?v ?e (+   ?a ?b))" =>
+                "(+   (let ?v ?e ?a) (let ?v ?e ?b))"),
+ rw!("let-eq";  "(let ?v ?e (=   ?a ?b))" =>
+                "(=   (let ?v ?e ?a) (let ?v ?e ?b))"),
+ rw!("let-if";  "(let ?v ?e (if ?cond ?then ?else))" =>
+                "(if (let ?v ?e ?cond)
+                     (let ?v ?e ?then)
+                     (let ?v ?e ?else))"),
+
+ // substitution elimination 替换消除
+ rw!("let-const";    "(let ?v ?e ?c)" => "?c"
+     if is_const(var("?c"))),
+ rw!("let-var-same"; "(let ?v1 ?e (var ?v1))" => "?e"),
+ rw!("let-var-diff"; "(let ?v1 ?e (var ?v2))" => "(var ?v2)"
+     if is_not_same_var(var("?v1"), var("?v2"))),
+ rw!("let-lam-same"; "(let ?v1 ?e (lam ?v1 ?body))" =>
+                     "(lam ?v1 ?body)"),
+ rw!("let-lam-diff"; "(let ?v1 ?e (lam ?v2 ?body))" =>
+     ( CaptureAvoid {
+        fresh: var("?fresh"), v2: var("?v2"), e: var("?e"),
+        if_not_free: "(lam ?v2 (let ?v1 ?e ?body))"
+                     .parse().unwrap(),
+        if_free: "(lam ?fresh (let ?v1 ?e
+                              (let ?v2 (var ?fresh) ?body)))"
+                 .parse().unwrap(),
+     })
+     if is_not_same_var(var("?v1"), var("?v2"))),
+]}\end{lstlisting}
+\end{subfigure}
+\caption[Language and rewrites for the lambda calculus in \egg]{
+% \egg is generic over user-defined languages;
+%   here we define a language and rewrite rules for a lambda calculus partial evaluator.
+% The provided \texttt{define\_language!} macro (lines 1-22) allows the simple definition
+%   of a language as a Rust \texttt{enum}, automatically deriving parsing and
+%   pretty printing.
+% A value of type \texttt{Lambda} is an \enode that holds either data that the
+%   user can inspect or some number of \eclass children (\eclass \texttt{Id}s).
+\egg 是针对用户定义语言的通用框架；
+  在这里，我们为 lambda 计算的部分求值器定义了语言和重写规则。 %？lambda calculus partial evaluator
+提供的 \texttt{define\_language!} 宏（行1-22）
+  允许简单地将语言定义为 Rust \texttt{enum}，可自动派生出解析器和产生漂亮的输出的打印器。
+\texttt{Lambda} 类型的值是一个 \enode，
+  它保存用户可以检查的数据或一些 \eclass 子节点（\eclass \texttt{Id}s）。
+
+% Rewrite rules can also be defined succinctly (lines 51-100).
+% Patterns are parsed as s-expressions:
+%   strings from the \texttt{define\_language!} invocation (ex: \texttt{fix}, \texttt{=}, \texttt{+}) and
+%   data from the variants (ex: \texttt{false}, \texttt{1}) parse as operators or terms;
+%   names prefixed by ``\texttt{?}'' parse as pattern variables.
+也可以简洁地定义重写规则（行51-100）。
+模式被解析为 s-expressions：
+  从 \texttt{define\_language!} 调用中解析的字符串
+  （如: \texttt{fix}, \texttt{=}, \texttt{+}）和
+  从变体（variant）中解析的数据 % ？ variant
+  （如: \texttt{false}, \texttt{1}）
+  解析为运算符或项（term）；% ？ term
+  以 ``\texttt{?}'' 为前缀的名称解析为模式变量。
+
+% Some of the rewrites made are conditional using the
+%   ``\texttt{left => right if cond}''
+%   syntax.
+% The \texttt{if-elim} rewrite on line 57 uses \egg's provided
+%   \texttt{ConditionEqual} as a condition, only applying the right-hand side
+%   if the \egraph can prove the two argument patterns equivalent.
+% The final rewrite, \texttt{let-lam-diff}, is dynamic to support capture avoidance;
+%   the right-hand side is a Rust value that
+%   implements the \texttt{Applier} trait instead of a pattern.
+% \autoref{fig:lambda-analysis} contains the supporting code for these rewrites.
+其中一些重写是条件重写，使用 ``\texttt{left => right if cond}'' 语法。
+在57行的 \texttt{if-elim} 重写使用 \egg 提供的
+  \texttt{ConditionEqual}作为条件，
+  只有在 \egraph 可以证明两个参数模式等价时才应用右式。
+最终的重写 \texttt{let-lam-diff} 是动态的，用来支持捕获避免（capture avoidance）；
+  右边是一个实现了 \texttt{Applier} 的 trait 而不是模式的 Rust 值。% trait
+\autoref{fig:lambda-analysis} 包含了这些重写的支持代码。
+
+% We also show some of the tests (lines 27-50)
+%   from \egg's \texttt{lambda} test suite.
+% The tests proceed by inserting the term on the left-hand side, running
+%   \egg's equality saturation, and then checking to make sure the right-hand
+%   pattern can be found in the same \eclass as the initial term.
+我们也展示了 \egg's \texttt{lambda} 测试套件的一些测试（行~ 27-50）。
+测试的过程是在左边插入 term ，运行\egg 的 等式饱和，
+  然后检查以确保右部的模式可以在与初始 term 相同的 \eclass 中找到。
+}
+\label{fig:lambda-rules}
+\label{fig:lambda-lang}
+\label{fig:lambda-examples}
+\end{figure}
+
+% 代码注释翻译：
+
+%     // enum variants have data or children (eclass Ids)
+%     // [Id; N] is an array of N `Id`s
+% // 枚举变量具有数据或子元素（eclass Ids）
+% // [Id; N]是 N 个 Id 的数组
+%     // base type operators
+% // 基础类型操作符
+%     // functions and binding
+% // 函数和绑定
+%     // (var x) is a use of `x` as an expression
+% // （var x）是使用`x`作为表达式
+%     // (subst a x b) substitutes a for (var x) in b
+% // （subst a x b）在 b 中替换（var x）的 a
+%     // base types have no children, only data
+% // 基础类型没有子元素，只有数据
+
+% // example terms and what they simplify to
+% // pulled directly from the |\egg|test suite
+% 示例项和它们简化为的内容
+% 直接从|\egg|测试套件中提取
+% // Returns a list of rewrite rules
+% 返回重写规则列表
+% // open term rules
+% 打开 term 规则
+
+%%% Local Variables:
+%%% TeX-master: "egg"
+%%% End:

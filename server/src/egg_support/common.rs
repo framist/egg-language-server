@@ -413,7 +413,7 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         rw!("let-var-same"; "(let ?v1 ?e (var ?v1))" => "?e"),
         rw!("let-var-diff"; "(let ?v1 ?e (var ?v2))" => "(var ?v2)"
             if is_not_same_var(var("?v1"), var("?v2"))),
-        rw!("let-lam-same"; "(let ?v1 ?e (lam ?v1 ?body))" => "(lam ?v1 ?body)"),
+        rw!("let-lam-same"; "(let ?v1 ?e (lam ?v1 ?body))" => "(lam ?v1 ?body)"), // = identity_assignment sikp
         rw!("let-lam-diff";
             "(let ?v1 ?e (lam ?v2 ?body))" =>
             { CaptureAvoid {
@@ -493,8 +493,8 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         rw!("seq-end"; "(seq ?a nil)" => "?a"),
         rw!("seq-let"; "(seq (seqlet ?v ?e) ?body)" => "(let ?v ?e ?body)"),
         rw!("seq-assoc"; "(seq (seq ?a ?b) ?c)" => "(seq ?a (seq ?b ?c))"),
-        rw!("seq-skip-before"; "(seq skip ?a)" => "?a"),
-        rw!("seq-skip-after"; "(seq ?a skip)" => "?a"),
+        rw!("seq-skip-left"; "(seq skip ?a)" => "?a"),
+        rw!("seq-skip-right"; "(seq ?a skip)" => "?a"),
         // TODO ...
 
     ]

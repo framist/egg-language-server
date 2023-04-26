@@ -1,0 +1,313 @@
+\section{引入}
+% Introduction
+\label{sec:intro}
+
+% 翻译完成
+
+% Equality graphs (\egraphs) were originally developed to
+%   efficiently represent congruence relations
+%   in automated theorem provers (ATPs).
+% At a high level, \egraphs~\cite{nelson, pp-congr}
+%   extend union-find~\cite{unionfind} to compactly represent
+%   equivalence classes of expressions while
+%   maintaining a key invariant:
+%   the equivalence relation is closed under congruence.\footnote{
+%     Intuitively, congruence simply means
+%     that $a \equiv b$ implies $f(a) \equiv f(b)$.} 
+等价图（Equality graphs，即 \egraph）最初是为了
+  在自动定理证明器（ATPs）中有效地表示同余（congruence）关系。
+在高层次上， \egraphs~\cite{nelson, pp-congr} 
+  扩展了并查集（union-find）~\cite{unionfind}，用来紧凑地表示
+  表达式的等价类，同时保持一个关键的不变性：
+  等价关系在同余下是封闭的。\footnote{
+    直观地说，同余简单的说就是
+    $a \equiv b$ 蕴含 $f(a) \equiv f(b)$.}
+
+    
+% Over the past decade, several projects have repurposed \egraphs
+%   to implement state-of-the-art, rewrite-driven
+%   compiler optimizations and program synthesizers
+%   using a technique known as \textit{equality saturation}~\cite{
+%     denali, eqsat, eqsat-llvm, szalinski, yogo-pldi20, spores, herbie}.
+% Given an input program $p$,
+%   equality saturation constructs an \egraph $E$ that
+%   represents a large set of programs equivalent to $p$,
+%   and then extracts the ``best'' program from $E$.
+% The \egraph is grown by repeatedly applying
+%   pattern-based rewrites.
+% Critically, these rewrites only add information to the \egraph,
+%   eliminating the need for careful ordering.
+% Upon reaching a fixed point (\textit{saturation}),
+%   $E$ will represent \textit{all equivalent ways} to
+%   express $p$ with respect to the given rewrites.
+% After saturation (or timeout),
+%   a final \textit{extraction} procedure
+%   analyzes $E$ and selects the
+%   optimal program according to
+%   a user-provided cost function.
+在过去的十年中，一些项目重新利用了 \egraphs
+  来实现最先进的重写驱动的编译器优化和程序综合器。
+  它们使用一种被称为 \textit{等式饱和}~\cite{
+    denali, eqsat, eqsat-llvm, szalinski, yogo-pldi20, spores, herbie} 的技术。
+给定一个输入程序 $p$ ，
+   等式饱和 构建了一个 $E$ 图，它代表了一大批与之等价的程序。
+  代表与 $p$ 等价的一大组程序。然后从 $E$ 中提取 "最好的 "程序。
+该图增长是通过反复应用基于模式的重写。
+最重要的是，这些改写只向 \egraph 增加信息。消除了对仔细排序的需要。
+在达到一个不动点（\textit{饱和}）时，
+  $E$ 将代表 \textit{所有等价的方式} 来表达表达 $p$ 与给定重写的关系。
+饱和（或超时）之后，最后的 \textit{萃取} （extraction）程序
+  将分析 $E$ 并选择根据用户提供的成本函数，选择最佳程序。
+
+
+% Ideally, a user could simply provide
+%   a language grammar and rewrites,
+%   and equality saturation would produce a effective optimizer.
+% Two challenges block this ideal.
+% First, maintaining congruence can become expensive as $E$ grows.
+% In part, this is because \egraphs from the conventional ATP setting
+%   remain unspecialized to the distinct \textit{equality saturation workload}.
+% Second, many applications critically depend on
+%   \textit{domain-specific analyses}, but
+%   integrating them requires ad~hoc extensions to the \egraph.
+% The lack of a general extension mechanism
+%   has forced researchers to re-implement
+%   equality saturation from scratch several times~\cite{herbie, eqsat, wu_siga19}.
+% These challenges limit equality saturation's practicality.
+理想情况下，用户可以简单地提供一个语言语法和一些重写规则。
+  而 等式饱和 将产生一个有效的优化器。
+但是有两个挑战阻碍了我们的期望：
+首先，随着 $E$ 的增长，维持全等性会变得很昂贵（expensive）。
+部分原因是传统 ATP（Automated Theorem Proving，自动定理证明）设置中的 \egraphs 
+  仍然没有针对不同的 \textit{等式饱和工作负载（equality saturation workload）} 特化。
+其次，许多应用关键性地依赖于 \textit{领域特定的分析（domain-specific analyses）}，但是
+  集成它们需要对 \egraph 进行特别的扩展。
+由于缺乏一个通用的扩展机制迫使研究人员多次从头实现
+  等式饱和~\cite{herbie, eqsat, wu_siga19}。
+这些挑战限制了等式饱和的实用性。
+
+% \textit{Equality Saturation Workload. $\,$}
+% %
+% ATPs frequently query and modify \egraphs and
+%   additionally require \textit{backtracking} to
+%   undo modifications (e.g., in  DPLL(T)~\cite{dpll}).
+% These requirements force conventional \egraph designs
+%   to maintain the congruence invariant after every operation.
+% In contrast,
+%   the equality saturation workload does not require backtracking and
+%   can be factored into distinct phases of
+%   (1) querying the \egraph to simultaneously find all rewrite matches and
+%   (2) modifying the \egraph to merge in equivalences for all matched terms.
+\textit{等式饱和工作负载. $\,$}
+ATPs 经常查询和修改 \egraphs ，还需要对文本进行\textit{回溯（backtracking）}
+  来撤销修改（例如在 DPLL(T)~\cite{dpll} 中）。
+这些要求迫使传统的 \egraph 设计为在每次操作后都要保持同余不变性。
+与此相反，
+  等式饱和工作负载不需要回溯，并且可以被分解为以下不同的阶段：
+  (1) 查询 \egraph 以同时找到所有的重写匹配
+  (2) 修改 \egraph 以合并所有匹配术语的等价关系。
+
+% We present a new amortized algorithm
+%   called \textit{rebuilding} that defers \egraph invariant maintenance
+%   to equality saturation phase boundaries without compromising soundness.
+% Empirically, rebuilding provides asymptotic speedups
+%   over conventional approaches.
+我们提出了一种新的摊销算法 % amortized algorithm
+  称为 \textit{rebuilding} ，
+  该算法将 \egraph 的不变性维护推迟到等式饱和阶段的边界，而不影响健全性。
+从经验上看，重建算法比传统的方法提供了渐进式的速度提升。
+
+% \textit{Domain-specific Analyses. $\,$}
+% %
+% Equality saturation is primarily driven by syntactic rewriting,
+%   but many applications require additional interpreted reasoning
+%   to bring domain knowledge into the \egraph.
+% Past implementations have resorted to
+%   ad~hoc \egraph manipulations
+%   to integrate what would otherwise be
+%   simple program analyses like constant folding.
+\textit{特定领域分析. $\,$}
+等价物饱和主要由句法重写驱动。
+  但许多应用需要额外的解释推理以将领域知识带入 \egraph 中。
+过去的实现方式是诉诸于
+  临时性的 \egraph 操作来整合那些本来是简单的程序分析，如常量折叠（constant folding）。
+
+% To flexibly incorporate such reasoning,
+%   we introduce a new, general mechanism called \textit{\eclass analyses}.
+% An \eclass analysis annotates each \eclass
+%   (an equivalence class of terms)
+%   with facts drawn from a semilattice domain.
+为了灵活地纳入这种推理。
+  我们引入了一个新的、通用的机制，叫做 \textit{e 类分析（\eclass analyses）}。
+一个 \eclass 分析对每个 \eclass （term 的等价类）
+  用来自半格域（semilattice domain）的论据（fact）进行推导。
+%  % resembling an abstract interpretation lifted to \egraphs.
+% As the \egraph grows,
+%   facts are introduced, propagated, and joined
+%   to satisfy the \textit{\eclass analysis invariant},
+%   which relates analysis facts to the terms represented in the \egraph.
+% Rewrites cooperate with \eclass analyses by
+%   depending on analysis facts and
+%   adding equivalences that in turn
+%   establish additional facts.
+% Our case studies and examples
+%   (Sections \ref{sec:impl} and \ref{sec:case-studies})
+%   demonstrate \eclass analyses like
+%   constant folding and free variable analysis
+%   which required bespoke customization in
+%   previous equality saturation implementations.
+随着 \egraphs 的增长。论据被引入、传播和连接 
+  以满足 \textit{\eclass 分析不变量} 的要求。
+  它将分析论据 与 \egraph 中的项联系起来。
+重写与 \eclass 分析的合作方式是
+  依赖于分析论据和添加等价物，而这些等价物又建立额外的论据。
+我们的案例研究和示例 （ ~\ref{sec:impl} ~与~ \ref{sec:case-studies}~ 节）
+  展示了 \eclass 分析，如常量折叠和自由变量分析
+  这些分析需要在以前的等价饱和实现中需要进行专门定制。
+
+
+% \textit{\Egg. $\,$}
+% %
+% We implement rebuilding and \eclass analyses in
+%   an open-source\footnote{
+%     web: \url{https://egraphs-good.github.io},
+%     source: \url{https://github.com/egraphs-good/egg},
+%     documentation: \url{https://docs.rs/egg}
+%   }
+%   library called \egg (\textbf{e}-\textbf{g}raphs \textbf{g}ood).
+% \Egg specifically targets equality saturation,
+%   taking advantage of its workload characteristics and
+%   supporting easy extension mechanisms to
+%   provide \egraphs specialized for
+%   program synthesis and optimization.
+% \Egg also addresses more prosaic challenges,
+%   e.g., parameterizing over user-defined
+%   languages, rewrites, and cost functions
+%   while still providing an optimized implementation.
+% Our case studies demonstrate how \egg's features
+%   constitute a general, reusable \egraph library that can
+%   support equality saturation across diverse domains.
+% \textit{\Egg. $\,$}
+我们在一个开源库 \footnote{
+    主页: \url{https://egraphs-good.github.io},
+    源码: \url{https://github.com/egraphs-good/egg},
+    文档: \url{https://docs.rs/egg}
+  } 中实现了重建（rebuilding）和 \eclass 分析。
+  它称为 \egg (\textbf{e}-\textbf{g}raphs \textbf{g}ood)。
+\Egg 专门针对平等饱和。
+  利用其工作负载的特点和支持简单的扩展机制来提供针对 \egraphs 的程序综合和优化。
+\Egg 还解决了更多普通的挑战。
+  例如，在用户定义的语言、重写和成本函数上进行参数化。同时还提供了一个优化的实现。
+我们的案例研究表明，\egg 的功能是如何
+  构成了一个通用的、可重复使用的 \egraph 库，可以支持不同领域的等式饱和。
+
+% In summary, the contributions of this paper include:
+总而言之，本文的工作包括：
+
+\begin{itemize}
+
+% % \item Identifying that equality saturation
+% %   exposes \egraph to a workload different from
+% %   theorem provers~\cite{z3} and therefore can benefit from a
+% %   specialized algorithm for maintaining congruence.
+
+% \item Rebuilding (\autoref{sec:rebuilding}),
+%   a technique that restores key correctness and performance invariants
+%   only at select points in the equality saturation algorithm.
+%   Our evaluation demonstrates that rebuilding is faster than
+%   existing techniques in practice.
+\item 重建 (\autoref{sec:rebuilding})，
+  它是只在等式饱和算法的选定点恢复关键的正确性和性能不变性的一种技术。
+  我们的评估表明，重建的速度在实践中比现有技术更快。
+
+
+% \item \Eclass analysis (\autoref{sec:extensions}),
+%   a technique for integrating domain-specific analyses
+%   that cannot be expressed as purely syntactic rewrites.
+%   The \eclass analysis invariant provides the guarantees
+%   that enable cooperation between rewrites and analyses.
+\item \Eclass 分析 (\autoref{sec:extensions})，
+  它是一种整合特定领域分析的技术，不能被表达为纯粹的语法重写。
+  \eclass 分析的不变性保证使得重写和分析之间能够协作。
+
+
+% %    a technique for maintaining additional information in \eclasses
+% %    that enables integrating domain-specific analyses
+% %    that cannot be expressed as syntactic rewrites.
+
+% % \item Identifying the key invariants necessary
+% %   for a correct, high-performance \egraph library for equality saturation.
+
+% \item A fast, extensible implementation of
+%   \egraphs in a library dubbed \egg (\autoref{sec:impl}).
+\item 一个快速、可拓展的 \egraphs 实现库，称作 \egg (\autoref{sec:impl}).
+
+
+% \item Case studies of real-world, published tools that use \egg
+%     for deductive synthesis and program optimization across domains such as
+%     floating point accuracy,
+%     linear algebra optimization,
+%     and CAD program synthesis
+%     (\autoref{sec:case-studies}).
+%     Where previous implementations existed,
+%       \egg is orders of magnitude faster and offers more features.
+% \end{itemize}
+\item 真实世界的案例研究。使用已发布的 \egg 的工具，
+    用于演绎综合（deductive synthesis）和程序优化（ program optimization）的案例研究。
+    这些领域包括浮点精度、线性代数优化、和 CAD 程序综合(\autoref{sec:case-studies})。
+   相比以前的实现方式 \egg 的速度快了几个数量级，并提供了更多的功能。
+\end{itemize}
+
+% -------------------------
+
+% The rest of the paper is organized as follows:
+% \autoref{sec:background} provides background on term rewriting
+%   and defines \egraphs and the invariant, \congrinv.
+% It describes the equality saturation workload and how it compares
+%   to theorem proving.
+% \autoref{sec:rebuild} introduces \egg's novel algorithm
+%   for invariant maintenance called \textit{rebuilding}
+%   and evaluates it to demonstrate the resulting speedups.
+% \autoref{sec:extensions} introduces \eclass analysis and shows
+%   how it is used for conditional and dynamic rewrites, and extraction.
+% \autoref{sec:impl} discusses the implementation of \egg and
+%   presents a partial evaluator for the lambda calculus implemented
+%   using \egg.
+% \autoref{sec:case-studies} presents three major research projects that
+%   have used \egg as their equality saturation engine and benefited
+%   in terms of performance and scalability.
+% \autoref{sec:related} presents a summary of relevant related work and
+% \autoref{sec:conclusion} concludes.
+
+
+%\Zach{contributions}
+
+
+%% At a high level, \egraphs~\cite{nelson, pp-congr} store expressions
+%%   similarly to the union-find~\cite{unionfind} data structures
+%%   often used for representing equivalence relations.
+%% The key additional invariant maintained by the e-graph is that its
+%%   equivalence relation is closed under congruence.
+
+%  and a performance invariant ($\mathcal{I}_p$) ensuring that
+%  equivalent terms are stored without duplication, i.e. equivalent
+%  subterms are shared whenever possible.
+% \Max{dedup isn't a necessary invariant, it's for perf}
+
+%Equality saturation uses \egraphs to construct $E$,
+%  but the resulting workload exhibits distinct phases compared to ATPs and
+%  often requires ad~hoc extensions to integrate domain-specific analyses.
+
+% Second, integrating domain-specific analyses
+%   requires ad~hoc extensions to the \egraph.
+% The lack of a general extension mechanism
+%   complicates combining rewrites with analyses.
+% These challenges limit equality saturation's practical applicability;
+%   researchers have resorted to re-implementing
+%   equality saturation from scratch for each new domain.
+
+
+
+%%% Local Variables:
+%%% TeX-master: "egg"
+%%% End:

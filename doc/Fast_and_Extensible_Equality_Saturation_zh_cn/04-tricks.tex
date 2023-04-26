@@ -1,0 +1,552 @@
+\section{用 \eclass 分析器拓展 \Egraphs}
+% \section{Extending \Egraphs with \Eclass Analyses}
+\label{sec:extensions}
+
+% As discussed so far, \egraphs and equality saturation provide an efficient way
+%   to implement a term rewriting system.
+% Rebuilding enhances that efficiency, but the approach remains designed for
+%   purely syntactic rewrites.
+% However, program analysis and optimization typically require more than just
+%   syntactic information.
+正如迄今为止所讨论的，\egraphs 和 等式饱和 提供了一种高效的方法来实现一个项重写系统。
+重建增强了效率，但该方法仍然仅限于语法重写。
+然而，程序分析和优化通常需要的不仅仅是语法信息。
+% Instead, transformations are \emph{computed} based on the input terms and also semantic facts
+%   about that input term, e.g., constant value, free variables, nullability,
+%   numerical sign, size in memory, and so on.
+% The ``purely syntactic'' restriction has forced existing equality saturation
+%   applications~\cite{eqsat, eqsat-llvm, herbie} to
+%   resort to ad hoc passes over the \egraph
+%   to implement analyses like constant folding.
+% These ad hoc passes require manually manipulating the \egraph,
+%   the complexity of which could prevent the implementation of more sophisticated
+%   analyses.
+%   % naturally expressed in the more conventional term rewriting setting,
+%   % but must implemented as complicated \textit{ad hoc} passes over the \egraph.
+相反，转换的 \emph{计算} 是基于输入 项 和该输入 项 的语义论据（semantic facts），
+  例如，常量值，自由变量，空属性，数字符号，内存大小等。
+“纯语法”限制迫使现有的 等式饱和 应用~\cite{eqsat, eqsat-llvm, herbie} 
+  不得不求助于临时措施通过 \egraph 来实现常量折叠等分析。
+这些临时措施需要手动操纵 \egraph ，其复杂性可能会妨碍实施更复杂的分析。
+
+
+% We present a new technique called \textit{\eclass analysis},
+%   which allows the concise
+%   expression of a program analysis over the \egraph.
+% An \eclass analysis resembles abstract interpretation
+%   lifted to the \egraph level,
+%   attaching \textit{analysis data} from a semilattice to each \eclass.
+% The \egraph maintains and propagates this data as
+%   \eclasses get merged and new \enodes are added.
+% Analysis data can be used directly to modify the \egraph, to inform
+%   how or if rewrites apply their right-hand sides, or to determine the cost of
+%   terms during the extraction process.
+我们提出了一种新技术，称为 \textit{\eclass 分析器（\eclass Analyses）}，它允许在 \egraph 上简洁地表达程序分析。
+一个 \eclass 分析器类似于提升到 \egraph 层面的抽象解释，
+  从半格（semilattice）到每个\eclass 附加 \textit{分析数据}。% ？semilattice
+在合并 \eclasses 和添加新的 \enodes 时，\egraph 会维护和传播这些数据。
+分析数据可以直接用于修改 \egraph，以告知重写如何或是否应用其右右部，或在萃取过程中确定 term 的成本。
+
+% \Eclass analyses provide a general mechanism to replace what previously
+%   required ad hoc extensions that manually manipulate the \egraph.
+% \Eclass analyses also fit within the equality saturation workflow,
+%   so they can naturally cooperate with the equational reasoning provided by
+%   rewrites.
+% Moreover, an analysis lifted to the \egraph level automatically benefits from a
+%   sort of ``partial-order reduction'' for free:
+%   large numbers of similar programs may be analyzed for little additional cost
+%   thanks to the \egraph's compact representation.
+\eclass 分析器提供了一种通用机制，用来替换以前需要手动操纵 \egraph 的特殊扩展。
+\eclass 分析器也适合 等式饱和 工作流程，
+  因此它们可以自然地与重写提供的等式推理（equational reasoning）协作。
+此外，在 \egraph 层面的分析会自动从一种“偏序归约（partial-order reduction）”中免费受益：
+  借由 \egraph 的紧凑表示，大量类似程序可以以用很少的额外成本进行分析。
+
+% This section provides a conceptual explanation of \eclass analyses as well
+%   as dynamic and conditional rewrites that can use the analysis data.
+% The following sections will provide concrete examples:
+%   \autoref{sec:impl} discusses the \egg implementation and a complete example of a
+%   partial evaluator for the lambda calculus;
+%   \autoref{sec:case-studies} discusses how three published projects have used
+%   \egg and its unique features (like \eclass analyses).
+本节提供了 \eclass 分析器的概念解释以及可以使用分析数据的动态和条件重写。
+接下来的章节将提供具体示例:
+  \autoref{sec:impl} 讨论 \egg 实现和 lambda 演算中部分求值器的完整示例;
+  \autoref{sec:case-studies} 讨论三个已发布项目如何使用
+  \egg 及其独特特性（如 \eclass 分析器）。
+
+% 原文注释 begin
+% An \eclass analysis may,  modify the \egraph itself to inject new based on the computed data,
+% In this way, the \eclass analysis can work with the rewrites as opposed
+
+% \Egg offers many convenient ways to interact with the \egraph that are difficult
+%   or impossible in other implementations.
+% These tools give \egg the flexibility highlighted by the diverse case studies
+%   in \autoref{sec:case-studies}
+%   and the lambda calculus example in \autoref{sec:lambda}.
+
+% Like the rest of \egg, these extensions are generic over the language and
+%   rewrites that the user is working with.
+% These are all novel in practice, as \egg is the first (to our knowledge)
+%   general-purpose, reusable \egraph library.
+% \Eclass analyses appear to be conceptually novel as well.
+
+% \Chandra{this entire section is a bit light in details and doesn't
+% always connect back to the goals of egg the right way. For example,
+% without a concrete advantage of runners, it's not clear why it is useful.}
+% 原文注释 end
+
+% \subsection{\Eclass Analyses}
+\subsection{\eclass 分析器}
+\label{sec:analysis}
+
+% An \eclass analysis defines a domain $D$ and associates a value $d_{c} \in D$ to
+%   each \eclass $c$.
+% The \eclass $c$ contains the associated data $d_{c}$,
+%   i.e., given an \eclass $c$, one can get $d_{c}$ easily, but not vice-versa.
+\eclass 分析器（\eclass Analyses）定义了一个域 $D$ 并将一个值 $d_{c} \in D$ 与每个 \eclass $c$ 关联。
+\eclass $c$ 包含关联数据 $d_{c}$，
+  即，给定一个 \eclass $c$，可以很容易地获得 $d_{c}$，但反过来不行。
+
+% The interface of an \eclass analysis is as follows,
+%   where $G$ refers to the \egraph,
+%   and $n$ and $c$ refer to \enodes and \eclasses within $G$:
+\eclass 分析器的接口如下，
+  其中 $G$ 指的是 \egraph,
+  $n$ 和 $c$ 指的是 $G$ 中的 \enodes 和 \eclasses ：
+
+% 原文注释 begin
+% We will use the following metavariables and syntax in this section:
+
+% \begin{center}
+%   $G$: \egraph, $c$: \eclass, $n$: \enode,
+%   $d_{c}$: the analysis data associated with \eclass $c$
+% \end{center}
+% 原文注释 end
+
+% 本段翻译未仔细校对
+\vspace{1em}
+\begin{tabular}{lp{0.7\linewidth}}
+  $\textsf{make}(n) \to d_{c}$ &
+    % When a new \enode $n$ is added to $G$ into a new, singleton \eclass $c$,
+    % construct a new value $d_{c} \in D$ to be associated with $n$'s new \eclass,
+    % typically by accessing the associated data of $n$'s children.
+    当一个新的 \enode $n$ 被添加到 $G$ 并且形成一个新的，单一的 \eclass $c$ 时，
+    构造一个新值 $d_{c} \in D$ 与 $n$ 的新 \eclass 关联，
+    通常通过访问 $n$ 的子节点的关联数据。
+  \\
+  $\textsf{join}(d_{c_1}, d_{c_2}) \to d_{c}$ &
+    % When \eclasses $c_{1}, c_{2}$ are being merged into $c$,
+    % join $d_{c_1}, d_{c_2}$ into a new value $d_{c}$ to be associated with the
+    % new \eclass $c$.
+    当 \eclasses $c_{1}, c_{2}$ 被合并成 $c$ 时，将 $d_{c_1}, d_{c_2}$ 合并成一个新值 $d_{c}$ 与新 \eclass $c$ 关联。
+  \\
+  $\textsf{modify}(c) \to c'$ &
+    % Optionally modify the \eclass $c$ based on $d_{c}$, typically by adding an
+    %   \enode to $c$.
+    % Modify should be idempotent if no other changes occur to the \eclass, i.e.,
+    %   $\textsf{modify}(\textsf{modify}(c)) = \textsf{modify}(c)$
+    % % Returning $c$ unmodified ($c = c'$) suffices in many cases, and is the
+    % % default implementation for analyses in \egg.
+    根据 $d_{c}$ 可选地修改 \eclass $c$，通常是添加一个 \enode 到 $c$。
+    如果 \eclass 没有其他变化，修改应该幂等，即 
+      $\textsf{modify}(\textsf{modify}(c)) = \textsf{modify}(c)$
+\end{tabular}
+\vspace{1em}
+
+% The domain $D$ together with the \textsf{join} operation should form a join-semilattice.
+% The semilattice perspective is useful for defining the \textit{analysis invariant}
+%   (where $\wedge$ is the \textsf{join} operation):
+域 $D$ 与 \textsf{join} 操作一起应该形成一个联并半格（join-semilattice）。 % ?
+半格视角对于定义 \textit{分析不变量} 是很有用的。 % ?
+  （其中 $\wedge$是textsf{join}操作）。
+\[
+  \forall c \in G.\quad
+  d_{c} = \bigwedge_{n \in c} \textsf{make}(n)
+  \quad \text{and} \quad
+  \textsf{modify}(c) = c
+\]
+
+% 本段翻译未仔细校对
+% The first part of the analysis invariant states that the data associated with
+%   each \eclass must be the \textsf{join} of the \textsf{make} for every \enode
+%   in that \eclass.
+% Since $D$ is a join-semilattice, this means that
+%   $\forall c, \forall n \in c, d_{c} \geq \textsf{make}(n) $.
+% The motivation for the second part is more subtle.
+% Since the analysis can modify an \eclass through the \textsf{modify} method,
+%   the analysis invariant asserts that these modifications are driven to a fixed
+%   point.
+% When the analysis invariant holds, a client looking at the analysis data can be
+%   assured that the analysis is ``stable'' in the sense that
+%   recomputing \textsf{make}, \textsf{join}, and \textsf{modify} will not
+%   modify the \egraph or any analysis data.
+第一部分的分析不变性声明，
+  每个 \eclass 的关联的数据必须是每个 \enode 的 \textsf{make} 的\textsf{join}。
+由于 $D$ 是 联并半格（join-semilattice） ，这意味着
+  $\forall c, \forall n \in c, d_{c} \geq \textsf{make}(n) $。
+第二部分的动机更为微妙。
+由于分析可以通过 \textsf{modify} 方法修改一个\eclass，
+  分析不变性声明这些修改被驱动到一个固定点。
+当分析不变性成立时，客户端看到的分析数据可以确保分析在重新计算
+  \textsf{make}，\textsf{join}，\textsf{modify} 不会修改 \egraph 或任何分析数据的意义下是“稳定”的。
+
+% \subsubsection{Maintaining the Analysis Invariant}
+\subsubsection{保持分析不变量（Analysis Invariant）}
+
+% 因模板问题，代码注释暂不翻译
+\begin{figure}
+  \begin{minipage}[t]{0.47\linewidth}
+    \begin{lstlisting}[gobble=4, numbers=left, numberstyle=\color{black}, basicstyle=\scriptsize\ttfamily\color{black!40}, escapechar=|]
+    def add(enode):
+      enode = self.canonicalize(enode)
+      if enode in self.hashcons:
+        return self.hashcons[enode]
+      else:
+        eclass = self.new_singleton_eclass(enode)
+        for child_eclass in enode.children:
+          child_eclass.parents.add(enode, eclass)
+        self.hashcons[enode] = eclass
+        |\color{black}\label{line:add1} eclass.data = analysis.make(enode)|
+        |\color{black}\label{line:add2} analysis.modify(eclass)|
+        return eclass
+
+    def merge(eclass1, eclass2)
+      union = self.union_find.union(eclass1, eclass2)
+      if not union.was_already_unioned:
+        |\color{black}\label{line:merge1}d1, d2 = eclass1.data, eclass2.data|
+        |\color{black}\label{line:merge2}union.eclass.data = analysis.join(d1, d2)|
+        self.worklist.add(union.eclass)
+      return union.eclass
+    \end{lstlisting}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{0.47\linewidth}
+    \begin{lstlisting}[gobble=4, numbers=left, firstnumber=21, numberstyle=\color{black}, basicstyle=\scriptsize\ttfamily\color{black!40}, escapechar=|]
+    def repair(eclass):
+      for (p_node, p_eclass) in eclass.parents:
+        self.hashcons.remove(p_node)
+        p_node = self.canonicalize(p_node)
+        self.hashcons[p_node] = self.find(p_eclass)
+
+      new_parents = {}
+      for (p_node, p_eclass) in eclass.parents:
+        p_node = self.canonicalize(p_node)
+        if p_node in new_parents:
+          self.union(p_eclass, new_parents[p_node])
+        new_parents[p_node] = self.find(p_eclass)
+      eclass.parents = new_parents
+    \end{lstlisting}
+    \vspace{-3mm}
+    \begin{lstlisting}[gobble=4, numbers=left, firstnumber=34, basicstyle=\scriptsize\ttfamily, escapechar=|]
+
+      # 任何对 eclass 的修改
+      # 都会添加到 worklist 中
+      |\label{line:repair1}|analysis.modify(eclass)
+      for (p_node, p_eclass) in eclass.parents:
+        new_data = analysis.join(
+          p_eclass.data,
+          analysis.make(p_node))
+        if new_data != p_eclass.data:
+          p_eclass.data = new_data
+          |\label{line:repair2}|self.worklist.add(p_eclass)
+    \end{lstlisting}
+  \end{minipage}
+  \caption{
+    % The pseudocode for maintaining the \eclass analysis invariant is largely
+    %   similar to how rebuilding maintains congruence closure
+    %   (\autoref{sec:rebuilding}).
+    % Only lines \ref{line:add1}--\ref{line:add2},
+    %   \ref{line:merge1}--\ref{line:merge2},
+    %   and \ref{line:repair1}--\ref{line:repair2} are added.
+    % Grayed out or missing code is unchanged from \autoref{fig:rebuild-code}.
+    维护 \eclass 分析器不变量的伪代码大体上与重建维持同余闭包的方式相似（\autoref{sec:rebuilding}）。
+      只添加了行 \ref{line:add1}--\ref{line:add2},
+      \ref{line:merge1}--\ref{line:merge2},
+      和 \ref{line:repair1}--\ref{line:repair2} 。
+    灰色或未列出的代码与 \autoref{fig:rebuild-code} 相同。
+    % 【代码注释翻译】
+    %   # any mutations modify makes to eclass
+    %   # will add to the worklist
+    %   任何对 eclass 的修改
+    %   都会添加到 worklist 中
+  }
+  \label{fig:rebuild-analysis}
+\end{figure}
+
+% 本段翻译未仔细校对
+% We extend the rebuilding procedure from \autoref{sec:rebuilding} to restore the
+%   analysis invariant as well as the congruence invariant.
+% \autoref{fig:rebuild-analysis} shows the necessary modifications to the
+%   rebuilding code from \autoref{fig:rebuild-code}.
+我们将重建过程从 \autoref{sec:rebuilding} 扩展到恢复分析不变性和同余不变性。
+\autoref{fig:rebuild-analysis}显示了从\autoref{fig:rebuild-code}修改重建代码所需的修改。
+
+
+% 本段翻译未仔细校对
+% Adding \enodes and merging \eclasses risk breaking the analysis invariant in
+%   different ways.
+% Adding \enodes is the simpler case; lines \ref{line:add1}--\ref{line:add2}
+%   restore the invariant for the newly created, singleton \eclass that holds the
+%   new \enode.
+% When merging \enodes, the first concern is maintaining the semilattice portion of the
+%   analysis invariant.
+% Since \textsf{join} forms a semilattice over the domain $D$ of the analysis
+%   data, the order in which the joins occur does not matter.
+% Therefore, line \ref{line:merge2} suffices to update the analysis data of the
+%   merged \eclass.
+添加 \enodes 和合并 \eclasses 都有可能以不同的方式打破分析不变性。
+添加\enodes 是更简单的情况；
+  行 \ref{line:add1}--\ref{line:add2} 恢复了新创建的，单个 \eclass 的不变性。%？singleton
+合并\enodes 时，第一个关注点是维护分析不变性的半阶部分。
+由于\textsf{join}在分析数据的域D上形成半阶，因此合并的顺序并不重要。
+因此，线\ref{line:merge2}足以更新合并的\eclass 的分析数据。
+
+% 本段翻译未仔细校对
+% Since $\textsf{make}(n)$ creates analysis data by looking at the data of $n$'s,
+%   children, merging \eclasses can violate the analysis invariant in the same way
+%   it can violate the congruence invariant.
+% The solution is to use the same worklist mechanism introduced in
+%   \autoref{sec:rebuilding}.
+% Lines \ref{line:repair1}--\ref{line:repair2} of the \texttt{repair} method
+%   (which \texttt{rebuild} on each element of the worklist)
+%   re-\textsf{make} and \textsf{merge} the analysis data of the parent of any
+%   recently merged \eclasses.
+% The new \texttt{repair} method also calls \textsf{modify} once, which suffices
+%   due to its idempotence.
+% In the pseudocode, \textsf{modify} is reframed as a mutating method for clarity.
+由于 $\textsf{make}(n)$ 通过查看 $n$ 的子元素创建分析数据，
+  因此合并 \eclasses 可能会在同一方式中违反分析不变性。
+解决方案是使用在 \autoref{sec:rebuilding} 中引入的相同工作列表机制。
+\texttt{repair} 方法 （它在工作列表的每个元素上\texttt{rebuild}） 
+  的行 \ref{line:repair1}--\ref{line:repair2} 
+  重新 \textsf{make}和 \textsf{merge} 最近合并的 \eclasses 父元素的分析数据。
+新的 \texttt{repair} 方法还调用 \textsf{modify} 一次，这足以满足其幂等性（idempotence）。
+在伪代码中，为了更明晰，\textsf{modify} 被重构为一种可变方法。
+
+
+% 本段翻译未仔细校对
+% \Egg's implementation of \eclass analyses assumes that the analysis domain $D$
+%   is indeed a semilattice and that \textsf{modify} is idempotent.
+% Without these properties, \egg may fail to restore the analysis invariant on
+%   \texttt{rebuild}, or it may not terminate.
+\Egg 实现的 \eclass 分析器假设分析域 $D$ 确实是半格，
+  并且 \textsf{modify} 具有幂等性。
+如果没有这些性质，\egg 可能无法在 \texttt{rebuild} 上恢复分析不变量，或者它可能永不终止。
+
+% % \subsubsection{Modifying the \Egraph from an \Eclass Analysis}
+% \subsubsection{Example: Constant Folding}
+\subsubsection{示例: 常量折叠（Constant folding）}
+
+
+% 本段翻译未仔细校对
+% The data produced by \eclass analyses can be
+%   usefully consumed by other components of an equality saturation system
+%   (see \autoref{sec:rewrites}),
+%   but \eclass analyses can be useful on their own thanks to the
+%   \textsf{modify} hook.
+% Typical \textsf{modify} hooks will either do nothing, check some invariant about
+%   the \eclasses being merged, or add an \enode to that \eclass
+%   (using the regular \texttt{add} and \texttt{merge} methods of the \egraph).
+\eclass 分析器产生的数据可以被其他 等式饱和 系统组件有效地使用(参见 \autoref{sec:rewrites}),
+但是由于 \textsf{modify} 钩子的存在，\eclass 分析器可以独立使用
+典型的 \textsf{modify} 钩子 会什么事都不做，检查要合并的 \eclasses 的某些不变量，
+或者将一个 \enode 添加到该 \eclass 中(使用 \egraph 的常规 \texttt{add} 和 \texttt{merge} 方法)。
+
+% 本段翻译未仔细校对
+% As mentioned above, other equality saturation implementations have implemented
+%   constant folding as custom, ad hoc passes over the \egraph.
+% We can formulate constant folding as an \eclass analysis that highlights the
+%   parallels with abstract interpretation.
+% Let the domain $D = \texttt{Option<Constant>}$, and let the \texttt{join}
+%   operation be the ``\texttt{or}'' operation of the \texttt{Option} type:
+如上所述，其他 等式饱和 实现已经将常量折叠实现为自定义的，
+  临时通过 \egraph 的步骤。 %？
+我们可以将常量折叠表示为一个 \eclass 分析器,突出了它与抽象解释之间的相似之处。
+设域 $D = \texttt{Option<Constant>}$，
+  设 \texttt{join} 操作是 \texttt{Option} 类型上的 ``\texttt{or}'' 操作：  
+\\
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Rust, basicstyle=\ttfamily\footnotesize, xleftmargin=35mm]
+match (a, b) {
+  (None,    None   ) => None,
+  (Some(x), None   ) => Some(x),
+  (None,    Some(y)) => Some(y),
+  (Some(x), Some(y)) => { assert!(x == y); Some(x) }
+}
+\end{lstlisting}
+\end{minipage}
+\\
+% 本段翻译未仔细校对
+% Note how \textsf{join} can also aid in debugging by checking properties about
+%   values that are unified in the \egraph;
+%   in this case we assert that all terms represented in an \eclass should have
+%   the same constant value.
+% The \textsf{make} operation serves as the abstraction function, returning the
+%   constant value of an \enode if it can be computed from the constant values
+%   associated with its children \eclasses.
+% The \textsf{modify} operation serves as a concretization function in this
+%   setting.
+% If $d_{c}$ is a constant value, then $\textsf{modify}(c)$ would add
+%   $\gamma(d_{c}) = n$ to $c$, where $\gamma$ concretizes the constant value into
+%   a childless \enode.
+注意如何 \textsf{join} 也可以通过检查在 \egraph 中统一的值的属性来辅助调试;
+  在这种情况下,我们断言在 \eclass 中表示的所有项应该具有相同的常量值。
+\textsf{make} 操作充当抽象函数，
+  如果它可以从与其子\eclasses 相关联的常量值计算出来，
+  返回 \enode 的常量值。
+\textsf{modify} 操作在这个设置中充当具体化函数。 %  concretization？
+如果 $d_{c}$ 是一个常量值，那么 $\textsf{modify}(c)$ 就会将 
+  $\gamma(d_{c}) = n$ 添加到 $c$ 中，
+  其中 $\gamma$ 将常量值具体化（concretizes）为没有子节点的 \enode。
+
+% 本段翻译未仔细校对
+% Constant folding is an admittedly simple analysis, but one that did not formerly
+%   fit within the equality saturation framework.
+% \Eclass analyses support more complicated analyses in a general way, as
+%   discussed in later sections on the \egg implementation and case studies
+%   (Sections \ref{sec:impl} and \ref{sec:case-studies}).
+常量折叠是一种明显简单的分析，但之前并不适合 等式饱和 框架。
+\Eclass analyses 在通用的方式中支持更复杂的分析，
+  如后面关于 \egg 实现和案例研究的章节所讨论的
+  （\ref{sec:impl} 和 \ref{sec:case-studies}）。
+
+% \subsection{Conditional and Dynamic Rewrites}
+\subsection{条件和动态重写}
+\label{sec:rewrites}
+
+% 此段翻译未仔细校对
+% In equality saturation applications, most of the rewrites are purely
+%   syntactic.
+% In some cases, additional data may be needed to determine if or how to perform
+%   the rewrite.
+% For example, the rewrite $x / x \to 1$ is only valid if $x \neq 0$.
+% A more complex rewrite may need to compute the right-hand side dynamically based
+%   on an analysis fact from the left-hand side.
+在 等式饱和 应用中，大多数重写都是纯粹的语法形式。
+在某些情况下，可能需要额外的数据来确定是否执行重写或如何执行重写。
+例如，$x / x \to 1$ 重写仅在 $x \neq 0$ 时有效。
+更复杂的重写可能需要根据左侧的分析事实动态计算右侧。
+
+% 此段翻译未仔细校对
+% The right-hand side of a rewrite can be generalized to a function
+%   \textsf{apply} that takes a substitution and an \eclass generated from
+%   e-matching the left-hand side, and produces a term to be added to the \egraph
+%   and unified with the matched \eclass.
+% For a purely syntactic rewrite, the \textsf{apply} function need not inspect the
+%   matched \eclass in any way; it would simply apply
+%   the substitution to the right-hand pattern to produce a new term.
+重写的右侧可以概括为函数 \textsf{apply}，该函数采用替代和通过 e-matching 左侧得到的 \eclass，并产生一个术语，该术语将被添加到 \egraph 中并与匹配的 \eclass 统一。
+对于纯粹的语法重写，\textsf{apply} 函数无需以任何方式检查匹配的 \eclass；它只需将替代应用于右侧模式以产生新术语即可。
+
+% 此段翻译未仔细校对
+% \Eclass analyses greatly increase the utility of this generalized form of
+%   rewriting.
+% The \textsf{apply} function can look at the analysis data for the matched
+%   \eclass or any of the \eclasses in the substitution to determine if or how to
+%   construct the right-hand side term.
+% These kinds of rewrites can broken down further into two categories:
+\eclass 分析器大大增加了这种重写的通用形式的效用。
+\textsf{apply} 函数可以查看匹配的 \eclass 的分析数据或替代中的任何 \eclasses，以确定如何构造右侧术语。这些重写可以进一步分为两类：
+\begin{itemize}
+  % \item \textit{Conditional} rewrites like $x / x \to 1$ that are purely
+  % syntactic but whose validity depends on checking some analysis data;
+  % \item \textit{Dynamic} rewrites that compute the right-hand side based on
+  % analysis data.
+  \item \textit{条件} 重写，如 $x / x \to 1$，它们是纯粹的语法形式，
+    但其有效性取决于检查一些分析数据。
+  \item \textit{动态} 重写，它们根据分析数据计算右侧。
+\end{itemize}
+
+% 此段翻译未仔细校对
+% Conditional rewrites are a subset of the more general dynamic rewrites.
+% Our \egg implementation supports both.
+% The example in \autoref{sec:impl} and case studies in \autoref{sec:case-studies}
+%   heavily use generalized rewrites, as it is typically the most convenient way
+%   to incorporate domain knowledge into the equality saturation
+%   framework.
+条件重写是更一般动态重写的子集。我们的 \egg 实现支持两者。在 \autoref{sec:impl} 中的示例和在 \autoref{sec:case-studies} 中的案例研究中大量使用了广义重写，因为这通常是将领域知识纳入 等式饱和 框架的最方便的方法。
+
+% \subsection{Extraction}
+\subsection{萃取（Extraction）}
+\label{sec:tricks-extraction}
+
+% 此段翻译未仔细校对
+% Equality saturation typically ends with an extraction phase that selects an
+%   optimal represented term from an \eclass according to some cost function.
+% In many domains \cite{herbie, szalinski}, AST size
+%   (sometimes weighted differently for different operators) suffices as a simple,
+%   local cost function.
+% We say a cost function $k$ is local when the cost of a term $f(a_{1}, ...)$ can be
+%   computed from the function symbol $f$ and the costs of the children.
+% With such cost functions, extracting an optimal term can be efficiently done
+%   with a fixed-point traversal over the \egraph that selects the minimum cost
+%   \enode from each \eclass \cite{herbie}.
+等式饱和 通常以提取阶段结束，该阶段根据某些成本函数从 \eclass 中选择最优表示术语。
+在许多领域 \cite{herbie, szalinski} 中，
+  AST 大小（有时对不同运算符的权重不同）足以作为简单的局部成本函数。 % ？AST
+当我们可以从函数符号 $f$ 和子结点的成本计算出术语 $f(a_{1}, ...)$ 的成本时，
+  称成本函数 $k$ 为局部的。
+使用这样的成本函数，可以使用固定点遍历 \egraph 来高效地提取最优术语，该遍历从每个 \eclass 中选择最小成本的 \enode \cite{herbie}。
+
+% 此段翻译未仔细校对
+% Extraction can be formulated as an \eclass analysis when the cost function
+%   is local.
+% The analysis data is a tuple $(n, k(n))$ where $n$ is the cheapest \enode
+%   in that \eclass and $k(n)$ its cost.
+% The $\textsf{make}(n)$ operation calculates the cost $k(n)$ based on
+%   the analysis data (which contain the minimum costs) of $n$'s children.
+% The \textsf{merge} operation simply takes the tuple with lower cost.
+% The semilattice portion of the analysis invariant then guarantees that the
+%   analysis data will contain the lowest-cost \enode in each class.
+% Extract can then proceed recursively;
+%   if the analysis data for \eclass $c$ gives $f(c_{1}, c_{2}, ...)$ as the optimal \enode,
+%   the optimal term represented in $c$ is
+%   $\textsf{extract}(c) = f( \textsf{extract}(c_{1}), \textsf{extract}(c_{2}), ... )$.
+% % The optimal term represented in an \eclass can then be built recursively,
+% %   starting with the optimal \enode from the analysis data.
+% % Extraction can be completed by starting from the desired \eclass and
+% %   building the term recursively based on the \enode from the analysis data.
+% This not only further demonstrates the generality of \eclass analyses, but also
+%   provides the ability to do extraction ``on the fly''; conditional and dynamic
+%   rewrites can determine their behavior based on the cheapest term in an \eclass.
+萃取可以在成本函数是局部的情况下被制定（formulated）为 \eclass 分析器。 %？formulated
+分析数据是一个元组 $(n, k(n))$，其中 $n$ 是该 \eclass 中最便宜的 \enode，
+  $k(n)$ 是它的花费。
+$\textsf{make}(n)$ 操作基于 $n$ 的子节点的分析数据（其中包含最小花费）计算 $k(n)$。
+\textsf{merge} 操作只需取较低花费的元组。
+分析不变量的半格部分保证了分析数据将包含每个类中最低花费的 \enode。
+提取可以递归进行；
+  如果 \eclass $c$ 的分析数据给出 $f(c_{1}, c_{2}, ...)$ 作为最佳 \enode，
+  则 $c$ 表示的最佳项是  
+  $\textsf{extract}(c) = f( \textsf{extract}(c_{1}), \textsf{extract}(c_{2}), ... )$。
+这不仅进一步证明了 \eclass 分析器的普遍性，还提供了“即时”提取的能力；
+  条件和动态重写可以根据分析数据来确定其行为。
+
+% 此段翻译未仔细校对
+% Extraction (whether done as a separate pass or an \eclass analysis) can also
+%   benefit from the analysis data.
+% Typically, a local cost function can only look at the function symbol of the
+%   \enode $n$ and the costs of $n$'s children.
+% When an \eclass analysis is attached to the \egraph, however, a cost function
+%   may observe the data associated with $n$'s \eclass, as well as the data
+%   associated with $n$'s children.
+% This allows a cost function to depend on computed facts rather that just purely
+%   syntactic information.
+% In other words, the cost of an operator may differ based on its inputs.
+% \autoref{sec:spores} provides a motivating case study wherein an \eclass
+%   analysis computes the size and shape of tensors, and this size information
+%   informs the cost function.
+萃取（无论是作为单独的通过还是作为 \eclass 分析器）也可以从分析数据中受益。
+通常，局部成本函数只能查看 \enode $n$ 的函数符号和 $n$ 的子节点的成本。
+但是，当 \eclass 分析器附加到 \egraph 时，
+  成本函数可以观察与 $n$ 的 \eclass 关联的数据，
+  以及与 $n$ 的子节点关联的数据。
+这允许成本函数依赖于计算出的事实而不仅仅是纯语法信息。
+换句话说，运算符的成本可能因其输入而不同。
+\autoref{sec:spores} 提供了一个激励性的案例研究（motivating case study ），% ？ motivating case study 
+  其中 \eclass 分析器计算张量的大小和形状，并且这些大小信息会影响成本函数。
+
+%%% Local Variables:
+%%% TeX-master: "egg"
+%%% End:

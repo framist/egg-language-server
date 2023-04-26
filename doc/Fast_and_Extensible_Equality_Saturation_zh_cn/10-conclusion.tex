@@ -1,0 +1,47 @@
+\section{总结}
+% \section{Conclusion}
+\label{sec:conclusion}
+% 翻译完成
+
+% We presented two new techniques,
+%   rebuilding and \eclass analysis,
+%   that make equality saturation
+%   fast and extensible enough for a new family of
+%   applications.
+% Rebuilding is a new way to
+%   amortize the cost of maintaining the \egraph's
+%   data structure invariants,
+%   specializing the \egraph to the equality saturation workload.
+% \Eclass analysis is a general framework
+%   %for lifting a form of abstract
+%   %interpretation to the \egraph level,
+%   allowing for interpreted reasoning
+%   beyond what purely syntactic rewrites can provide.
+我们提出了两种新技术，重建和 \eclass 分析，
+  使得 等式饱和 变快且足够可扩展，可用于一类新的应用程序。
+重建是一种新的方法，用于摊销维护 \egraph 数据结构不变性的成本，
+  将 \egraph 针对 等式饱和 工作量来特化。 % ？
+\eclass 分析是一个通用框架，可以提供超出纯语法重写所能提供的解释性推理。
+
+% We implemented both of these techniques in \egg,
+%   a reusable, extensible, and efficient \egraph library.
+% \Egg is generic over the user-defined language,
+%   which allowed focused effort on optimization and efficiency
+%   while obviating the need for
+%   ad hoc \egraph implementations and manipulations.
+% Our case studies show that equality saturation can now scale
+%   further and be used more flexibly than before;
+%   \egg provided new functionality and large speedups.
+% We believe that these contributions
+%   position equality saturation as a powerful toolkit for
+%   program synthesis and optimization.
+我们在 \egg 中实现了这两种技术，\egg 是一个可重用、可扩展和高效的 \egraph 库。
+\Egg 是针对用户定义语言的通用库，这使得我们能够专注于优化和效率，
+  同时避免了临时性的 \egraph 实现和操作的需要。 % ？ ad hoc
+我们的案例研究表明， 等式饱和 现在可以进一步拓展，% ？scale further
+  并比以前更灵活地使用；\egg 提供了新的功能和大幅性能加速。
+我们相信这些贡献将 等式饱和 定位为程序合成和优化的的强大工具箱。
+
+%%% Local Variables:
+%%% TeX-master: "egg"
+%%% End:

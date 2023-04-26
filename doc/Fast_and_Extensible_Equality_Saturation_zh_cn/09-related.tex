@@ -1,0 +1,158 @@
+\section{相关工作}
+% \section{Related Work}
+\label{sec:related}
+% 草草翻译完成
+
+% \paragraph{Term Rewriting}
+\paragraph{Term 重写}
+
+% 此段翻译未仔细校对 :-( 
+% Term rewriting~\cite{rewritesystems} has been used widely to facilitate
+% equational reasoning for program
+% optimizations~\cite{DBLP:conf/scitools/BoyleHW96,
+%   DBLP:journals/toplas/BrandHKO02, DBLP:conf/icfp/VisserBT98}. A term rewriting
+% system applies a database of semantics preserving rewrites or axioms to an input
+% expression to get a new expression, which may, according to some cost function,
+% be more profitable compared to the input. Rewrites are typically symbolic and
+% have a left hand side and a right hand side. To apply a rewrite to an
+% expression, a rewrite system implements pattern matching---if the left hand side
+% of a rewrite rule matches with the input expression, the system computes a
+% substitution which is then applied to the right-hand side of the rewrite rule.
+% Upon applying a rewrite rule, a rewrite system typically replaces the old
+% expression by the new expression. This can lead to the \textit{phase ordering}
+% problem--- it makes it impossible to apply a rewrite to the old expression in
+% the future which could have led to a more optimal result. 
+Term 重写~\cite{rewritesystems} 已被广泛用于促进程序优化~\cite{DBLP:conf/scitools/BoyleHW96,
+  DBLP:journals/toplas/BrandHKO02, DBLP:conf/icfp/VisserBT98}的等式推理中。
+Term 重写系统将保留语义的重写或公理的数据库应用于输入表达式，
+  以得到一个新的表达式，根据一些成本函数，这个表达式与输入式相比可能更有利。
+  重写通常是符号化的，有一个左式和一个右式。
+  为了对一个表达式进行重写，重写系统实现了模式匹配
+  ——如果重写规则的左侧与输入表达式相匹配，系统就会计算出一个替换，然后应用到重写规则的右侧。
+  在应用重写规则时，重写系统通常会用新的表达式替换旧的表达式。
+  这可能会导致 \textit{阶段排序（phase ordering）} 的问题
+  —— 它使得在未来不可能对旧的表达式进行重写，而这可能会导致更优的结果。
+
+
+% \paragraph{\Egraphs and E-matching}
+\paragraph{\Egraphs 和 E-matching}
+
+% 此段翻译未仔细校对 :-( 
+% \Egraph were originally proposed several decades ago as an
+% efficient data structure for maintaining congruence
+% closure~\cite{nelson-oppen-78, kozen-stoc77, nelson}.
+% \Egraphs continue to be a critical component in successful SMT
+% solvers where they are used for combining satisfiability theories by sharing equality
+% information~\cite{z3}.
+%  A key difference between past implementations of \egraphs and
+%   \egg's \egraph is our novel rebuilding algorithm that maintains
+%   invariants only at certain critical points~(\autoref{sec:rebuild}).
+% This makes \egg more efficient for the purpose of equality saturation.
+%   \egg implements the pattern compilation strategy introduced by de Moura et al.~\cite{ematching}
+%   that is used in state of the art theorem provers~\cite{z3}.
+\Egraph 最初是几十年前提出的一种高效的数据结构，
+  用于维护同余闭包~\cite{nelson-oppen-78, kozen-stoc77, nelson}。
+\Egraphs 仍然是成功的 SMT 求解器中的关键组成部分，
+  它们被用于通过共享等价关系结合可满足性理论~\cite{z3}。 % ？
+过去 \egraph 实现和 \egg 的 \egraph 的主要区别在于我们新颖的重建算法——
+  只在某些关键点维护不变性~(\autoref{sec:rebuild})。
+这使得 \egg 更适合等价饱和的目的。
+\egg 实现了 de Moura 等人提出的模式编译策略~\cite{ematching}，
+  该策略在最先进的定理证明器~\cite{z3}中使用。
+% Some provers~\cite{z3, simplify} propose optimizations like mod-time,
+% pattern-element and inverted-path-index to find new terms and relevant patterns
+% for matching, and avoid redundant matches. So far, we have found \egg to be
+% faster than several prior \egraph implementations even without
+% these optimizations. They are,
+% however, compatible with \egg's design and could be explored in the future. Another
+% key difference is \egg's powerful \eclass analysis abstraction and flexible
+% interface. They empower the programmer to easily leverage \egraphs for problems
+% involving complex semantic reasoning.
+一些证明器~\cite{z3, simplify} 提出了像 
+  mod-time，pattern-element 和 inverted-path-index 这样的优化，
+  用于找到新的术语和相关模式进行匹配，避免重复匹配。
+  到目前为止，我们发现 \egg 比之前的几个 \egraph 实现更快，即使没有这些优化。
+然而，它们与 \egg 的设计兼容，可以在未来进行探索。
+  另一个关键差异是 \egg 强大的 \eclass 分析抽象和灵活的界面。
+  它们使程序员能够轻松地利用 \egraph 解决涉及复杂语义推理的问题。
+
+% \paragraph{Congruence Closure}
+\paragraph{同余闭包}
+
+% 此段翻译未仔细校对 :-( 
+% Our rebuilding algorithm is similar to the congruence closure algorithm
+%   presented by \citet{downey-cse}.
+% The contribution of rebuilding is not \emph{how} it restores the \egraph invariants
+%   but \emph{when};
+%   it gives the client the ability to specialize invariant restoration to a
+%   particular workload like equality saturation.
+% Their algorithm also features a worklist of merges to be processed further,
+%   but it is offline, i.e.,
+%   the algorithm processes a given set of equalities and outputs the set of
+%   equalities closed over congruence.
+% Rebuilding is adapted to the online e-graph (and equality saturation) setting,
+%   where rewrites frequently examine the current set of equalities and assert new ones.
+% Rebuilding additionally propagates e-class analysis facts (\autoref{sec:analysis}).
+% Despite these differences,
+%   the core algorithms algorithms are similar enough that theoretical results on
+%   offline performance characteristics \cite{downey-cse} apply to both.
+% We do not provide theoretical analysis of rebuilding for the online setting;
+%   it is likely highly workload dependent.
+我们的重建算法类似于 \citet{downey-cse} 提出的同余闭包（congruence closure）算法。
+重建的贡献不在于它如何恢复 \egraph 不变性，而在于它什么时候恢复；
+  客户端有能力将不变性恢复专门化为特定工作负载，如 等式饱和。
+它的算法也具有要进一步处理的合并工作列表
+  ，但它是离线的，即算法处理给定的等价关系并输出经过同构闭包的等价关系集。
+重建适用于在线 e-graph（和等式饱和）设置，
+  在这种设置中重写经常检查当前的等价关系并断言新的关系。
+重建还传播 e-class 分析事实（\autoref{sec:analysis}）。
+尽管存在这些差异，但核心算法相似，离线性能特征 \cite{downey-cse} 适用于两者。
+我们没有为在线设置提供重建的理论分析；它可能与工作负载高度相关。
+
+% \paragraph{Superoptimization and Equality Saturation}
+\paragraph{超优化（Superoptimization）~和~ 等式饱和}
+
+% 此段翻译未仔细校对 :-( 
+% The Denali~\cite{denali} superoptimizer first demonstrated how to use \egraphs
+% for optimized code generation as an alternative to hand-optimized machine code
+% and prior exhaustive approaches~\cite{massalin}, both of which were less
+% scalable. The inputs to Denali are programs in a C-like language from which it
+% produces assembly programs. Denali supported three types of
+% rewrites---arithmetic, architectural, and program-specific. After applying these
+% rewrites till saturation, it used architectural description of the hardware to
+% generate constraints that were solved using a SAT solver to output a
+% near-optimal program. While Denali's approach was a significant improvement over
+% prior work, it was intended to be used on straight line code only and therefore,
+% did not apply to large real programs.
+Denali~\cite{denali} 超优化器首先展示了如何使用 \egraphs 进行优化代码生成，
+作为手动优化机器代码和先前的详尽方法~\cite{massalin}的替代方案，两者都不易扩展。 
+Denali 的输入是类 C 语言中的程序，它会生成汇编程序。 
+Denali 支持三种重写——算术、架构和特定于程序。
+在应用这些重写直到饱和之后，它使用硬件描述生成约束，使用 SAT 求解器解决这些约束以输出近似最优程序。
+虽然 Denali 的方法比先前的工作有了重大改进，但它只适用于直线代码，因此不适用于大型实际程序。
+
+% 此段翻译未仔细校对 :-( 
+% Equality saturation~\cite{eqsat, eqsat-llvm} developed a compiler optimization
+% phase that works for complex language constructs like loops and conditionals.
+% The first equality saturation paper used an intermediate representation called
+% Program Expression Graphs (PEGs) to encode loops and conditionals. PEGs have
+% specialized nodes that can represent infinite sequences, which allows them to
+% represent loops. It uses a global profitability heuristic for extraction which
+% is implemented using a pseudo-boolean solver. Recently, \cite{yogo-pldi20} uses
+% PEGs for code search.
+% \egg can support PEGs as a user-defined language,
+% and thus their technique could be ported.
+等式饱和 ~\cite{eqsat, eqsat-llvm} 开发了编译优化选择算法，
+适用于循环和条件等复杂语言结构。
+第一篇关于等价饱和的论文使用中间表示，称为程序表达图（PEGs）来编码循环和条件。
+PEGs 有专门的节点，可以表示无限序列，这样就可以表示循环。
+它使用全局可盈利性启发式来进行提取，使用伪布尔求解器实现。
+最近，\cite{yogo-pldi20} 使用 PEGs 进行代码搜索（code search）。
+\egg 可以支持 PEGs 作为用户定义语言，因此它们的技术可以移植。
+
+
+%PEGs could be implemented in \egg.
+
+%%% Local Variables:
+%%% TeX-master: "egg"
+%%% End:

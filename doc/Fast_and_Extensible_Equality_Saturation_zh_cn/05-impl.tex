@@ -1,0 +1,361 @@
+\section{\egg: 易用, 可拓展, 高效率的 \Egraphs}
+% \section{\egg: Easy, Extensible, and Efficient \Egraphs}
+% \section{\egg: implementation and strengths}
+% 翻译完成
+
+\label{sec:egg}
+\label{sec:impl}
+\label{sec:lambda}
+
+% We implemented the techniques of rebuilding and \eclass analysis in \egg,
+%   an easy-to-use, extensible, and efficient \egraph library.
+% To the best of our knowledge,
+%   \egg is the first general-purpose, reusable \egraph implementation.
+% This has allowed focused effort on ease of use and optimization,
+%   knowing that any benefits will
+%   be seen across use cases as opposed to a single, ad hoc instance.
+我们在 \egg 中实现了重构和 \eclass 分析技术，
+  它是一个易于使用、可扩展、高效的 \egraph 库。
+据我们所知，\egg 是第一个通用、可重用的 \egraph 实现。
+这使得我们可以专注于易用性和优化,
+  因为任何优点都将在不同的使用场景中体现,
+  而不是仅限于一个特定的情况。
+
+% This section details \egg's implementation and some of the various
+%   optimizations and tools it provides to the user.
+% We use an extended example of a partial evaluator for the lambda calculus\footnote{
+%   \Egraphs do not have any ``built-in'' support for binding;
+%   for example, equality modulo alpha renaming is not free.
+%   The explicit substitution provided in this section is is illustrative but rather high in performance cost.
+%   Better support for languages with binding is important future work.
+% },
+%   for which we provide the complete source code (which few changes for readability)
+%   in \autoref{fig:lambda-lang} and \autoref{fig:lambda-analysis}.
+% While contrived, this example is compact and familiar, and it highlights
+%   (1) how \egg is used and (2) some of its novel features like
+%   \eclass analyses and dynamic rewrites.
+% It demonstrates how \egg can tackle binding,
+%   a perennially tough problem for \egraphs,
+%   with a simple explicit substitution approach
+%   powered by \egg's extensibility.
+% \autoref{sec:case-studies} goes further, providing real-world case studies of
+%   published projects that have depended on \egg.
+本节详细说明了 \egg 的实现和它为用户提供的各种优化和工具。
+我们使用了一个对于 lambda 演算的部分求值器的扩展示例 \footnote{
+  \Egraphs 没有任何“内置”的绑定支持;
+  例如，“同模（equality modulo） 阿尔法重命名（alpha renaming）”不是无成本的。
+  本节中提供的显式替换相当耗性能，未来的重要工作是更好的支持有绑定的语言。
+}，
+  完整的源代码在 \autoref{fig:lambda-lang} 和 \autoref{fig:lambda-analysis} 中提供
+  （仅做了少量修改以方便阅读）。
+尽管示例稍显做作, 但它紧凑易懂, 并突出了
+  (1) \egg 的使用方式和 (2) 其中一些新特性, 比如 \eclass 分析和动态重写。
+它演示了如何借助 \egg 的可扩展性，比如使用简单的显式替换方法来解决绑定问题——
+  这是一个对于\egraphs 来说永恒的难题。 
+\autoref{sec:case-studies} 提供了更多真实世界的案例研究,
+  展示了依赖 \egg 的已经发布的项目。
+
+% \egg is implemented in \textasciitilde{}5000 lines of Rust,\footnote
+% {
+%   \citeauthor{rust} is a high-level systems programming language.
+%   \egg has been integrated into applications written in other
+%   programming languages using both C FFI and serialization approaches.
+% }
+% including code, tests, and documentation.
+% \egg is open-source, well-documented, and distributed via Rust's package
+%   management system.\footnote{
+%   Source: \url{https://github.com/mwillsey/egg}.
+%   Documentation: \url{https://docs.rs/egg}.
+%   Package: \url{https://crates.io/crates/egg}.
+% }
+% All of \egg's components are generic over the
+%   user-provided language, analysis, and cost functions.
+\egg 由 \textasciitilde{}5000 行包括代码、测试和文档的 Rust \footnote
+{
+  \citeauthor{rust} 是一种高级系统编程语言。
+  \egg 已经被集成到其他编程语言编写的应用程序中，使用 C FFI 和序列化方法。
+}实现。
+\egg 是开源的、文档齐全的, 通过 Rust 的包管理系统发布。\footnote{
+  源码: \url{https://github.com/mwillsey/egg}.
+  文档: \url{https://docs.rs/egg}.
+  包: \url{https://crates.io/crates/egg}.
+}
+\egg 所有组件都是针对用户提供的语言、分析和成本函数的通用组件。
+
+% \subsection{Ease of Use}
+\subsection{易用}
+\label{sec:egg-easy}
+
+\input{91-lambda-rules}
+
+% \egg's ease of use comes primarily from its design as a library.
+% By defining only a language and some rewrite rules,
+%   a user can quickly
+%   start developing a synthesis or optimization tool.
+% Using \egg as a Rust library,
+%   the user defines the language using the \texttt{define\_language!} macro
+%   shown in \autoref{fig:lambda-lang}, lines 1-22.
+% Childless variants in the language may contain data of user-defined types,
+%   and \eclass analyses or dynamic rewrites may inspect this data.
+\egg 的易用性主要来自其作为库的设计。
+通过只定义一种语言和一些重写规则，用户可以快速开始开发合成或优化工具。
+作为一个 Rust 库来使用 \egg ，用户可以使用 \texttt{define\_language!} 宏定义语言。
+  示例见 \autoref{fig:lambda-lang} ，行1-22。
+语言中的子节点为空的变量可以包含用户定义类型的数据，
+  \eclass 分析或动态重写可以审查这些数据。 % ？may inspect this data.
+
+% 原文注释：
+%Defining a language is the only necessary input for \egg.
+%From there, a user may create and manipulate \egraphs that hold expressions from
+%  that language.
+%If the user wants to perform rewrites and equality saturation, \egg provides
+%  facilities for this as well.
+
+% The user provides rewrites as shown in
+%   \autoref{fig:lambda-lang}, lines 51-100.
+% Each rewrite has a name, a left-hand side, and a right-hand side.
+% For purely syntactic rewrites, the right-hand is simply a pattern.
+% More complex rewrites can incorporate conditions or even dynamic right-hand
+%   sides, both explained in the \autoref{sec:egg-extensible} and \autoref{fig:lambda-applier}.
+用户可以提供重写规则，见 \autoref{fig:lambda-lang}，行 51-100 。
+每个重写规则都有一个名称,一个左部和一个右部.
+对于纯语法重写,右部仅仅是一个模式.
+更复杂的重写可以包含条件甚至是动态的右部，
+  这些在 \autoref{sec:egg-extensible} 和 \autoref{fig:lambda-applier} 中有解释。
+
+% Equality saturation workflows, regardless of the application domain,
+%   typically have a similar structure:
+% add expressions to an empty \egraph, run rewrites until saturation or
+%   timeout, and extract the best equivalent expressions according to some cost
+%   function.
+% This ``outer loop'' of equality saturation involves a significant amount of
+%   error-prone boilerplate:
+无论应用领域如何，等式饱和工作流程通常具有相似的结构：
+向空的 \egraph 添加表达式，运行重写直到饱和或超时，并根据一些代价函数提取最佳等价表达式。
+这种“外循环（outer loop）”的等式饱和涉及大量的
+  容易出错的繁文缛节：% ？error-prone boilerplate
+% \begin{itemize}
+%   \item Checking for saturation, timeouts, and \egraph size limits.
+%   \item Orchestrating the read-phase, write-phase, rebuild system
+%     (\autoref{fig:rebuild-code}) that makes \egg fast.
+%   \item Recording performance data at each iteration.
+%   \item Potentially coordinating rule execution so that expansive rules like
+%     associativity do not dominate the \egraph.
+%   \item Finally, extracting the best expression(s) according to a
+%   user-defined cost function.
+% \end{itemize}
+\begin{itemize}
+  \item 饱和、超时和 \egraph 大小限制的检测。
+  \item 协调读取阶段、写入阶段和重建系统（\autoref{fig:rebuild-code}）来加速 \egg 。
+  \item 在每次迭代中记录性能数据。
+  \item 潜在地协调规则的执行，
+    以便像结合律（associativity）这样的扩张性（expansive）规则不会在 \egraph 中占主导地位。
+  \item 最后, 根据用户定义的代价函数提取最佳表达式。
+\end{itemize}
+
+% \egg provides these functionalities through its \texttt{Runner} and
+%   \texttt{Extractor} interfaces.
+% \texttt{Runner}s automatically detect saturation, and can be configured to stop
+%   after a time, \egraph size, or iterations limit.
+% The equality saturation loop provided by \egg calls \texttt{rebuild}, so users
+%   need not even know about \egg's deferred invariant maintenance.
+% \texttt{Runner}s record various metrics about each iteration automatically,
+%   and the user can hook into this to report relevant data.
+% \texttt{Extractor}s select the optimal term from an \egraph given a
+%   user-defined, local cost function.\footnote{
+%     As mentioned in \autoref{sec:tricks-extraction}, extraction can be
+%     implemented as part of an \eclass analysis.
+%     The separate \texttt{Extractor} feature is still useful for ergonomic and
+%     performance reasons.
+%   }
+% The two can be combined as well; users commonly record the ``best so far''
+%   expression by extracting in each iteration.
+\egg 通过其 \texttt{Runner} 和 \texttt{Extractor} 接口提供了这些功能。
+\texttt{Runner}s 会自动检测饱和状态，并可以配置为在特定时间、\egraph 大小或迭代次数限制后停止。
+由 \egg 提供的等式饱和循环会调用 \texttt{rebuild}，
+  因此用户甚至不需要了解 \egg 的延迟不变性（deferred invariant）维护。
+\texttt{Runner}s 自动记录每次迭代的各种指标，用户可以钩入（hook）此过程以报告相关数据。
+\texttt{Extractor}s 根据用户定义的局部代价函数从 \egraph 中选择最优项。\footnote{
+    正如在 \autoref{sec:tricks-extraction} 中提到的，萃取可以作为 \eclass 分析的一部分实现。
+    由于人性化和性能原因，独立的 \texttt{Extractor} 功能仍然有用。
+  }
+这两者也可以结合起来；用户通常在每次迭代中萃取来记录“到目前为止最好”的表达。
+
+% \autoref{fig:lambda-lang} also shows \egg's \texttt{test\_fn!}
+%   macro for easily creating tests (lines 27-50).
+% These tests create an \egraph with the given expression, run equality saturation
+%   using a \texttt{Runner}, and check to make sure the right-hand pattern can be
+%   found in the same \eclass as the initial expression.
+\autoref{fig:lambda-lang} 也展示了 \egg 的用于轻松创建测试的 \texttt{test\_fn!} 宏（行~27-50）。
+这些测试使用给定表达式创建一个 \egraph，
+  使用 \texttt{Runner} 运行 等式饱和 ，
+  并检查右部的模式是否能够在与初始表达式相同的 \eclass 中找到。
+
+% \subsection{Extensibility}
+\subsection{可拓展性}
+\label{sec:egg-extensible}
+
+% For simple domains, defining a language and purely syntactic rewrites will
+%   suffice.
+% However, our partial evaluator requires interpreted reasoning, so we use some of
+%   \egg's more advanced features like \eclass analyses and dynamic rewrites.
+% Importantly, \egg supports these extensibility features as a library:
+%   the user need not modify the \egraph or \egg's internals.
+对于简单的领域，定义语言和纯语法重写就足够了。
+但是，我们的部分评估器需要解释性推理，因此我们使用了一些 \egg 更高级的功能，如 \eclass 分析和动态重写。
+重要的是，\egg 作为库支持这些可扩展性功能：用户无需修改 \egraph 或 \egg 的内部。
+
+\input{92-lambda-code}
+
+% \autoref{fig:lambda-applier} shows the remainder of the code for our lambda
+%   calculus partial evaluator.
+% It uses an \eclass analysis (\texttt{LambdaAnalysis})
+%   to track free variables and constants associated
+%   with each \eclass.
+% The implementation of the \eclass analysis is in Lines 11-50.
+% The \eclass analysis invariant
+%   guarantees that the analysis data contains an over-approximation of free variables
+%   from terms represented in that \eclass.
+% The analysis also does constant folding
+%   (see the \texttt{make} and \texttt{modify} methods).
+\autoref{fig:lambda-applier} 展示了我们的 lambda 部分求值器的代码的剩余部分。
+它使用一个 \eclass 分析 （\texttt{LambdaAnalysis}）来跟踪与每个 \eclass 相关联的自由变量和常量。
+\eclass 分析的实现在第 11-50 行。
+\eclass 分析不变量保证了
+  分析数据包含来自该 \eclass 表示的 term 的
+  自由变量的上近似（或作“过近似”，Over-approximation）。%？
+该分析还进行了常量折叠（请参阅 \texttt{make} 和 \texttt{modify} 方法）。
+% The \texttt{let-lam-diff} rewrite (Line 90, \autoref{fig:lambda-rules})
+%   uses the \texttt{CaptureAvoid} (Lines 81-100, \autoref{fig:lambda-applier})
+%   dynamic right-hand side to do capture-avoiding
+%   substitution only when necessary based on the free variable information.
+% The conditional rewrites from \autoref{fig:lambda-rules} depend on the
+%   conditions \texttt{is\_not\_same\_var} and
+%   \texttt{is\_var} (Lines 68-74, \autoref{fig:lambda-applier})
+%   to ensure correct substitution.
+\texttt{let-lam-diff} 重写（\autoref{fig:lambda-rules}，第 90 行）
+  使用 \texttt{CaptureAvoid} （\autoref{fig:lambda-applier}，第 81-100 行）
+  的动态右部，根据自由变量的信息仅在必要时进行捕获避免地替换（capture-avoiding substitution）。
+\autoref{fig:lambda-rules} 的条件重写取决于条件 \texttt{is\_not\_same\_var} 和 \texttt{is\_var} 
+  （ \autoref{fig:lambda-applier}，第 68-74 行） 以确保正确的替换。
+
+% \egg is extensible in other ways as well.
+% As mentioned above, \texttt{Extractor}s are parameterized by a user-provided
+%   cost function.
+% \texttt{Runner}s are also extensible with user-provided rule schedulers that can
+%   control the behavior of potentially troublesome rewrites.
+% \label{sec:rule-scheduling}
+% In typical equality saturation, each rewrite is searched for and applied each
+%   iteration.
+% This can cause certain rewrites, commonly associativity or distributivity,
+%   to dominate others and make the search space less productive.
+% Applied in moderation, these rewrites can trigger other rewrites and find
+%   greatly improved expressions,
+%   but they can also slow the search by
+%   exploding the \egraph exponentially in size.
+% By default, \egg uses the built-in backoff scheduler
+%   that identifies rewrites that are matching in exponentially-growing
+%   locations and temporarily bans them.
+% We have observed that this greatly reduced run time (producing the same results)
+%   in many settings.
+% \egg can also use a conventional every-rule-every-time scheduler, or the user
+%   can supply their own.
+\egg 在其他方面也是可扩展的。
+如上所述，\texttt{Extractor} 由用户提供的成本函数来参数化。% are parameterized
+\texttt{Runner} 也可以使用用户提供的规则调度程序进行扩展，以控制潜在有问题的重写的行为。
+\label{sec:rule-scheduling}
+在典型的等式饱和中，每次迭代都会搜索和应用每个重写。
+这可能导致某些重写（通常是结合率或分配率）占据其他重写的地位，使搜索空间变得不够高效。
+适量使用这些重写可以触发其他重写并找到更好的表达式，
+  但它们也可能会使搜索变慢，因为它们会使 \egraph 的大小指数级增长。
+默认情况下，\egg 使用内置的退避调度程序（backoff scheduler），
+  该调度程序识别在指数级位置匹配的重写并暂时禁用它们。
+我们已经观察到，这在许多情况下大大减少了运行时间（产生相同的结果）。
+\egg 也可以使用常规的每规则每次调度器（every-rule-every-time scheduler），
+  或者用户自定义的调度器。
+
+% \subsection{Efficiency}
+\subsection{效率}
+\label{sec:egg-efficient}
+
+% \egg's novel \textit{rebuilding} algorithm (\autoref{sec:rebuild})
+% combined with systems programming best practices
+%   makes \egraphs---and the equality saturation
+%   use case in particular---more efficient than prior tools.
+\egg 的新颖的\textit{重建}算法 (\autoref{sec:rebuild}) 与系统编程最佳实践相结合，
+  使得 \egraphs —— 尤其是等式饱和使用案例 —— 比之前的工具更有效率。
+
+% \egg is implemented in Rust, giving the compiler freedom to
+%   specialize and inline user-written code.
+% This is especially important as
+%   \egg's generic nature leads to tight interaction
+%   between library code
+%   (e.g., searching for rewrites) and user code (e.g., comparing operators).
+% \egg is designed from the ground up to use cache-friendly,
+%   flat buffers with minimal indirection for most internal data structures.
+% This is in sharp contrast to traditional representations of \egraphs
+%   \cite{nelson, simplify} that contains many tree- and linked list-like data
+%   structures.
+% \egg additionally compiles patterns to be executed by a small virtual machine
+%   \cite{ematching}, as opposed to recursively walking the tree-like
+%   representation of patterns.
+\egg 是用 Rust 实现的，这使得编译器可以自由地特化（specialize）和内联（inline）用户编写的代码。
+这非常重要，因为 \egg 的通用性导致了库代码（例如搜索重写）和用户代码（例如比较运算符）之间的紧密交互。
+\egg 从头开始设计，
+  使用缓存友好的、
+  带有最少间接层（indirection）的平面缓冲区（flat buffers），%？flat buffers、indirection
+  用于大多数内部数据结构。
+这与包含许多树和链表类似的数据结构的传统 \egraphs 表示形式 \cite{nelson, simplify} 形成鲜明对比。
+与递归遍历模式的树状表示法相比，\egg 另外还编译了模式，% ？additionally compiles patterns
+  以便由一个小型虚拟机执行 \cite{ematching}。
+
+% Aside from deferred rebuilding, \egg's equality saturation algorithm leads to
+%   implementation-level performance enhancements.
+% Searching for rewrite matches, which is the bulk of running time, can be
+%   parallelized thanks to the phase separation.
+% Either the rules or \eclasses could be searched in parallel.
+% Furthermore, the once-per-iteration frequency of rebuilding allows \egg to
+%   establish other performance-enhancing invariants that hold during the
+%   read-only search phase.
+% For example, \egg sorts \enodes within each \eclass to enable binary search, and
+%   also maintains a cache mapping function symbols to \eclasses that
+%   contain \enodes with that function symbol.
+除了延迟重建外，\egg 的等式饱和算法还带来了实现层面的性能增强。
+搜索重写匹配，这是运行时间的主要部分，可以通过阶段分离并行化。
+规则或 \eclasses 可以并行搜索。
+此外，每次迭代重建的频率允许 \egg 建立其他在只读搜索阶段期间保持的性能增强不变量，。
+此外，每次迭代一次（once-per-iteration）的重建频率
+  允许 \egg 建立其他增强性能的不变量，
+  这些不变量在只读搜索阶段保持不变。
+例如，\egg 在每个 \eclass 内排序 \enodes 以启用二分查找，
+  并维护将函数符号映射到包含具有该函数符号的 \enodes 的 \eclasses 的缓存。
+
+% Many of \egg's extensibility features can also be used to improve performance.
+% As mentioned above, rule scheduling can lead to great performance improvement in
+%   the face of ``expansive'' rules that would otherwise dominate the search
+%   space.
+% The \texttt{Runner} interface also supports user hooks that can stop
+%   the equality saturation after some arbitrary condition.
+% This can be useful when using equality saturation to prove terms equal; once
+%   they are unified, there is no point in continuing.
+% \label{sec:egg-batched}
+% \egg's \texttt{Runner}s also support batch simplification, where multiple terms
+%   can be added to the initial \egraph before running equality saturation.
+% If the terms are substantially similar, both rewriting and any \eclass analyses
+%   will benefit from the \egraph's inherent structural deduplication.
+% The case study in \autoref{sec:herbie} uses batch simplification to achieve
+%   a large speedup with simplifying similar expressions.
+\egg 的许多可扩展性功能也可用于提高性能。
+如上所述，规则调度可以在面对“扩展性”规则时带来巨大的性能改进，否则这些规则将主导搜索空间。
+\texttt{Runner} 接口也支持用户钩子，可以在任意条件后停止equality saturation。
+当使用等式饱和来证明项目相等时，这是非常有用的; 
+  一旦它们一致，就没有继续的必要了。
+\label{sec:egg-batched}
+\egg 的 \texttt{Runner} 也支持批量简化，
+  在运行等式饱和之前可以将多个 term 添加到初始 \egraph。
+如果这些 term 显着相似，重写和任何 \eclass 分析都将从 \egraph 的固有结构去重复中受益。
+\autoref{sec:herbie} 中的案例研究使用批量简化来实现简化相似表达式的大幅加速。
+
+%%% Local Variables:
+%%% TeX-master: "egg"
+%%% End:
