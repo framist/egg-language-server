@@ -7,6 +7,10 @@ pub fn lisp_parser(s: &str) -> Vec<EggDiagnostic> {
 	// no ast_to_sexpr step
     let sexpr = s;
     info!("sexpr: \n{}", &sexpr);
+    debug!(
+        "pretty sexp: \n{}",
+        rpn_to_human(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+    );
 
     let mut diagnostics: Vec<EggDiagnostic> = Vec::new();
 
