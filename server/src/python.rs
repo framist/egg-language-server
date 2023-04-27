@@ -332,7 +332,7 @@ pub fn py_parser(s: &str) -> Vec<EggDiagnostic> {
 
 // TODO 并行化 函数返回 simplify 的 vec handle， 在调用处 join
 // use rayon::prelude::*;
-use std::thread;
+// use std::thread;
 
 fn parser_batch_helper(tree_cursor: &TreeCursor, code: &str) -> Vec<EggDiagnostic> {
     let node = tree_cursor.node();

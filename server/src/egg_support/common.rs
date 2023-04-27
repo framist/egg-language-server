@@ -88,10 +88,10 @@ define_language! {
         "<=" = Le([Id; 2]),
         "!=" = Ne([Id; 2]),
 
-        // * List 
+        // * List
         // 注意，为了防止歧义，目前仅用于解决多参数问题；数据结构构建都应看作未定义的函数
         "cons" = Cons([Id; 2]),
-        // "car" = Car(Id), 
+        // "car" = Car(Id),
         // "cdr" = Cdr(Id),
         "nil" = Nil,
         // 多参 的函数 例如 (laml (cons x (cons y nil)) (+ x y))
@@ -103,7 +103,7 @@ define_language! {
         "seq" = Seq([Id; 2]),           // 序列指令
         "seqlet" = SeqLet([Id; 2]),     // (sqlet x 1)
 
-        
+
         // can also do a variable number of children in a boxed slice
         // this will only match if the lengths are the same
         // 但是涉及 Multi-matching patterns (ex: `?a...`)  egg 还没有实现 参加 Egg CHANGELOG
@@ -500,29 +500,7 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
     ]
 }
 
-/// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
-#[cfg(test)]
-pub fn simplify_test(s: &str) -> Result<String, String> {
-    // 解析表达式，类型注释(<Language>)告诉它使用哪种语言
-    // let expr: RecExpr<Language> = s.parse().unwrap();
-    let expr = match s.parse() {
-        Ok(expr) => expr,
-        Err(error) => return Err(format!("Failed to parse expression: {}", error)),
-    };
-
-    // 使用 Runner 简化表达式，该运行器创建带有
-    // 给定的表达式的 e-graph ，并在其上运行给定的规则
-    let runner = Runner::default().with_expr(&expr).run(&make_rules());
-
-    // Runner 知道用 with_expr 给出的表达式在哪个 e-class 中
-    let root = runner.roots[0];
-
-    // 使用提取器 extractor 选择 根 eclass 的最佳元素
-    let extractor = Extractor::new(&runner.egraph, CommonLanguageCostFn);
-    let (_best_cost, best) = extractor.find_best(root);
-    Ok(best.to_string())
-}
-
+use std::time::{Duration, Instant};
 /// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
 /// - 如果解析失败，则返回错误
 /// - 如果没有产生简化，则返回 None
@@ -533,10 +511,16 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     }
     let expr = match s.parse() {
         Ok(expr) => expr,
-        Err(error) => return Err(format!("Failed to parse expression: {}", error)),
+        Err(error) => return Err(format!("Egg failed to parse: {}", error)),
     };
 
-    let runner = Runner::default().with_expr(&expr).run(&make_rules());
+    // 一个计时器
+    let start = Instant::now();
+    let runner = Runner::default()
+        .with_time_limit(Duration::new(0, 500_000_000)) // 这个超时时间应该要能设置为自定义的，也可以参考测试结果的最长时间
+        .with_expr(&expr)
+        .run(&make_rules());
+    debug!("runner spend: {:?}", start.elapsed());
 
     // Runner 知道用 with_expr 给出的表达式在哪个 e-class 中
     let root = runner.roots[0];
@@ -546,11 +530,23 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     let (best_cost, best) = extractor.find_best(root);
 
     // cost  的变化
-    debug!("cost: {} -> {}", CommonLanguageCostFn.cost_rec(&expr), best_cost);
+    debug!(
+        "cost: {} -> {}",
+        CommonLanguageCostFn.cost_rec(&expr),
+        best_cost
+    );
     if best_cost <= CommonLanguageCostFn.cost_rec(&expr) - 1.0 {
         Ok(Some(best))
     } else {
         Ok(None)
+    }
+}
+
+#[cfg(test)]
+pub fn simplify_test(s: &str) -> Result<String, String> {
+    match simplify(s)? {
+        Some(expr) => Ok(format!("{}", expr)),
+        None => Ok(s.to_string()),
     }
 }
 
@@ -633,6 +629,25 @@ fn debug_test2() {
         )
     );
 }
+
+#[test]
+fn time_test1() {
+    println!("{:?}", simplify_test("(+ 1 1)"));
+}
+test_fn! {time_test2, make_rules(), "(+ 1 1)" => "2"}
+//     正是下面能影响时长
+//     let goals = &["2".parse().unwrap()];
+//     let goals = goals.to_vec();
+//     runner = runner.with_hook(move |r| {
+//         if goals
+//             .iter()
+//             .all(|g: &Pattern<_>| g.search_eclass(&r.egraph, id).is_some())
+//         {
+//             Err("Proved all goals".into())
+//         } else {
+//             Ok(())
+//         }
+//     });
 
 // * math test *
 
@@ -740,7 +755,7 @@ egg::test_fn! {
     "(if (= 1 1) 7 9)" => "7"
 }
 
-// TODO: this is a bit slow
+// TODO: this is a bit slow, need 12s+
 egg::test_fn! {
     lambda_compose_many, make_rules(),
     "(let compose (lam f (lam g (lam x (app (var f)
@@ -756,7 +771,6 @@ egg::test_fn! {
     =>
     "(lam ?x (+ (var ?x) 7))"
 }
-
 
 egg::test_fn! {
     lambda_if, make_rules(),
@@ -792,19 +806,17 @@ egg::test_fn! {
     => "3"
 }
 
-
 // * list test *
 
-
 egg::test_fn! {laml_curry1, make_rules(), "(laml (cons y nil) (+ 1 (var y)))" => "(lam y (+ 1 (var y)))" }
-egg::test_fn! {laml_curry2, make_rules(), "(laml (cons x (cons y nil)) (+ (var x) (var y)))" 
-                                       => "(lam x (lam y (+ (var x) (var y))))" }
+egg::test_fn! {laml_curry2, make_rules(), "(laml (cons x (cons y nil)) (+ (var x) (var y)))"
+=> "(lam x (lam y (+ (var x) (var y))))" }
 
-egg::test_fn! {seqlet1, make_rules(), "(seq (seqlet a 1) (seq (var a) nil))" 
-                                       => "1" }
+egg::test_fn! {seqlet1, make_rules(), "(seq (seqlet a 1) (seq (var a) nil))"
+=> "1" }
 
-egg::test_fn! {skip1, make_rules(), "(seq (seq skip (seq (var a) skip)) skip)" 
-                                       => "(var a)" }
+egg::test_fn! {skip1, make_rules(), "(seq (seq skip (seq (var a) skip)) skip)"
+=> "(var a)" }
 
 #[test]
 fn temp() {
