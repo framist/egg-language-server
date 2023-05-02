@@ -9,7 +9,9 @@ pub fn lisp_parser(s: &str) -> Vec<EggDiagnostic> {
     info!("sexpr: \n{}", &sexpr);
     debug!(
         "pretty sexp: \n{}",
-        rpn_to_human(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+        {
+            rpn_to_human(&s.parse().unwrap_or("(error)".parse().unwrap()), rpn_helper_simple).unwrap_or("Error".to_string())
+        }
     );
 
     let mut diagnostics: Vec<EggDiagnostic> = Vec::new();

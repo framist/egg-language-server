@@ -103,6 +103,8 @@ define_language! {
         "seq" = Seq([Id; 2]),           // 序列指令
         "seqlet" = SeqLet([Id; 2]),     // (sqlet x 1)
 
+        "while" = While([Id; 2]),       // (while (x < 10) (x = x + 1))
+        "for" = For([Id; 4]),           // (for (x = 0) (x < 10) (x = x + 1) (x = x + 1))
 
         // can also do a variable number of children in a boxed slice
         // this will only match if the lengths are the same
@@ -124,6 +126,7 @@ impl CostFunction<CommonLanguage> for CommonLanguageCostFn {
         let op_cost = match enode {
             CommonLanguage::Cons(..) => 0.01,
             CommonLanguage::Nil => 0.01,
+            CommonLanguage::Seq(..) => 0.01,
             _ => 1.0,
         };
         enode.fold(op_cost, |sum, i| sum + costs(i))
@@ -244,6 +247,7 @@ fn eval(
         )),
 
         // * Relation
+        // TODO 变量情况下没法常数折叠 (let a 1 (!= (var a) 2))
         CommonLanguage::Gt([a, b]) => Some((
             CommonLanguage::Bool(x(a)?.num()? > x(b)?.num()?),
             format!("(> {} {})", x(a)?, x(b)?).parse().unwrap(),
@@ -262,7 +266,7 @@ fn eval(
             format!("(<= {} {})", x(a)?, x(b)?).parse().unwrap(),
         )),
         CommonLanguage::Ne([a, b]) => Some((
-            CommonLanguage::Bool(x(a)?.num()? != x(b)?.num()?),
+            CommonLanguage::Bool(x(a)? != x(b)?),
             format!("(!= {} {})", x(a)?, x(b)?).parse().unwrap(),
         )),
         _ => None,
@@ -480,7 +484,7 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         rw!("ge-expand"; "(>= ?a ?b)" => "(~ (> ?b ?a))"), // >= => not >+flip
         rw!("le-flip"; "(<= ?a ?b)" => "(>= ?b ?a)"), // <= => >=
         rw!("ne-expand"; "(!= ?a ?b)" => "(~ (= ?a ?b))"),
-        // = => <= and >= 首尾相连，实测会让 simplify_test7 快很多
+        // = => <= and >= 首尾相连
         rw!("eq-expand"; "(= ?a ?b)" => "(& (<= ?a ?b) (>= ?a ?b))"), 
 
         // * List
@@ -495,6 +499,13 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         rw!("seq-assoc"; "(seq (seq ?a ?b) ?c)" => "(seq ?a (seq ?b ?c))"),
         rw!("seq-skip-left"; "(seq skip ?a)" => "?a"),
         rw!("seq-skip-right"; "(seq ?a skip)" => "?a"),
+        // * Imp
+        // while
+        rw!("while-true"; "(while true ?body)" => "(while true skip)"),
+        rw!("while-false"; "(while false ?body)" => "skip"),
+        rw!("while-expand"; "(while ?cond ?body)" => "(seq ?body (while ?cond ?body))"),
+        // for
+        rw!("for-expand"; "(for ?init ?cond ?update ?body)" => "(seq ?init (while ?cond (seq ?body ?update)))"),
         // TODO ...
 
     ]
@@ -517,7 +528,7 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     // 一个计时器
     let start = Instant::now();
     let runner = Runner::default()
-        .with_time_limit(Duration::new(0, 500_000_000)) // 这个超时时间应该要能设置为自定义的，也可以参考测试结果的最长时间
+        .with_time_limit(Duration::new(20, 500_000_000)) // 这个超时时间应该要能设置为自定义的，也可以参考测试结果的最长时间
         .with_expr(&expr)
         .run(&make_rules());
     debug!("runner spend: {:?}", start.elapsed());
@@ -528,7 +539,7 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     // 使用提取器 extractor 选择 根 eclass 的最佳元素
     let extractor = Extractor::new(&runner.egraph, CommonLanguageCostFn);
     let (best_cost, best) = extractor.find_best(root);
-
+    debug!("best sexpr:\n{}", best.to_string());
     // cost  的变化
     debug!(
         "cost: {} -> {}",
@@ -609,6 +620,9 @@ test_fn! { simplify_test7, make_rules(), "(& (| (> 3 2) (= 1 2)) true)" => "true
 test_fn! { simplify_test8, make_rules(), "(& (| true (= 3 2)) true)" => "true" }
 
 test_fn! { simplify_test9, make_rules(), "(& (| (<= 233 666) (= 2 3)) true)" => "true" }
+
+// TODO
+test_fn! { simplify_test10, make_rules(), " (let a 1 (!= (var a) 2))" => "true" }
 
 // TODO
 #[test]
@@ -817,6 +831,17 @@ egg::test_fn! {seqlet1, make_rules(), "(seq (seqlet a 1) (seq (var a) nil))"
 
 egg::test_fn! {skip1, make_rules(), "(seq (seq skip (seq (var a) skip)) skip)"
 => "(var a)" }
+
+
+egg::test_fn! {while_true, make_rules(), "(while true (var a))"
+=> "(while true skip)" }
+
+egg::test_fn! {while_false, make_rules(), "(while false (var a))"
+=> "skip" }
+
+// egg::test_fn! {for_to_while, make_rules(), "(for (seqlet i 0) (<= (var i) 10) (+ (var i) 1) (var i))"
+// => "" }
+
 
 #[test]
 fn temp() {

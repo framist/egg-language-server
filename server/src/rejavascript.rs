@@ -123,6 +123,24 @@ fn rpn_helper_js(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
             let var = stack.pop().ok_or(&err)?;
             format!("let {} = {};", var, body)
         }
+        While(_) => {
+            let body = stack.pop().ok_or(&err)?;
+            let cond = stack.pop().ok_or(&err)?;
+            format!("while {} {{\n{}\n}}", cond, add_widths(body))
+        }
+        For(_) => {
+            let body = stack.pop().ok_or(&err)?;
+            let update = stack.pop().ok_or(&err)?;
+            let cond = stack.pop().ok_or(&err)?;
+            let init = stack.pop().ok_or(&err)?;
+            format!(
+                "for ({}; {}; {}) {{\n{}\n}}",
+                init,
+                cond,
+                update,
+                add_widths(body)
+            )
+        }
         // op @ _ => return Err(format!("un imp token = {:?}", op)),
     })
 }

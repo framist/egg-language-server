@@ -19,13 +19,7 @@ use tree_sitter::{Parser, TreeCursor};
 
 // 类递归地转换为自定义的 s-expr
 // 树指针的方式
-// TODO 随着 seq 的加入，可以用递归的方式了，不过还是用树指针实现（效率高）
-// fn fa(a: i32,i: i32) {
-// if i == 0 {
-//     return;
-// }
-// fa(a, i-1)
-// }
+// 随着 seq 的加入，可以用递归的方式了，不过还是用树指针实现（效率高）
 fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
     let no_var_ast_to_sexpr = |tree_cursor: &TreeCursor, code: &str | {
         let node = tree_cursor.node();
@@ -408,7 +402,6 @@ fn parser_batch_helper(tree_cursor: &TreeCursor, code: &str) -> Vec<EggDiagnosti
 
 // * test *
 
-// TODO 性能还是一个很大的问题，需要优化
 #[test]
 fn test_py_parser() {
     // python 额外注意空格与 tab 是不一样的！
