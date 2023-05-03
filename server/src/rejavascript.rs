@@ -141,6 +141,14 @@ fn rpn_helper_js(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
                 add_widths(body)
             )
         }
+        Other(s, argids) => {
+            let mut ans = stack.pop().ok_or(&err)?;
+            for _ in 0..argids.len() - 1 {
+                let arg = stack.pop().ok_or(&err)?;
+                ans = arg + ", " + &ans;
+            }
+            format!("{}({})", s, ans)
+        }
         // op @ _ => return Err(format!("un imp token = {:?}", op)),
     })
 }

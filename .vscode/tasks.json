@@ -38,11 +38,26 @@
 			"command": "cargo build",
 			"problemMatcher": "$rustc"
 		},
+		{
+			"label": "Build Server (release)",
+			"group": "build",
+			"type": "shell",
+			"command": "cargo build --release",
+			"problemMatcher": "$rustc"
+		},
 		// 联合调试
 		{
 			"label": "Build Server and Extension",
 			"dependsOn": [
 				"Build Server",
+				"Build Extension"
+			],
+			"problemMatcher": "$rustc"
+		},
+		{
+			"label": "Build Server (release) and Extension",
+			"dependsOn": [
+				"Build Server (release)",
 				"Build Extension"
 			],
 			"problemMatcher": "$rustc"

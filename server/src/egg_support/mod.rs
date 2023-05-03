@@ -156,6 +156,14 @@ pub fn rpn_helper_simple(
                 add_widths(body)
             )
         }
+        Other(s, argids) => {
+            let mut ans = stack.pop().ok_or(&err)?;
+            for _ in 0..argids.len() - 1 {
+                let arg = stack.pop().ok_or(&err)?;
+                ans = arg + ", " + &ans;
+            }
+            format!("{}({})", s, ans)
+        }
         // op @ _ => return Err(format!("un imp token = {:?}", op)),
     })
 }
@@ -273,19 +281,6 @@ fn lisp_temp_test() {
     println!("[*]simply:\n{}", direct_parser(s).unwrap());
 }
 
-// #[test]
-// fn list_temp_test() {
-//     let s = "(car
-//                 (cons 1 (cons 2 nil))
-//              )";
-//     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
-//     println!(
-//         "[*]rpn_to_string:\n{}",
-//         rpn_to_string(&s.parse().unwrap(), rpn_helper_simple).unwrap()
-//     );
-//     // 优化后
-//     println!("[*]simply:\n{}", direct_parser(s).unwrap());
-// }
 
 #[test]
 fn curry_temp_test() {
@@ -338,4 +333,17 @@ fn temp_test2() {
     // 优化后
     println!("[*]simply:\n{}", direct_parser(s).unwrap());
 }
+
+#[test]
+fn list_temp_test1() {
+    let s = "(my 1 2 3 4)";
+    println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
+    println!(
+        "[*]rpn_to_string:\n{}",
+        rpn_to_human(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+    );
+    // 优化后
+    println!("[*]simply:\n{}", direct_parser(s).unwrap());
+}
+
 

@@ -56,9 +56,9 @@ define_language! {
 
         // * lambda
         Bool(bool),
-        "var" = Var(Id),        // 声明之后为一个 var
+        "var" = Var(Id),        // 实参注明
         "=" = Eq([Id; 2]),
-        "app" = App([Id; 2]),   // apply 使用lam函数 声明之后为一个lambda, 如果是函数名，则需var声明
+        "app" = App([Id; 2]),   // apply 施加函数
         "lam" = Lambda([Id; 2]),
         "let" = Let([Id; 3]),
         "fix" = Fix([Id; 2]),
@@ -108,11 +108,13 @@ define_language! {
 
         // can also do a variable number of children in a boxed slice
         // this will only match if the lengths are the same
-        // 但是涉及 Multi-matching patterns (ex: `?a...`)  egg 还没有实现 参加 Egg CHANGELOG
+        // 但是涉及 Multi-matching patterns (ex: `?a...`)  egg 还没有实现 参见 Egg CHANGELOG
         // TODO "list" = List(Box<[Id]>),
-
-        Symbol(Symbol),  // language items are parsed in order
-
+ 
+        Symbol(Symbol),// 语言项的解析是按顺序进行的，所以这个应放在后面
+        // 这是最终的回退，它将解析任何运算符 (作为字符串) 和任意数量的孩子。
+        // 请注意，如果有0个子级，则前一个分支将成功
+        Other(Symbol, Vec<Id>),
     }
 }
 
@@ -389,7 +391,7 @@ impl Applier<CommonLanguage, LambdaAnalysis> for CaptureAvoid {
 }
 
 /// 对表达式进行重写。
-/// 重写实际上不是可逆的，即 ==>
+/// => 重写是不可逆的。可逆重写可以用 <=> 实现
 #[rustfmt::skip]
 fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
     vec![
@@ -512,7 +514,7 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
 }
 
 use std::time::{Duration, Instant};
-/// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
+/// 解析一个表达式，使用 egg 对其进行简化
 /// - 如果解析失败，则返回错误
 /// - 如果没有产生简化，则返回 None
 /// - 如果产生了简化，则返回 Some(简化后的 RecExpr 逆波兰表达式)
@@ -528,7 +530,7 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     // 一个计时器
     let start = Instant::now();
     let runner = Runner::default()
-        .with_time_limit(Duration::new(20, 500_000_000)) // 这个超时时间应该要能设置为自定义的，也可以参考测试结果的最长时间
+        // .with_time_limit(Duration::new(0, 500_000_000)) // 这个超时时间应该要能设置为自定义的，也可以参考测试结果的最长时间 ps. release 模式下基本上不用限制时间
         .with_expr(&expr)
         .run(&make_rules());
     debug!("runner spend: {:?}", start.elapsed());
@@ -586,6 +588,8 @@ fn simplify_explain_test() {
     println!("best ================= \n{}", end.to_string());
 
     // TODO 获取解释性输出的时间很长，需要优化
+    // ~60s in debug mode
+    // ~12s in release mode
 
     println!(
         "get_flat_string ================= \n{}",
@@ -769,7 +773,7 @@ egg::test_fn! {
     "(if (= 1 1) 7 9)" => "7"
 }
 
-// TODO: this is a bit slow, need 12s+
+// this is a bit slow, need 12s+ ; but in release mode, it's ~0.1s
 egg::test_fn! {
     lambda_compose_many, make_rules(),
     "(let compose (lam f (lam g (lam x (app (var f)

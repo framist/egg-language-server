@@ -42,10 +42,19 @@ export function activate(context: ExtensionContext) {
 
 	// 创建一个输出通道，用于显示语言服务器的跟踪信息
 	const traceOutputChannel = window.createOutputChannel("egg Language Server trace");
-	// 取得要运行的语言服务器的命令路径
-	const command = process.env.SERVER_PATH_DEBUG || "egg-language-server";
 	const run: Executable = {
-		command,
+		command: process.env.SERVER_PATH_RELEASE || "egg-language-server",
+		options: {
+			env: {
+				...process.env,                    // 继承当前进程环境变量，并添加或覆盖其中的环境变量
+				RUST_LOG: "egg_language_server=info,egg=off",   // rust 日志级别；egg 似乎会匹配 egg*
+				// RUST_BACKTRACE: 1                  // 开启 Rust panic 时的 backtrace 功能
+			},
+		},
+	};
+	const debug: Executable = {
+		// 取得要运行的语言服务器的命令路径
+		command: process.env.SERVER_PATH_DEBUG || "egg-language-server",
 		options: {
 			env: {
 				...process.env,                    // 继承当前进程环境变量，并添加或覆盖其中的环境变量
@@ -54,12 +63,9 @@ export function activate(context: ExtensionContext) {
 			},
 		},
 	};
-	// const debug: Executable = {
-	// 	// TODO 未实现：调试
-	// };
 	const serverOptions: ServerOptions = {
 		run,
-		debug: run,
+		debug,
 	};
 
 

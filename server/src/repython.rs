@@ -131,6 +131,14 @@ fn rpn_helper_py(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
         For(_) => {
             return Err(format!("un imp token = {}", "for"))
         }
+        Other(s, argids) => {
+            let mut ans = stack.pop().ok_or(&err)?;
+            for _ in 0..argids.len() - 1 {
+                let arg = stack.pop().ok_or(&err)?;
+                ans = arg + ", " + &ans;
+            }
+            format!("{}({})", s, ans)
+        }
         // op @ _ => return Err(format!("un imp token = {:?}", op)),
     })
 }
