@@ -37,7 +37,7 @@
 			"outFiles": [
 				"${workspaceRoot}/client/out/**/*.js"
 			],
-			"preLaunchTask": "Build Server and Extension",
+			"preLaunchTask": "Build Server (release) and Extension",
 			"skipFiles": [
 				"<node_internals>/**/*.js"
 			],

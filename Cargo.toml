@@ -3,3 +3,7 @@
 members = [
     "server/",
 ]
+
+[profile.test] 
+opt-level = 3
+
