@@ -148,13 +148,7 @@ pub fn rpn_helper_simple(
             let update = stack.pop().ok_or(&err)?;
             let cond = stack.pop().ok_or(&err)?;
             let init = stack.pop().ok_or(&err)?;
-            format!(
-                "for {}; {}; {}:\n{}",
-                init,
-                cond,
-                update,
-                add_widths(body)
-            )
+            format!("for {}; {}; {}:\n{}", init, cond, update, add_widths(body))
         }
         Other(s, argids) => {
             let mut ans = stack.pop().ok_or(&err)?;
@@ -163,8 +157,7 @@ pub fn rpn_helper_simple(
                 ans = arg + ", " + &ans;
             }
             format!("{}({})", s, ans)
-        }
-        // op @ _ => return Err(format!("un imp token = {:?}", op)),
+        } // op @ _ => return Err(format!("un imp token = {:?}", op)),
     })
 }
 
@@ -183,80 +176,42 @@ fn simple_reparser(s: &String) -> Result<String, String> {
 
 /// rpn_to_string 测试
 #[test]
+#[rustfmt::skip]
 fn rpn_to_string_test() {
-    // 数学运算
-    assert_eq!(
-        rpn_to_human(&"(+ 1 2)".parse().unwrap(), rpn_helper_simple).unwrap(),
-        "(1 + 2)"
-    );
-    assert_eq!(
-        rpn_to_human(
-            &"(+ 1 (- a (* a (+ 2 -1))))".parse().unwrap(),
-            rpn_helper_simple
-        )
-        .unwrap(),
-        "(1 + (a - (a * (2 + -1))))"
-    );
-    // 控制流
-    assert_eq!(
-        rpn_to_human(&"(if (= 1 2) 3 4)".parse().unwrap(), rpn_helper_simple).unwrap(),
-        r"
+    let test_helper = |a: &str, b: &str| {
+        assert_eq!(
+            rpn_to_human(&a.parse().unwrap(), rpn_helper_simple).unwrap(),
+            b.to_string().trim()
+        );
+    };
+// 数学运算
+test_helper("(+ 1 2)", "(1 + 2)");
+test_helper("(+ 1 (- a (* a (+ 2 -1))))", "(1 + (a - (a * (2 + -1))))");
+// 控制流
+test_helper(
+"(if (= 1 2) 3 4)",
+r"
 if 1 == 2:
     3
 else:
     4"
-        .to_string()
-        .trim()
-    );
-    assert_eq!(
-        rpn_to_human(&"(if (= 1 2) 3 4)".parse().unwrap(), rpn_helper_simple).unwrap(),
-        r"
-if 1 == 2:
-    3
-else:
-    4"
-        .to_string()
-        .trim()
-    );
+);
     // lambda
-    assert_eq!(
-        rpn_to_human(&"(lam x (+ x 4))".parse().unwrap(), rpn_helper_simple).unwrap(),
-        r"
+test_helper(
+"(lam x (+ x 4))",
+r"
 (λ x:
     (x + 4))"
-            .to_string()
-            .trim()
     );
-    // mix
-    assert_eq!(
-        rpn_to_human(
-            &"(let fib (fix fib (lam n
-                (if (= (var n) 0)
-                    0
-                (if (= (var n) 1)
-                    1
-                (+ (app (var fib)
-                        (+ (var n) -1))
-                    (app (var fib)
-                        (+ (var n) -2)))))))
-                (app (var fib) 4))"
-                .parse()
-                .unwrap(),
-            rpn_helper_simple
-        )
-        .unwrap(),
-        r"
-let fib = Y fib: (λ n:
-    if `n` == 0:
-        0
-    else:
-        if `n` == 1:
-            1
-        else:
-            (`fib`((`n` + -1)) + `fib`((`n` + -2))));
-`fib`(4)"
-            .to_string()
-            .trim()
+    // 多参函数
+test_helper(
+"(seq (seqlet f (laml (cons x (cons y nil)) (laml (var x) (+ 42 (appl (laml (var y) (var y)) (cons 24 nil)))))) (appl (appl (var f) (cons 2 (cons 3 nil))) (cons 6 nil)))",
+r"
+let f = (λ x :: y :: nil:
+    (λ `x`:
+        (42 + (λ `y`:
+            `y`)(24 :: nil))));;
+`f`(2 :: 3 :: nil)(6 :: nil)"
     );
 }
 
@@ -280,7 +235,6 @@ fn lisp_temp_test() {
     // 优化后
     println!("[*]simply:\n{}", direct_parser(s).unwrap());
 }
-
 
 #[test]
 fn curry_temp_test() {
@@ -346,4 +300,14 @@ fn list_temp_test1() {
     println!("[*]simply:\n{}", direct_parser(s).unwrap());
 }
 
-
+#[test]
+fn temp_test1() {
+    let s = "(seq (seqlet f (laml (cons x (cons y nil)) (laml (var x) (+ 42 (appl (laml (var y) (var y)) (cons 24 nil)))))) (appl (appl (var f) (cons 2 (cons 3 nil))) (cons 6 nil)))";
+    println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
+    println!(
+        "[*]rpn_to_string:\n{}",
+        rpn_to_human(&s.parse().unwrap(), rpn_helper_simple).unwrap()
+    );
+    // 优化后
+    println!("[*]simply:\n{}", direct_parser(s).unwrap());
+}

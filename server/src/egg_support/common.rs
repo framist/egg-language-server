@@ -396,15 +396,6 @@ impl Applier<CommonLanguage, LambdaAnalysis> for CaptureAvoid {
 fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
     vec![
         // * lambda
-        // open term rules
-        rw!("if-true";  "(if  true ?then ?else)" => "?then"),
-        rw!("if-false"; "(if false ?then ?else)" => "?else"),
-        rw!("if-elim"; "(if (= (var ?x) ?e) ?then ?else)" => "?else"
-            if ConditionEqual::parse("(let ?x ?e ?then)", "(let ?x ?e ?else)")),
-        rw!("add-comm";  "(+ ?a ?b)"        => "(+ ?b ?a)"),
-        rw!("add-assoc"; "(+ (+ ?a ?b) ?c)" => "(+ ?a (+ ?b ?c))"),
-        rw!("eq-comm";   "(= ?a ?b)"        => "(= ?b ?a)"),
-        // subst 规则
         rw!("fix";      "(fix ?v ?e)"             => "(let ?v (fix ?v ?e) ?e)"),
         rw!("beta";     "(app (lam ?v ?body) ?e)" => "(let ?v ?e ?body)"),
         rw!("let-app";  "(let ?v ?e (app ?a ?b))" => "(app (let ?v ?e ?a) (let ?v ?e ?b))"),
@@ -430,9 +421,10 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
             if is_not_same_var(var("?v1"), var("?v2"))),
 
         // * math
-        // rw!("comm-add";  "(+ ?a ?b)"        => "(+ ?b ?a)"),
+        rw!("comm-add";  "(+ ?a ?b)"        => "(+ ?b ?a)"),
         rw!("comm-mul";  "(* ?a ?b)"        => "(* ?b ?a)"),
-        // rw!("assoc-add"; "(+ ?a (+ ?b ?c))" => "(+ (+ ?a ?b) ?c)"),
+        rw!("add-assoc"; "(+ (+ ?a ?b) ?c)" => "(+ ?a (+ ?b ?c))"),  // ? 不加上有部分测试过不了，还不知道为什么
+        rw!("assoc-add"; "(+ ?a (+ ?b ?c))" => "(+ (+ ?a ?b) ?c)"),
         rw!("assoc-mul"; "(* ?a (* ?b ?c))" => "(* (* ?a ?b) ?c)"),
         rw!("sub-canon"; "(- ?a ?b)" => "(+ ?a (* -1 ?b))"),
         rw!("div-canon"; "(/ ?a ?b)" => "(* ?a (pow ?b -1))" if is_not_zero(var("?b"))),
@@ -476,7 +468,7 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         // * 接下来是额外的自定义的规则 TODO 需仔细研究 加以精简
         // * Relation
         // 对称关系
-        // rw!("eq-comm"; "(= ?a ?b)" => "(= ?b ?a)"), 前面已经有了
+        rw!("eq-comm"; "(= ?a ?b)" => "(= ?b ?a)"), 
         rw!("gt-comm"; "(& (> ?a ?b) (> ?b ?a))" => "false"),
         // 自反关系
         rw!("eq-true"; "(= ?a ?a)" => "true"),
@@ -502,6 +494,11 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         rw!("seq-skip-left"; "(seq skip ?a)" => "?a"),
         rw!("seq-skip-right"; "(seq ?a skip)" => "?a"),
         // * Imp
+        // if
+        rw!("if-true";  "(if  true ?then ?else)" => "?then"),
+        rw!("if-false"; "(if false ?then ?else)" => "?else"),
+        rw!("if-elim"; "(if (= (var ?x) ?e) ?then ?else)" => "?else"
+            if ConditionEqual::parse("(let ?x ?e ?then)", "(let ?x ?e ?else)")),
         // while
         rw!("while-true"; "(while true ?body)" => "(while true skip)"),
         rw!("while-false"; "(while false ?body)" => "skip"),
@@ -530,7 +527,7 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     // 一个计时器
     let start = Instant::now();
     let runner = Runner::default()
-        // .with_time_limit(Duration::new(0, 500_000_000)) // 这个超时时间应该要能设置为自定义的，也可以参考测试结果的最长时间 ps. release 模式下基本上不用限制时间
+        .with_time_limit(Duration::new(5, 500_000_000)) // 这个超时时间应该要能设置为自定义的，也可以参考测试结果的最长时间 ps. release 模式下基本上不用限制时间
         .with_expr(&expr)
         .run(&make_rules());
     debug!("runner spend: {:?}", start.elapsed());

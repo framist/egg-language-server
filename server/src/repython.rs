@@ -14,7 +14,6 @@ pub fn py_reparser(sexpr: &String) -> Result<String, String> {
     }
 }
 
-
 fn rpn_helper_py(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<String, String> {
     let err = format!("RPN has invalid format: token = {:?}", token);
     let width = "    "; // 后续考虑需从编辑器环境中获取 width 信息
@@ -58,7 +57,7 @@ fn rpn_helper_py(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
         Lambda(_) => {
             let body = stack.pop().ok_or(&err)?;
             let var = stack.pop().ok_or(&err)?;
-            format!("lambda {}:\n{}", var, add_widths(body))
+            format!("(lambda {}: {})", var, body)
         }
         App(_) => {
             let right = stack.pop().ok_or(&err)?;
@@ -98,13 +97,17 @@ fn rpn_helper_py(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
         Cons(_) => {
             let right = stack.pop().ok_or(&err)?;
             let left = stack.pop().ok_or(&err)?;
-            format!("{}, {}", left, right)
+            if right == "nil" {
+                format!("{}", left)
+            } else {
+                format!("{}, {}", left, right)
+            }
         }
         Nil => "nil".to_string(),
         LambdaL(_) => {
             let body = stack.pop().ok_or(&err)?;
             let varl = stack.pop().ok_or(&err)?;
-            format!("lambda {}:\n{}", varl, add_widths(body))
+            format!("(lambda {}: {})", varl, body)
         }
         AppL(_) => {
             let body = stack.pop().ok_or(&err)?;
@@ -128,9 +131,7 @@ fn rpn_helper_py(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
             let cond = stack.pop().ok_or(&err)?;
             format!("while {}:\n{}", cond, add_widths(body))
         }
-        For(_) => {
-            return Err(format!("un imp token = {}", "for"))
-        }
+        For(_) => return Err(format!("un imp token = {}", "for")),
         Other(s, argids) => {
             let mut ans = stack.pop().ok_or(&err)?;
             for _ in 0..argids.len() - 1 {
@@ -138,14 +139,60 @@ fn rpn_helper_py(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
                 ans = arg + ", " + &ans;
             }
             format!("{}({})", s, ans)
-        }
-        // op @ _ => return Err(format!("un imp token = {:?}", op)),
+        } // op @ _ => return Err(format!("un imp token = {:?}", op)),
     })
+}
+
+#[test]
+#[rustfmt::skip]
+fn rpn_to_string_test() {
+    let test_helper = |a: &str, b: &str| {
+        assert_eq!(
+            rpn_to_human(&a.parse().unwrap(), rpn_helper_py).unwrap(),
+            b.to_string().trim()
+        );
+    };
+// 数学运算
+test_helper("(+ 1 2)", "(1 + 2)");
+test_helper("(+ 1 (- a (* a (+ 2 -1))))", "(1 + (a - (a * (2 + -1))))");
+// 控制流
+test_helper(
+"(if (= 1 2) 3 4)",
+r"
+if 1 == 2:
+    3
+else:
+    4"
+);
+    // lambda
+test_helper(
+"(lam x (+ x 4))",
+r"
+(lambda x: (x + 4))"
+    );
+    // 多参函数
+test_helper(
+"(seq (seqlet f (laml (cons x (cons y nil)) (laml (var x) (+ 42 (appl (laml (var y) (var y)) (cons 24 nil)))))) (appl (appl (var f) (cons 2 (cons 3 nil))) (cons 6 nil)))",
+r"
+f = (lambda x, y: (lambda x: (42 + (lambda y: y)(24))))
+f(2, 3)(6)
+"
+);
 }
 
 #[test]
 fn lisp_temp_test() {
     let s = "(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))";
+    println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
+    println!(
+        "[*]rpn_to_string:\n{}",
+        rpn_to_human(&s.parse().unwrap(), rpn_helper_py).unwrap()
+    );
+}
+
+#[test]
+fn lisp_temp_test2() {
+    let s = "(seq (seqlet f (laml (cons x (cons y nil)) (laml (var x) (+ 42 (appl (laml (var y) (var y)) (cons 24 nil)))))) (appl (appl (var f) (cons 2 (cons 3 nil))) (cons 6 nil)))";
     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
     println!(
         "[*]rpn_to_string:\n{}",

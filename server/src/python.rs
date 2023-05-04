@@ -145,53 +145,56 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
         }
         // argument_list 是调用时，所以参数有 var
         "argument_list" => {
+            let mut a = vec![];
             let mut children = tree_cursor.clone();
             children.goto_first_child();
             // 跳过 `(` (python)
             children.goto_next_sibling();
-            let mut args = "nil".to_string();
-            loop {
-                let a = format!("{}", ast_to_sexpr(&children, code));
-                if children.node().kind() == ")" {
-                    break;
-                }
-                args = format!("(cons {} {})", a, args);
+            while children.node().kind() != ")" {
+                a.push(ast_to_sexpr(&children, code));
                 children.goto_next_sibling();
                 // 跳过 `,` (python)
                 children.goto_next_sibling();
             }
-            args
+            let mut args = "nil".to_string();
+            for i in a.into_iter().rev() {
+                args = format!("(cons {} {})", i, args);
+            }
+            args            
         }        
         "parameters" => {
+            let mut a = vec![];
             let mut children = tree_cursor.clone();
             children.goto_first_child();
             // 跳过 `(` (python)
             children.goto_next_sibling();
-            let mut args = "nil".to_string();
-            loop {
-                let a = format!("{}", no_var_ast_to_sexpr(&children, code));
-                if children.node().kind() == ")" {
-                    break;
-                }
-                args = format!("(cons {} {})", a, args);
+            while children.node().kind() != ")" {
+                a.push(no_var_ast_to_sexpr(&children, code));
                 children.goto_next_sibling();
                 // 跳过 `,` (python)
                 children.goto_next_sibling();
+            }
+            let mut args = "nil".to_string();
+            for i in a.into_iter().rev() {
+                args = format!("(cons {} {})", i, args);
             }
             args
         }
         "lambda_parameters" => {
+            let mut a = vec![];
             let mut children = tree_cursor.clone();
             children.goto_first_child();
-            let mut args = "nil".to_string();
             loop {
-                let a = format!("{}", no_var_ast_to_sexpr(&children, code));
-                args = format!("(cons {} {})", a, args);
+                a.push(no_var_ast_to_sexpr(&children, code));
                 if !children.goto_next_sibling() {
                     break;
                 }
                 // 跳过 `,` (python)
                 children.goto_next_sibling();
+            }
+            let mut args = "nil".to_string();
+            for i in a.into_iter().rev() {
+                args = format!("(cons {} {})", i, args);
             }
             args
         }

@@ -5,6 +5,18 @@ use crate::*;
 
 fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
     let node = tree_cursor.node();
+    let no_var_ast_to_sexpr = |tree_cursor: &TreeCursor, code: &str| {
+        let node = tree_cursor.node();
+        match node.kind() {
+            "identifier" => {
+                let var = node.utf8_text(code.as_bytes()).unwrap().to_string();
+                format!("{}", var)
+            }
+            &_ => {
+                format!("<发生错误 no_var_ast_to_sexpr: {:?}>", node.kind())
+            }
+        }
+    };
     match node.kind() {
         // 逻辑常量
         "true" => "true".to_string(),
@@ -83,20 +95,35 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
                 body        // 函数体
             )
         }
-        // TODO 形参和实参 var
+        "arrow_function" => {
+            let mut children = tree_cursor.clone();
+            children.goto_first_child();
+            let parameters = ast_to_sexpr(&children, code);
+            children.goto_next_sibling();
+            // 跳过 `=>` (javascript)
+            children.goto_next_sibling();
+            let body = ast_to_sexpr(&children, code);
+            assert_eq!(children.goto_next_sibling(), false);
+            format!("(laml {} {})", parameters, body)
+        }
+        // 形参，没有 var
         "formal_parameters" => {
-            let mut cursor = node.walk();
-            let mut children = node.children(&mut cursor);
-
-            // TODO 0 个参数的情况
-
-            // 只有一个参数
-            children.next(); // 跳过 `(` (javascript)
-            let name = children.next().unwrap().utf8_text(code.as_bytes()).unwrap();
-
-            // TODO 支持多个参数 laml
-
-            name.to_string()
+            let mut a = vec![];
+            let mut children = tree_cursor.clone();
+            children.goto_first_child();
+            // 跳过 `(` (javascript)
+            children.goto_next_sibling();
+            while children.node().kind() != ")" {
+                a.push(no_var_ast_to_sexpr(&children, code));
+                children.goto_next_sibling();
+                // 跳过 `,` (javascript)
+                children.goto_next_sibling();
+            }
+            let mut args = "nil".to_string();
+            for i in a.into_iter().rev() {
+                args = format!("(cons {} {})", i, args);
+            }
+            args
         }
         "call_expression" => {
             let mut children = tree_cursor.clone();
@@ -105,16 +132,26 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
             children.goto_next_sibling();
             let args = ast_to_sexpr(&children, code);
 
-            format!("(app {} {})", name, args)
+            format!("(appl {} {})", name, args)
         }
+        // arguments 是调用时 实参，所以参数有 var
         "arguments" => {
+            let mut a = vec![];
             let mut children = tree_cursor.clone();
             children.goto_first_child();
-            // 跳过 `(` (javascript)
+            // 跳过 `(`
             children.goto_next_sibling();
-            //TODO: 先假设只有一个参数 | 支持多个参数 通过柯里化实现
-            let arg = ast_to_sexpr(&children, code);
-            arg
+            while children.node().kind() != ")" {
+                a.push(ast_to_sexpr(&children, code));
+                children.goto_next_sibling();
+                // 跳过 `,`
+                children.goto_next_sibling();
+            }
+            let mut args = "nil".to_string();
+            for i in a.into_iter().rev() {
+                args = format!("(cons {} {})", i, args);
+            }
+            args
         }
         "return_statement" => {
             let mut children = tree_cursor.clone();

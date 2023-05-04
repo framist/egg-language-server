@@ -11,7 +11,7 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use serde_json::Value;
 use std::sync::RwLock; // TODO 是否会出现死锁？
 
-#[allow(dead_code)]
+
 struct Settings {
     // 语言客户端配置
     max_number_of_problems: usize,

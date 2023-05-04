@@ -1,6 +1,4 @@
 use egg::*;
-use std::borrow::Cow;
-use std::sync::Arc;
 
 define_language! {
     enum SimpleLanguage {

@@ -58,7 +58,7 @@ fn rpn_helper_js(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
         Lambda(_) => {
             let body = stack.pop().ok_or(&err)?;
             let var = stack.pop().ok_or(&err)?;
-            format!("({}) => {{\n{}\n}}", var, add_widths(body))
+            format!("({} => {})", var, body)
         }
         App(_) => {
             let right = stack.pop().ok_or(&err)?;
@@ -98,13 +98,17 @@ fn rpn_helper_js(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
         Cons(_) => {
             let right = stack.pop().ok_or(&err)?;
             let left = stack.pop().ok_or(&err)?;
-            format!("{}, {}", left, right)
+            if right == "nil" {
+                format!("{}", left)
+            } else {
+                format!("{}, {}", left, right)
+            }
         }
-        Nil => "".to_string(),
+        Nil => "nil".to_string(),
         LambdaL(_) => {
             let body = stack.pop().ok_or(&err)?;
             let varl = stack.pop().ok_or(&err)?;
-            format!("({}) => \n{{{}}})", varl, add_widths(body))
+            format!("(({}) => {})", varl, body)
         }
         AppL(_) => {
             let body = stack.pop().ok_or(&err)?;
@@ -115,7 +119,7 @@ fn rpn_helper_js(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
         Seq(_) => {
             let then = stack.pop().ok_or(&err)?;
             let body = stack.pop().ok_or(&err)?;
-            format!("{};\n{}", body, then)
+            format!("{}\n{}", body, then)
         }
         Skip => ";".to_string(),
         SeqLet(_) => {
@@ -156,6 +160,16 @@ fn rpn_helper_js(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
 #[test]
 fn lisp_temp_test() {
     let s = "(let add1 (lam x (let x (+ (var x) 1) (var x))) (let y 1 (app (var add1) (var y))))";
+    println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
+    println!(
+        "[*]rpn_to_string:\n{}",
+        rpn_to_human(&s.parse().unwrap(), rpn_helper_js).unwrap()
+    );
+}
+
+#[test]
+fn lisp_temp_test2() {
+    let s = "(seq (seqlet f (laml (cons x (cons y nil)) (laml (var x) (+ 42 (appl (laml (var y) (var y)) (cons 24 nil)))))) (appl (appl (var f) (cons 2 (cons 3 nil))) (cons 6 nil)))";
     println!("[*]pretty:\n{}", s.parse::<EggIR>().unwrap().pretty(20));
     println!(
         "[*]rpn_to_string:\n{}",
