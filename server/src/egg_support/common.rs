@@ -325,6 +325,7 @@ impl Analysis<CommonLanguage> for LambdaAnalysis {
             } else {
                 let const_id = egraph.add(c.0);
                 egraph.union(id, const_id);
+
             }
         }
     }
@@ -420,6 +421,12 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
             }}
             if is_not_same_var(var("?v1"), var("?v2"))),
 
+        // 柯里化 currying
+        rw!("laml-currying-end"; "(laml (cons ?v nil) ?body)" => "(lam ?v ?body)"),
+        rw!("laml-currying-fix"; "(laml (cons ?v ?list) ?body)" => "(lam ?v (laml ?list ?body))"),
+        rw!("appl-currying-end"; "(appl ?f (cons ?v nil))" => "(app ?f ?v)"),
+        rw!("appl-currying-fix"; "(appl ?f (cons ?v ?list))" => "(appl (app ?f ?v) ?list)"),
+
         // * math
         rw!("comm-add";  "(+ ?a ?b)"        => "(+ ?b ?a)"),
         rw!("comm-mul";  "(* ?a ?b)"        => "(* ?b ?a)"),
@@ -482,18 +489,14 @@ fn make_rules() -> Vec<Rewrite<CommonLanguage, LambdaAnalysis>> {
         rw!("eq-expand"; "(= ?a ?b)" => "(& (<= ?a ?b) (>= ?a ?b))"), 
 
         // * List
-        // 柯里化 currying
-        rw!("laml-currying-end"; "(laml (cons ?v nil) ?body)" => "(lam ?v ?body)"),
-        rw!("laml-currying-fix"; "(laml (cons ?v ?list) ?body)" => "(lam ?v (laml ?list ?body))"),
-        rw!("appl-currying-end"; "(appl ?f (cons ?v nil))" => "(app ?f ?v)"),
-        rw!("appl-currying-fix"; "(appl ?f (cons ?v ?list))" => "(appl (app ?f ?v) ?list)"),
+
+        // * Imp
         // 序列 seq
         rw!("seq-end"; "(seq ?a nil)" => "?a"),
         rw!("seq-let"; "(seq (seqlet ?v ?e) ?body)" => "(let ?v ?e ?body)"),
         rw!("seq-assoc"; "(seq (seq ?a ?b) ?c)" => "(seq ?a (seq ?b ?c))"),
         rw!("seq-skip-left"; "(seq skip ?a)" => "?a"),
         rw!("seq-skip-right"; "(seq ?a skip)" => "?a"),
-        // * Imp
         // if
         rw!("if-true";  "(if  true ?then ?else)" => "?then"),
         rw!("if-false"; "(if false ?then ?else)" => "?else"),
@@ -562,7 +565,9 @@ pub fn simplify_test(s: &str) -> Result<String, String> {
 
 #[test]
 fn simplify_explain_test() {
-    let expr = "(& (| (<= 233 666) (= 2 3)) true)".parse().unwrap();
+    let expr = "(lam x (+ 42
+        (app (lam y (var y))
+             24)))".parse().unwrap();
     // let expr = match start.parse() {
     //     Ok(expr) => expr,
     //     Err(error) => return Err(format!("Failed to parse expression: {}", error)),
