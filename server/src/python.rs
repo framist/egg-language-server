@@ -275,7 +275,7 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
         }
 
         &_ => {
-            format!("<发生错误 unhandled node kind: {:?}>", node.kind())
+            format!("<unhandled-node-kind-{}>", node.kind()) // TODO 直接表示为 cl
         }
     }
 }
@@ -336,28 +336,28 @@ fn parser_batch_helper(tree_cursor: &TreeCursor, code: &str) -> Vec<EggDiagnosti
     let mut diagnostics: Vec<EggDiagnostic> = Vec::new();
 
     // 原始
-    let mut children = tree_cursor.clone();
-    if children.goto_first_child() {
-        loop {
-            diagnostics.append(&mut parser_batch_helper(&children, code));
-            if children.goto_next_sibling() == false {
-                break;
-            }
-        }
-    }
+    // let mut children = tree_cursor.clone();
+    // if children.goto_first_child() {
+    //     loop {
+    //         diagnostics.append(&mut parser_batch_helper(&children, code));
+    //         if children.goto_next_sibling() == false {
+    //             break;
+    //         }
+    //     }
+    // }
 
     // 迭代器
-    // let children_diagnostics: Vec<Vec<EggDiagnostic>> = node
-    //     .children(&mut node.walk())
-    //     .map(|child| parser_batch_helper(&child.walk(), &code))
-    //     .collect();
-    // for mut child_diagnostics in children_diagnostics {
-    //     diagnostics.append(&mut child_diagnostics);
-    // }
+    let children_diagnostics: Vec<Vec<EggDiagnostic>> = node
+        .children(&mut node.walk())
+        .map(|child| parser_batch_helper(&child.walk(), &code))
+        .collect();
+    for mut child_diagnostics in children_diagnostics {
+        diagnostics.append(&mut child_diagnostics);
+    }
 
     match node.kind() {
         // 递归终止点
-        "module" | "block" | "expression_statement" | "comparison_operator"
+        "module" | "block" | "expression_statement" | "comparison_operator" | "binary_operator" 
             if diagnostics.is_empty() =>
         {
             let sexpr = ast_to_sexpr(&tree_cursor, code);

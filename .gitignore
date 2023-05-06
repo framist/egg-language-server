@@ -11,3 +11,7 @@ client/server
 # rust
 /server/target/
 /target/
+
+# test
+scripts/*.csv
+scripts/temp.*

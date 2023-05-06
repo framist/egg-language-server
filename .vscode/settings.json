@@ -9,5 +9,9 @@
 	"commentTranslate.hover.enabled": true,
 	"rust-analyzer.linkedProjects": [
 		"./server/Cargo.toml"
-	]
+	],
+	"[python]": {
+		"editor.defaultFormatter": "ms-python.autopep8"
+	},
+	"python.formatting.provider": "none"
 }

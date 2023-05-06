@@ -111,6 +111,18 @@ egg 的源码优化主要分为以下过程：
    3. 点击 ▷ 运行启动配置 (F5).
 
 
+### 基准测试
+
+要获取每个测试运行时的简单csv，您可以设置环境变量
+将 “EGG_BENCH_CSV” 添加到要将每个测试附加到csv的行的内容。
+
+示例:
+
+```bash
+EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_support::common --nocapture --test --test-threads=1
+```
+
+
 ## 已知问题
 
 ## 发行说明

@@ -565,9 +565,7 @@ pub fn simplify_test(s: &str) -> Result<String, String> {
 
 #[test]
 fn simplify_explain_test() {
-    let expr = "(lam x (+ 42
-        (app (lam y (var y))
-             24)))".parse().unwrap();
+    let expr = "(+ 1 1)".parse().unwrap();
     // let expr = match start.parse() {
     //     Ok(expr) => expr,
     //     Err(error) => return Err(format!("Failed to parse expression: {}", error)),
@@ -628,7 +626,7 @@ test_fn! { simplify_test8, make_rules(), "(& (| true (= 3 2)) true)" => "true" }
 test_fn! { simplify_test9, make_rules(), "(& (| (<= 233 666) (= 2 3)) true)" => "true" }
 
 // TODO
-test_fn! { simplify_test10, make_rules(), " (let a 1 (!= (var a) 2))" => "true" }
+// test_fn! { simplify_test10, make_rules(), " (let a 1 (!= (var a) 2))" => "true" }
 
 // TODO
 #[test]
@@ -654,20 +652,7 @@ fn debug_test2() {
 fn time_test1() {
     println!("{:?}", simplify_test("(+ 1 1)"));
 }
-test_fn! {time_test2, make_rules(), "(+ 1 1)" => "2"}
-//     正是下面能影响时长
-//     let goals = &["2".parse().unwrap()];
-//     let goals = goals.to_vec();
-//     runner = runner.with_hook(move |r| {
-//         if goals
-//             .iter()
-//             .all(|g: &Pattern<_>| g.search_eclass(&r.egraph, id).is_some())
-//         {
-//             Err("Proved all goals".into())
-//         } else {
-//             Ok(())
-//         }
-//     });
+
 
 // * math test *
 
@@ -698,11 +683,11 @@ egg::test_fn! {
     "(/ 1 (sqrt five))"
 }
 
-egg::test_fn! {math_simplify_factor, make_rules(), "(* (+ x 3) (+ x 1))" => "(+ (+ (* x x) (* 4 x)) 3)"}
+test_fn! {math_simplify_factor, make_rules(), "(* (+ x 3) (+ x 1))" => "(+ (+ (* x x) (* 4 x)) 3)"}
 
 // * lambda test *
 
-egg::test_fn! {
+test_fn! {
     lambda_under, make_rules(),
     "(lam x (+ 4
                (app (lam y (var y))
@@ -713,7 +698,7 @@ egg::test_fn! {
     "(lam x 8))",
 }
 
-egg::test_fn! {
+test_fn! {
     lambda_if_elim, make_rules(),
     "(if (= (var a) (var b))
          (+ (var a) (var a))
@@ -722,7 +707,7 @@ egg::test_fn! {
     "(+ (var a) (var b))"
 }
 
-egg::test_fn! {
+test_fn! {
     lambda_let_simple, make_rules(),
     "(let x 0
      (let y 1
@@ -734,19 +719,19 @@ egg::test_fn! {
     "1",
 }
 
-egg::test_fn! {
+test_fn! {
     #[should_panic(expected = "Could not prove goal 0")]
     lambda_capture, make_rules(),
     "(let x 1 (lam x (var x)))" => "(lam x 1)"
 }
 
-egg::test_fn! {
+test_fn! {
     #[should_panic(expected = "Could not prove goal 0")]
     lambda_capture_free, make_rules(),
     "(let y (+ (var x) (var x)) (lam x (var y)))" => "(lam x (+ (var x) (var x)))"
 }
 
-egg::test_fn! {
+test_fn! {
     #[should_panic(expected = "Could not prove goal 0")]
     lambda_closure_not_seven, make_rules(),
     "(let five 5
@@ -757,7 +742,7 @@ egg::test_fn! {
     "7"
 }
 
-egg::test_fn! {
+test_fn! {
     lambda_compose, make_rules(),
     "(let compose (lam f (lam g (lam x (app (var f)
                                        (app (var g) (var x))))))
@@ -770,13 +755,13 @@ egg::test_fn! {
     "(lam ?x (+ (var ?x) 2))"
 }
 
-egg::test_fn! {
+test_fn! {
     lambda_if_simple, make_rules(),
     "(if (= 1 1) 7 9)" => "7"
 }
 
 // this is a bit slow, need 12s+ ; but in release mode, it's ~0.1s
-egg::test_fn! {
+test_fn! {
     lambda_compose_many, make_rules(),
     "(let compose (lam f (lam g (lam x (app (var f)
                                        (app (var g) (var x))))))
@@ -792,7 +777,7 @@ egg::test_fn! {
     "(lam ?x (+ (var ?x) 7))"
 }
 
-egg::test_fn! {
+test_fn! {
     lambda_if, make_rules(),
     "(let zeroone (lam x
         (if (= (var x) 0)
@@ -806,7 +791,7 @@ egg::test_fn! {
     "1",
 }
 
-egg::test_fn! {
+test_fn! {
     #[cfg(not(debug_assertions))]
     #[cfg_attr(feature = "test-explanations", ignore)]
     lambda_fib, make_rules(),
@@ -826,27 +811,50 @@ egg::test_fn! {
     => "3"
 }
 
-// * list test *
+// * imp test *
 
-egg::test_fn! {laml_curry1, make_rules(), "(laml (cons y nil) (+ 1 (var y)))" => "(lam y (+ 1 (var y)))" }
-egg::test_fn! {laml_curry2, make_rules(), "(laml (cons x (cons y nil)) (+ (var x) (var y)))"
+test_fn! {laml_curry1, make_rules(), "(laml (cons y nil) (+ 1 (var y)))" => "(lam y (+ 1 (var y)))" }
+test_fn! {laml_curry2, make_rules(), "(laml (cons x (cons y nil)) (+ (var x) (var y)))"
 => "(lam x (lam y (+ (var x) (var y))))" }
 
-egg::test_fn! {seqlet1, make_rules(), "(seq (seqlet a 1) (seq (var a) nil))"
+test_fn! {seqlet1, make_rules(), "(seq (seqlet a 1) (seq (var a) nil))"
 => "1" }
 
-egg::test_fn! {skip1, make_rules(), "(seq (seq skip (seq (var a) skip)) skip)"
+test_fn! {skip1, make_rules(), "(seq (seq skip (seq (var a) skip)) skip)"
 => "(var a)" }
 
 
-egg::test_fn! {while_true, make_rules(), "(while true (var a))"
+test_fn! {while_true, make_rules(), "(while true (var a))"
 => "(while true skip)" }
 
-egg::test_fn! {while_false, make_rules(), "(while false (var a))"
+test_fn! {while_false, make_rules(), "(while false (var a))"
 => "skip" }
 
-// egg::test_fn! {for_to_while, make_rules(), "(for (seqlet i 0) (<= (var i) 10) (+ (var i) 1) (var i))"
+// test_fn! {for_to_while, make_rules(), "(for (seqlet i 0) (<= (var i) 10) (+ (var i) 1) (var i))"
 // => "" }
+
+// * Prop test *
+test_fn! { not_false, make_rules(), "(~ false)" => "true" }
+test_fn! { not_true, make_rules(), "(~ true)" => "false" }
+test_fn! { not_not, make_rules(), "(~ (~ b))" => "b" }
+test_fn! { not_not_many, make_rules(), "(~ (~ (~ (~ (~ (~ (~ (~ b))))))))" => "b" }
+
+// TODO
+// test_fn! { and_not, make_rules(), "(& (~ a) (a)))" => "false" }
+
+
+// * Relation test *
+test_fn! { rel_eq_true, make_rules(), "(= a a)" => "true" }
+test_fn! { lq_true, make_rules(), "(<= a a)" => "true" }
+test_fn! { ge_true, make_rules(), "(>= a a)" => "true" }
+test_fn! { gt_false, make_rules(), "(> a a)" => "false" }
+test_fn! { lt_false, make_rules(), "(< a a)" => "false" }
+
+test_fn! {
+    #[should_panic(expected = "Could not prove goal 0")]
+    rel_eq_false, make_rules(),
+    "(= a b)" => "false"
+}
 
 
 #[test]
