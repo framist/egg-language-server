@@ -1,3 +1,5 @@
+# 这个脚本用于对 egg 支持的源码优化作语法模糊测试
+
 from fuzzingbook.Grammars import EXPR_EBNF_GRAMMAR, srange, convert_ebnf_grammar, Grammar
 from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
 import subprocess
@@ -108,7 +110,7 @@ def main():
         
     # 数据保存到 csv 文件
     df = pd.DataFrame({"exprslen": exprs, "times": times})
-    df.to_csv("exprslen-times-r-10000.csv", index=False)
+    df.to_csv("exprslen-times-10000.csv", index=False)
     
     
 
