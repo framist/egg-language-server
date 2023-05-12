@@ -29,7 +29,7 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
                 format!("{}", var)
             }
             &_ => {
-                format!("<发生错误 no_var_ast_to_sexpr: {:?}>", node.kind())
+                format!("<unhandled-in-no_var-{}>", node.kind())
             }
         }
     };

@@ -182,3 +182,9 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 ## Release Notes
 
 ## References
+
+---
+
+⚡ Visitor count
+
+![](https://profile-counter.glitch.me/framist-egg-language-server/count.svg)
