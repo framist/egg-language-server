@@ -16,13 +16,13 @@ egg 驱动的编写时代码优化 语言服务器及 Visual Studio Code 插件�
 
 ![demo](./doc/asserts/example1.png)
 
-egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。
+egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。目前，它在 Python 上工作最好
 
 egg-language-server 可以帮助您：
 
-- 优化程序结构，提升代码性能。具体的方法有，简化运行逻辑，增加代码复用等。
-- 简化源码本身。源码除了需要编译成可执行文件或直接执行的目的之外，还负担起可读可交流传播的作用。相比在编译时或运行时修改源码以提升性能的方式，在编写时提供的源码优化对程序员更加有参考价值，在后续的交流和传播中也不失易读性。
-- 提升您的能力和代码质量。人不是全能的，编程时提供的解决方案不一定是最优的，而且总避免不了犯下一些错误。在编写时提供的源码优化应对程序员有启发作用，能让程序员写出质量更优的代码。
+- 优化程序结构，提升代码性能。
+- 简化源码本身。
+- 提升您的能力和代码质量。
 
 egg 的源码优化主要分为以下过程：
 
@@ -125,7 +125,11 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 
 ## 已知问题
 
+many
+
 ## 发行说明
+
+暂未发行
 
 ## 参考
 
