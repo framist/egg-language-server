@@ -1,7 +1,6 @@
 <div align="center">
-  <a href="https://xmake.io/cn">
-    <img width="100" heigth="100" src="./doc/asserts/icon.svg">
-  </a>
+  <img width="100" heigth="100" src="./doc/asserts/icon.svg">
+
 
   <h1>egg-language-server</h1>
 
