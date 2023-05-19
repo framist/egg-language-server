@@ -47,6 +47,20 @@
 			}			
 		},
 		{
+			// Used to attach LLDB to a running LSP server.
+			// NOTE: Might require root permissions. For this run:
+			//
+			// `echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope`
+			"name": "Attach To Server",
+			"type": "lldb",
+			"request": "attach",
+			"program": "${workspaceFolder}/target/debug/egg-language-server",
+			"pid": "${command:pickMyProcess}",
+			"sourceLanguages": [
+			  "rust"
+			]
+		  },
+		{
 			"type": "extensionHost",
 			"request": "launch",
 			"name": "Launch Client",
