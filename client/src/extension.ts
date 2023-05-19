@@ -109,6 +109,7 @@ export function activate(context: ExtensionContext) {
     });
 
     context.subscriptions.push(disposable);
+    window.showInformationMessage('Welcome to use Egg Language Server! 😊');
 }
 
 // 消动函数

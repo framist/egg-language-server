@@ -1,16 +1,21 @@
-[*中文*](#egg-language-server-介绍) | [*English*](#egg-language-server-readme)
+<div align="center">
+  <a href="https://xmake.io/cn">
+    <img width="100" heigth="100" src="./doc/asserts/icon.svg">
+  </a>
+
+  <h1>egg-language-server</h1>
 
 
-**仍在开发中**
 
-<p align="center">
-  <img src="./doc/asserts/cog-egg.png" alt="temp logo" width="10%" />
-</p>
+  <b>🧪 in developing</b><br/>
+  <i>Source Code Optimization Tools at Writing-time</i><br/>
+</div>
 
+# 介绍 ([English](#egg-language-server-readme))
 
-# egg-language-server 介绍
+egg 驱动的编写时代码优化语言服务器及 Visual Studio Code 插件。
 
-egg 驱动的编写时代码优化 语言服务器及 Visual Studio Code 插件。
+本插件更多作为实验性质，真正的易于使用的编写时源码优化有待进一步工作
 
 ## 特性
 
@@ -34,7 +39,11 @@ egg 的源码优化主要分为以下过程：
 
 ## 依赖
 
-参见 `Cargo.toml` 文件
+[egg](https://github.com/egraphs-good/egg): 提供快速可拓展的等式饱和支持
+
+[tower-lsp](https://github.com/ebkalderon/tower-lsp): 提供 LSP 支持
+
+其他参见 `Cargo.toml` 文件
 
 ## 设置
 
@@ -86,6 +95,8 @@ egg 的源码优化主要分为以下过程：
 
 ## 开发
 
+对本项目作进一步的开发非常容易
+
 ### 结构
 
 ```
@@ -113,14 +124,19 @@ egg 的源码优化主要分为以下过程：
 
 ### 基准测试
 
-要获取每个测试运行时的简单csv，您可以设置环境变量
-将 “EGG_BENCH_CSV” 添加到要将每个测试附加到csv的行的内容。
+**使用 egg 提供的基准测试方案**
+
+要获取每个测试运行时的简单csv，您可以设置环境变量将 “EGG_BENCH_CSV” 添加到要将每个测试附加到csv的行的内容。
 
 示例:
 
 ```bash
 EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_support::common --nocapture --test --test-threads=1
 ```
+
+**更多测试**
+
+参见 `scripts` 文件夹中的部分基准测试脚本
 
 
 ## 已知问题
@@ -129,11 +145,11 @@ many
 
 ## 发行说明
 
-暂未发行
+暂无发行
 
 ## 参考
 
-- 本项目同时也是作者的毕业设计，但是论文还未完成。
+- 本项目同时也是作者的毕业设计。
 - 本项目作者对 egg 的论文《Egg: Fast and Extensible Equality Saturation》进行了中文翻译，可以在 [这里](https://www.overleaf.com/read/jhnbztftxwhm) 查看目前翻译的进度。待翻译完成后，会将其放在本项目的 `doc` 文件夹中。 [预览](./doc/asserts/Fast_and_Extensible_Equality_Saturation_zh_cn.pdf)
 - 作为本项目的学习基础，作者有以下笔记：
   - [Software-Foundations-Note](https://github.com/framist/Software-Foundations-Note) 
@@ -143,6 +159,8 @@ many
 
 *English*
 
+I am sorry, my English is bad, so almost empty here. :(
+
 # egg-language-server README
 
 ## Features
@@ -150,10 +168,6 @@ many
 ## Requirements
 
 ## Extension Settings
-
-* 'myExtension.enable': 启用/禁用此扩展。
-* 'myExtension.thing': 设置为 'blah' 做某事。
-
 
 ## Development
 

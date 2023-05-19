@@ -1,4 +1,5 @@
 # 这个脚本用于对 egg 支持的源码优化作语法模糊测试
+# 绘制生成的数据请使用本文件路径下的 csvplot3.py
 
 from fuzzingbook.Grammars import EXPR_EBNF_GRAMMAR, srange, convert_ebnf_grammar, Grammar
 from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
@@ -11,6 +12,7 @@ import tqdm
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# 目前只实现了 Python 算术表达式子集
 EXPR_EBNF_GRAMMAR: Grammar = {
     "<start>":
         ["<expr>"],
@@ -40,41 +42,7 @@ EXPR_EBNF_GRAMMAR: Grammar = {
         srange(string.ascii_letters)
 }
 
-def plot():
-    # 读取数据
-    os.chdir(os.path.join(os.path.dirname(__file__)))
-    df = pd.read_csv("exprslen-times.csv")
-    exprslen = df["exprslen"]
-    times = df["times"]
-    xlabel = "exprslen"
-    ylabel = "times"
-    plt.rcParams['font.sans-serif'] = ['Noto Sans CJK JP']
-    # 绘制散点图
-    plt.scatter(exprslen, times, marker='o', alpha=0.7 , color='blue', s=40, label='times')
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title('exprslen-times')
-    plt.legend(loc='upper left')
-    plt.show()
-    
-    # 小提琴图
-    plt.violinplot(exprslen, showmeans=True, showmedians=True)
-    plt.xlabel('exprslen')
-    plt.ylabel('times')
-    plt.title('exprslen-times')
-    plt.legend(loc='upper left')
-    plt.show()
-    
-    # 针对 exprslen 绘制直方图
-    # plt.hist(exprslen, bins=20, color='steelblue', edgecolor='k', label='exprslen')
-    # plt.xlabel('exprslen')
-    # plt.ylabel('频数')
-    # plt.title('exprslen-times')
-    # plt.legend(loc='upper left')
-    # plt.show()
-    
-    
-    
+
 
 def main():
 
@@ -117,4 +85,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # plot()
