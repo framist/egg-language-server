@@ -11,7 +11,6 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use serde_json::Value;
 use std::sync::RwLock; // TODO 是否会出现死锁？
 
-
 struct Settings {
     // 语言客户端配置
     max_number_of_problems: usize,
@@ -61,6 +60,7 @@ impl LanguageServer for Backend {
                     commands: vec!["EgglanguageServer.helloWorld".to_string()],
                     work_done_progress_options: Default::default(),
                 }),
+                code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
 
                 workspace: Some(WorkspaceServerCapabilities {
                     workspace_folders: Some(WorkspaceFoldersServerCapabilities {
@@ -132,15 +132,49 @@ impl LanguageServer for Backend {
     async fn execute_command(&self, p: ExecuteCommandParams) -> Result<Option<Value>> {
         self.log_info(format!("command executed! {:?}", p.command))
             .await;
-
-        // match self.client.apply_edit(WorkspaceEdit::default()).await {
-        //     Ok(res) if res.applied => self.client.log_message(MessageType::INFO, "applied").await,
-        //     Ok(_) => self.client.log_message(MessageType::INFO, "rejected").await,
-        //     Err(err) => self.client.log_message(MessageType::ERROR, err).await,
-        // }
-
+        match p.command.as_str() {
+            "EgglanguageServer.helloWorld" => {
+                self.client
+                    .show_message(MessageType::INFO, "Hello you too! 🤣")
+                    .await;
+            }
+            _ => {}
+        }
         Ok(None)
     }
+    async fn code_action(&self, params: CodeActionParams) -> Result<Option<CodeActionResponse>> {
+        self.log_info(format!("code action requested! {:?}", params))
+            .await;
+        let diagnostics = params.context.diagnostics;
+        let mut actions = Vec::new();
+        for diagnostic in diagnostics {
+            let action = CodeAction {
+                title: "let egg simplify it!".to_string(),
+                kind: Some(CodeActionKind::QUICKFIX),
+                diagnostics: Some(vec![diagnostic]),
+                edit: Some(WorkspaceEdit {
+                    changes: None,
+                    document_changes: None,
+                    change_annotations: None,
+                }),
+                command: None,
+                is_preferred: None,
+                disabled: None,
+                data: None,
+            };
+            actions.push(action);
+        }
+        let responses = actions
+            .into_iter()
+            .map(|action| CodeActionOrCommand::CodeAction(action))
+            .collect();
+        Ok(Some(responses))
+    }
+    // async fn code_action_resolve(&self, params: CodeAction) -> Result<CodeAction> {
+    //     self.log_info(format!("code action resolve requested! {:?}", params))
+    //         .await;
+    //     Ok(params)
+    // }
 }
 
 struct TextDocumentItem {
@@ -188,6 +222,22 @@ impl Backend {
         self.client
             .publish_diagnostics(params.uri.clone(), diagnostics, Some(params.version))
             .await;
+
+        // 发送代码操作建议
+        // let actions : CodeActionParams = CodeActionParams {
+        //     text_document: TextDocumentIdentifier {
+        //         uri: params.uri.clone(),
+        //     },
+        //     range: Range::default(),
+        //     context: CodeActionContext {
+        //         diagnostics: diagnostics,
+        //         only: None,
+        //         trigger_kind: None,
+        //     },
+        //     work_done_progress_params: Default::default(),
+        //     partial_result_params: Default::default(),
+        // };
+        // self.code_action(actions).await;
 
         debug!("诊断已发送 version={}", params.version);
     }
@@ -285,8 +335,7 @@ impl Backend {
             "debug" => debug_reparser,
             "same as source" => f_reparser,
             _ => {
-                self
-                    .log_warn(format!("不支持的输出语言: {}", out_language))
+                self.log_warn(format!("不支持的输出语言: {}", out_language))
                     .await;
                 debug_reparser
             }
@@ -335,7 +384,6 @@ async fn main() {
         client,
         settings: RwLock::new(Settings::new()),
     })
-    // .custom_method("custom/inlay_hint", Backend::inlay_hint)
     .finish();
     Server::new(stdin, stdout, socket).serve(service).await;
 }

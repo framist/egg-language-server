@@ -1,11 +1,6 @@
 <div align="center">
-  <img width="100" heigth="100" src="./doc/asserts/icon.svg">
-
-
+  <img width="150" heigth="150" src="./doc/asserts/icon.svg">
   <h1>egg-language-server</h1>
-
-
-
   <b>🧪 in developing</b><br/>
   <i>Source Code Optimization Tools at Writing-time</i><br/>
 </div>
@@ -49,48 +44,17 @@ egg 的源码优化主要分为以下过程：
 此扩展提供以下设置:
 
 - `EgglanguageServer.maxNumberOfProblems`: 
-  - 类型：`number`
   - 描述：控制最多报告问题的数量
-  - 默认值：`100`
-  - 最小值：`1`
-
 - `EgglanguageServer.ifExplanations`: 
-  - 类型：`boolean`
   - 描述：控制 是否显示 egg 重写方案解释
-  - 默认值：`true`
-
 - `EgglanguageServer.ExplanationWithLet`: 
-  - 类型：`boolean`
   - 描述：控制 是否显示 egg let 风格的重写方案解释
-  - 默认值：`true`
-  - 依赖项：`EgglanguageServer.ifExplanations: true`
-
 - `EgglanguageServer.ifEggIR`: 
-  - 类型：`boolean`
   - 描述：控制 是否显示egg的中间表示
-  - 默认值：`true`
-
 - `EgglanguageServer.outLanguage`: 
-  - 类型：`string`
-  - 枚举：
-    - `same as source`
-    - `debug`
-    - `python`
-    - `C`
-    - `lisp`
-    - `javascript`
   - 描述：控制 输出的优化结果参考的伪代码语言类型
-  - 默认值：`same as source`
-
 - `EgglanguageServer.trace.server`: 
-  - 类型：`string`
-  - 枚举：
-    - `off`
-    - `messages`
-    - `verbose`
   - 描述：跟踪 VS Code 和语言服务器之间的通信
-  - 默认值：`off`
-
 
 ## 开发
 
@@ -123,6 +87,8 @@ egg 的源码优化主要分为以下过程：
 
 ### 基准测试
 
+本插件的性能目标是在常用硬件中对于大部分情况在一秒内给出源码优化提示。
+
 **使用 egg 提供的基准测试方案**
 
 要获取每个测试运行时的简单csv，您可以设置环境变量将 “EGG_BENCH_CSV” 添加到要将每个测试附加到csv的行的内容。
@@ -140,7 +106,9 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 
 ## 已知问题
 
-many
+许多，比如
+
+- [ ] 快速更正功能未完成
 
 ## 发行说明
 
@@ -193,6 +161,24 @@ I am sorry, my English is bad, so almost empty here. :(
    1. Switch to the Run and Debug View in the Sidebar (Ctrl+Shift+D).
    2. Select `Launch Client` from the drop down (if it is not already).
    3. Press ▷ to run the launch config (F5).
+
+### benchmark
+
+The performance goal of this plugin is to give source code optimization tips within one second for most cases on common hardware.
+
+**Use the benchmark solution provided by egg**
+
+To get a simple csv of each test run, you can set the environment variable "EGG_BENCH_CSV" to add the content of "EGG_BENCH_CSV" to each line to be attached to the csv.
+
+Example:
+
+```bash
+EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_support::common --nocapture --test --test-threads=1
+```
+
+**More tests**
+
+See the section of the benchmark test script in the `scripts` folder.
 
 ## Known Issues
 
