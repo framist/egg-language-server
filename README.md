@@ -117,8 +117,10 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 ## 参考
 
 - 本项目同时也是作者的毕业设计。
-- 本项目作者对 egg 的论文《Egg: Fast and Extensible Equality Saturation》进行了中文翻译，可以在 [这里](https://www.overleaf.com/read/jhnbztftxwhm) 查看目前翻译的进度。待翻译完成后，会将其放在本项目的 `doc` 文件夹中。 [预览](./doc/asserts/Fast_and_Extensible_Equality_Saturation_zh_cn.pdf)
-- 作为本项目的学习基础，作者有以下笔记：
+- 本项目作者对 egg 的论文《Egg: Fast and Extensible Equality Saturation》进行了中文翻译
+  - [PDF](./doc/Fast_and_Extensible_Equality_Saturation_zh_cn.pdf)
+  - [源码](./doc/Fast_and_Extensible_Equality_Saturation_zh_cn/)
+- 作为本项目的学习基础，作者有以下粗糙的笔记：
   - [Software-Foundations-Note](https://github.com/framist/Software-Foundations-Note) 
   - [CS61a-Note](https://framist.github.io/2022/12/19/CS61a-Note/)
 

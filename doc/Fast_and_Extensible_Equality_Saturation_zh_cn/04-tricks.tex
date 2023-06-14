@@ -45,7 +45,7 @@
 一个 \eclass 分析器类似于提升到 \egraph 层面的抽象解释，
   从半格（semilattice）到每个\eclass 附加 \textit{分析数据}。% ？semilattice
 在合并 \eclasses 和添加新的 \enodes 时，\egraph 会维护和传播这些数据。
-分析数据可以直接用于修改 \egraph，以告知重写如何或是否应用其右右部，或在萃取过程中确定 term 的成本。
+分析数据可以直接用于修改 \egraph，以告知重写如何或是否应用其右右部，或在萃取过程中确定项的成本。
 
 % \Eclass analyses provide a general mechanism to replace what previously
 %   required ad hoc extensions that manually manipulate the \egraph.
@@ -436,7 +436,7 @@ match (a, b) {
 % For a purely syntactic rewrite, the \textsf{apply} function need not inspect the
 %   matched \eclass in any way; it would simply apply
 %   the substitution to the right-hand pattern to produce a new term.
-重写的右侧可以概括为函数 \textsf{apply}，该函数采用替代和通过 e-matching 左侧得到的 \eclass，并产生一个术语，该术语将被添加到 \egraph 中并与匹配的 \eclass 统一。
+重写的右侧可以概括为函数 \textsf{apply}，该函数采用替代和通过 e-matching 左侧得到的 \eclass，并产生一个项，该项将被添加到 \egraph 中并与匹配的 \eclass 统一。
 对于纯粹的语法重写，\textsf{apply} 函数无需以任何方式检查匹配的 \eclass；它只需将替代应用于右侧模式以产生新术语即可。
 
 % 此段翻译未仔细校对
@@ -471,7 +471,7 @@ match (a, b) {
 \subsection{萃取（Extraction）}
 \label{sec:tricks-extraction}
 
-% 此段翻译未仔细校对
+
 % Equality saturation typically ends with an extraction phase that selects an
 %   optimal represented term from an \eclass according to some cost function.
 % In many domains \cite{herbie, szalinski}, AST size
@@ -482,12 +482,12 @@ match (a, b) {
 % With such cost functions, extracting an optimal term can be efficiently done
 %   with a fixed-point traversal over the \egraph that selects the minimum cost
 %   \enode from each \eclass \cite{herbie}.
-等式饱和 通常以提取阶段结束，该阶段根据某些成本函数从 \eclass 中选择最优表示术语。
+等式饱和通常以萃取阶段结束，该阶段根据某些成本函数从 \eclass 中选择最优表示术语。
 在许多领域 \cite{herbie, szalinski} 中，
-  AST 大小（有时对不同运算符的权重不同）足以作为简单的局部成本函数。 % ？AST
+  AST（抽象语法树） 大小（有时对不同运算符的权重不同）足以作为简单的局部成本函数。 
 当我们可以从函数符号 $f$ 和子结点的成本计算出术语 $f(a_{1}, ...)$ 的成本时，
   称成本函数 $k$ 为局部的。
-使用这样的成本函数，可以使用固定点遍历 \egraph 来高效地提取最优术语，该遍历从每个 \eclass 中选择最小成本的 \enode \cite{herbie}。
+使用这样的成本函数（cost function），从 \egraph 中萃取出最佳项可以通过固定点遍历 \egraph 在每个 \eclass 中选择具有最小代价的 \enode 来高效地完成 \cite{herbie}。
 
 % 此段翻译未仔细校对
 % Extraction can be formulated as an \eclass analysis when the cost function
@@ -510,12 +510,12 @@ match (a, b) {
 % This not only further demonstrates the generality of \eclass analyses, but also
 %   provides the ability to do extraction ``on the fly''; conditional and dynamic
 %   rewrites can determine their behavior based on the cheapest term in an \eclass.
-萃取可以在成本函数是局部的情况下被制定（formulated）为 \eclass 分析器。 %？formulated
-分析数据是一个元组 $(n, k(n))$，其中 $n$ 是该 \eclass 中最便宜的 \enode，
-  $k(n)$ 是它的花费。
+萃取可以在成本函数是局部的情况下被表述为（formulated）为 \eclass 分析器。 %？formulated
+分析数据是一个元组 $(n, k(n))$，其中 $n$ 是该 \eclass 中最代价最小的 \enode，
+  $k(n)$ 是它的代价。
 $\textsf{make}(n)$ 操作基于 $n$ 的子节点的分析数据（其中包含最小花费）计算 $k(n)$。
-\textsf{merge} 操作只需取较低花费的元组。
-分析不变量的半格部分保证了分析数据将包含每个类中最低花费的 \enode。
+\textsf{merge} 操作只需取较低代价的元组。
+分析不变量的半格部分（semilattice portion）保证了分析数据将包含每个类中最低花费的 \enode。
 提取可以递归进行；
   如果 \eclass $c$ 的分析数据给出 $f(c_{1}, c_{2}, ...)$ 作为最佳 \enode，
   则 $c$ 表示的最佳项是  
@@ -523,7 +523,6 @@ $\textsf{make}(n)$ 操作基于 $n$ 的子节点的分析数据（其中包含�
 这不仅进一步证明了 \eclass 分析器的普遍性，还提供了“即时”提取的能力；
   条件和动态重写可以根据分析数据来确定其行为。
 
-% 此段翻译未仔细校对
 % Extraction (whether done as a separate pass or an \eclass analysis) can also
 %   benefit from the analysis data.
 % Typically, a local cost function can only look at the function symbol of the
@@ -537,15 +536,15 @@ $\textsf{make}(n)$ 操作基于 $n$ 的子节点的分析数据（其中包含�
 % \autoref{sec:spores} provides a motivating case study wherein an \eclass
 %   analysis computes the size and shape of tensors, and this size information
 %   informs the cost function.
-萃取（无论是作为单独的通过还是作为 \eclass 分析器）也可以从分析数据中受益。
+萃取（无论是作为单独的过程还是作为 \eclass 分析器）也可以从分析数据中受益。
 通常，局部成本函数只能查看 \enode $n$ 的函数符号和 $n$ 的子节点的成本。
 但是，当 \eclass 分析器附加到 \egraph 时，
   成本函数可以观察与 $n$ 的 \eclass 关联的数据，
   以及与 $n$ 的子节点关联的数据。
-这允许成本函数依赖于计算出的事实而不仅仅是纯语法信息。
+这允许成本函数依赖于计算出的论据（facts）而不仅仅是纯语法信息。
 换句话说，运算符的成本可能因其输入而不同。
 \autoref{sec:spores} 提供了一个激励性的案例研究（motivating case study ），% ？ motivating case study 
-  其中 \eclass 分析器计算张量的大小和形状，并且这些大小信息会影响成本函数。
+  其中 \eclass 分析器将计算张量的大小和形状，这些大小信息会影响成本函数。
 
 %%% Local Variables:
 %%% TeX-master: "egg"

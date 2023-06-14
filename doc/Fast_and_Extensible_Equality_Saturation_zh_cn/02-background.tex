@@ -36,7 +36,7 @@
 %   called \textit{equality saturation}~%
 %   \cite{denali, eqsat, eqsat-llvm, szalinski, yogo-pldi20, spores, herbie}.
 一个 \textit{\egraph} 是一个数据结构，
-  它存储了一组项（term）和这些项上的一个同义关系。% ？ terms 
+  它存储了一组项（term）和这些项上的一个同义关系。
 它最初是为定理证明器开发的，现在仍然被用于定理证明器的核心~\cite{nelson, simplify, z3},
   \egraphs 也被用来支持一种程序优化技术称为 \textit{等式饱和（equality saturation）}~。
   \cite{denali, eqsat, eqsat-llvm, szalinski, yogo-pldi20, spores, herbie}.。
@@ -513,9 +513,7 @@
 %           variables to \eclass ids such that $p[\sigma]$ is represented in \eclass $c$.
 % \end{itemize}
 \begin{itemize}
-    \item \texttt{find} 规范化 \eclass id 使用在定义 \ref{def:egraph} 中描述的并查集 $U$。
-    \item \texttt{find} 使用并查集 $U$ 来规范化 \eclass id，
-    如定义 \ref{def:egraph} 中所述。
+    \item \texttt{find} 使用并查集 $U$ 来进行规范化 \eclass id，如定义 \ref{def:egraph} 所述。
     \item \texttt{ematch} 执行在 \egraph 中查找模式的 
           \textit{e-matching}~\cite{simplify, ematching} 过程。 
           \texttt{ematch} 接受一个具有变量占位符的模式项 $p$ 并返回一个元组列表 $(\sigma, c)$，
@@ -675,7 +673,7 @@
 首先，从输入的项创建初始 \egraph。
 算法的核心运行一组重写规则，直到 \egraph 饱和或超时。
 最后，称为 \textit{extraction（提取）} 的程序根据某些成本函数选择最优表示的项。
-对于简单的成本函数，自底向上贪心遍历 \egraph 足以找到最佳术语。
+对于简单的成本函数，自底向上贪心遍历 \egraph 足以找到最佳项。
 其他提取程序已经探索了更复杂的成本函数~\cite{spores, wu_siga19}。
 
 % Equality saturation eliminates the tedious and often error-prone
