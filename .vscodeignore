@@ -2,6 +2,7 @@
 .vscode-test/**
 .gitignore
 vsc-extension-quickstart.md
+scripts/
 
 # 参考 LSP Example
 .vscode/**

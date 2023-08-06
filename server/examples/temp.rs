@@ -36,8 +36,21 @@ fn main() {
 
 #[test]
 fn concat() {
-    assert_eq!(["hello", "world"].concat(), "helloworld");
-    assert_eq!([[1, 2], [3, 4]].concat(), [1, 2, 3, 4]);
+    use serde_json::Value;
+
+    let json_str = r#"
+        {
+            "name": "John",
+            "age": 30,
+            "city": "New York"
+        }
+    "#;
+    
+    let value: Value = serde_json::from_str(json_str).unwrap();
+    
+    println!("Name: {}", value["name"]);
+    println!("Age: {}", value["age"]);
+    println!("City: {}", value["city"]);
 }
 
 #[derive(Debug)]

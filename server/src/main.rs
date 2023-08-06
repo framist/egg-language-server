@@ -11,6 +11,8 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use serde_json::Value;
 use std::sync::RwLock; // TODO 是否会出现死锁？
 
+use std::collections::HashMap;
+
 struct Settings {
     // 语言客户端配置
     max_number_of_problems: usize,
@@ -147,13 +149,30 @@ impl LanguageServer for Backend {
             .await;
         let diagnostics = params.context.diagnostics;
         let mut actions = Vec::new();
+
         for diagnostic in diagnostics {
+            let mut change = HashMap::<Url, Vec<TextEdit>>::new();
+            
+            // auto fix 的内容是诊断信息第三行开始的内容
+            change.insert(
+                params.text_document.uri.clone(),
+                vec![TextEdit {
+                    range: diagnostic.range,
+                    new_text: diagnostic
+                        .message
+                        .lines()
+                        .skip(2)
+                        .collect::<Vec<&str>>()
+                        .join("\n"),
+                }],
+            );
+
             let action = CodeAction {
                 title: "let egg simplify it!".to_string(),
                 kind: Some(CodeActionKind::QUICKFIX),
                 diagnostics: Some(vec![diagnostic]),
                 edit: Some(WorkspaceEdit {
-                    changes: None,
+                    changes: Some(change),
                     document_changes: None,
                     change_annotations: None,
                 }),
@@ -201,7 +220,7 @@ impl Backend {
                     Some(d.label),
                     None,
                     Some("egg-language-server".to_string()), // 可选字段，用于指定 linter 的名称或标识符等
-                    match d.sexpr {
+                    match &d.sexpr {
                         Some(s) => format!(
                             "{} => {}\npseudo code ({}-like):\n{}",
                             d.reason,
@@ -214,6 +233,10 @@ impl Backend {
                     None,
                     None,
                 )
+                // 可以在 data 中附加更多信息来传值
+                // dia.data = Some(serde_json::json!({
+                //     "sexpr": d.sexpr.clone(),
+                // }));
             })
             .take(self.settings.read().unwrap().max_number_of_problems)
             .collect::<Vec<_>>();
@@ -294,11 +317,11 @@ impl Backend {
         let target_language = match self.get_ext(&uri).await {
             Some(value) => value,
             None => {
-                self.log_error(format!("不支持的文件类型: {}", uri)).await;
+                self.log_error(format!("不支持的文件类型：{}", uri)).await;
                 return;
             }
         };
-        self.log_info(format!("目标语言: {}", target_language))
+        self.log_info(format!("目标语言：{}", target_language))
             .await;
         self.settings.write().unwrap().target_language = target_language.to_string();
 
@@ -321,7 +344,7 @@ impl Backend {
             }
             _ => {
                 return self
-                    .log_warn(format!("不支持的语言: {}", target_language))
+                    .log_warn(format!("不支持的语言：{}", target_language))
                     .await;
             }
         };
@@ -335,7 +358,7 @@ impl Backend {
             "debug" => debug_reparser,
             "same as source" => f_reparser,
             _ => {
-                self.log_warn(format!("不支持的输出语言: {}", out_language))
+                self.log_warn(format!("不支持的输出语言：{}", out_language))
                     .await;
                 debug_reparser
             }
