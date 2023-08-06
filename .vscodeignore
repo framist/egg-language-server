@@ -3,6 +3,8 @@
 .gitignore
 vsc-extension-quickstart.md
 scripts/
+doc/
+!doc/asserts/**
 
 # 参考 LSP Example
 .vscode/**
@@ -22,11 +24,8 @@ client/node_modules/**
 !client/node_modules/{semver,lru-cache,yallist}/**
 
 # 参考 tower-lsp-boilerplate
-.vscode
-node_modules
 out/
 src/
 tsconfig.json
 webpack.config.js
-client/**
 target

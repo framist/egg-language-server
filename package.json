@@ -2,8 +2,14 @@
 	"name": "egg-language-server",
 	"displayName": "egg-language-server",
 	"description": "language support with egg support",
+	"publisher": "framist",
+	"repository": {
+		"type": "git",
+    	"url": "https://github.com/framist/egg-language-server"
+	},
+	"icon": "doc/asserts/icon_128.png",
 	"license": "MIT",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"engines": {
 		"vscode": "^1.76.0"
 	},
