@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="150" heigth="150" src="./doc/asserts/icon.svg">
+  <img width="150" heigth="150" src="./doc/asserts/icon.png">
   <h1>egg-language-server</h1>
   <b>🧪 in developing</b><br/>
   <i>Source Code Optimization Tools at Writing-time</i><br/>
@@ -9,11 +9,11 @@
 
 egg 驱动的编写时代码优化语言服务器及 Visual Studio Code 插件。
 
-本插件更多作为实验性质，真正的易于使用的编写时源码优化有待进一步工作
+本插件更多作为实验性质，真正的易于使用的编写时源码优化有待进一步工作。
 
 ## 特性
 
-![demo](./doc/asserts/example1.png)
+![demo](./doc/asserts/demo1.gif)
 
 egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。目前，它在 Python 上工作最好
 
@@ -41,7 +41,7 @@ egg 的源码优化主要分为以下过程：
 
 ## 设置
 
-此扩展提供以下设置:
+此扩展提供以下设置：
 
 - `EgglanguageServer.maxNumberOfProblems`: 
   - 描述：控制最多报告问题的数量
@@ -50,7 +50,7 @@ egg 的源码优化主要分为以下过程：
 - `EgglanguageServer.ExplanationWithLet`: 
   - 描述：控制 是否显示 egg let 风格的重写方案解释
 - `EgglanguageServer.ifEggIR`: 
-  - 描述：控制 是否显示egg的中间表示
+  - 描述：控制 是否显示 egg 的中间表示
 - `EgglanguageServer.outLanguage`: 
   - 描述：控制 输出的优化结果参考的伪代码语言类型
 - `EgglanguageServer.trace.server`: 
@@ -91,9 +91,9 @@ egg 的源码优化主要分为以下过程：
 
 **使用 egg 提供的基准测试方案**
 
-要获取每个测试运行时的简单csv，您可以设置环境变量将 “EGG_BENCH_CSV” 添加到要将每个测试附加到csv的行的内容。
+要获取每个测试运行时的简单 csv，您可以设置环境变量将“EGG_BENCH_CSV”添加到要将每个测试附加到 csv 的行的内容。
 
-示例:
+示例：
 
 ```bash
 EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_support::common --nocapture --test --test-threads=1
@@ -106,9 +106,7 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 
 ## 已知问题
 
-许多，比如
-
-- [ ] 快速更正功能未完成
+许多
 
 ## 发行说明
 
@@ -188,8 +186,3 @@ See the section of the benchmark test script in the `scripts` folder.
 
 ## References
 
----
-
-⚡ Visitor count
-
-![](https://profile-counter.glitch.me/framist-egg-language-server/count.svg)

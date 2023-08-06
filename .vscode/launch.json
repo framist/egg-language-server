@@ -44,6 +44,26 @@
 			}			
 		},
 		{
+			"name": "Run demo (Release, disable-extensions)",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--disable-extensions", // 临时禁止其他的一切插件
+				"--extensionDevelopmentPath=${workspaceRoot}" // 需调试的 VSCode 插件目录
+			],
+			"outFiles": [
+				"${workspaceRoot}/client/out/**/*.js"
+			],
+			// "preLaunchTask": "Build Server (release) and Extension",
+			"skipFiles": [
+				"<node_internals>/**/*.js"
+			],
+			"env": {
+				"SERVER_PATH": "${workspaceRoot}/target/release/egg-language-server", // release server 路径
+			}			
+		},
+		{
 			// Used to attach LLDB to a running LSP server.
 			// NOTE: Might require root permissions. For this run:
 			//
