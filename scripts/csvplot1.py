@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # 设置中文字体
 plt.rcParams['font.sans-serif'] = ['Noto Sans CJK JP']
 
-# 从CSV文件中读取数据，指定列名为"tests"和"times"
+# 从 CSV 文件中读取数据，指定列名为"tests"和"times"
 df = pd.read_csv('./scripts/mydata.csv', names=['test', 'time'])
 
 df.sort_values(by=['time'], inplace=True, ascending=False)

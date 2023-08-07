@@ -55,13 +55,10 @@
 			"outFiles": [
 				"${workspaceRoot}/client/out/**/*.js"
 			],
-			// "preLaunchTask": "Build Server (release) and Extension",
+			"preLaunchTask": "Build Server (release) and Extension",
 			"skipFiles": [
 				"<node_internals>/**/*.js"
-			],
-			"env": {
-				"SERVER_PATH": "${workspaceRoot}/target/release/egg-language-server", // release server 路径
-			}			
+			]	
 		},
 		{
 			// Used to attach LLDB to a running LSP server.

@@ -11,6 +11,19 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [Unreleased]
 
 
+## [0.1.1] - 2023-08-06
+
+### Added
+
+### Fixed
+
+Still can't use... beacuse LS did not be included.
+
+### Changed
+
+### Removed
+
+
 ## [0.1.0] - 2023-08-06
 
 ### Added

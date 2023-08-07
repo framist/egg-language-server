@@ -9,13 +9,15 @@ import {
     ExtensionContext,
     window,
     commands,
+    extensions
 } from "vscode";
 
 import {
     Executable,
     LanguageClient,
     LanguageClientOptions,
-    ServerOptions} from 'vscode-languageclient/node';
+    ServerOptions
+} from 'vscode-languageclient/node';
 
 let client: LanguageClient;
 
@@ -24,11 +26,13 @@ let client: LanguageClient;
 export function activate(context: ExtensionContext) {
     // * 启动语言服务器
 
+    // 应该有更好的写法
+    const ls_path = extensions.getExtension('framist.egg-language-server').extensionPath + "/target/release/egg-language-server";
 
     // 创建一个输出通道，用于显示语言服务器的跟踪信息
     const traceOutputChannel = window.createOutputChannel("egg Language Server trace");
     const run: Executable = {
-        command: process.env.SERVER_PATH || "egg-language-server",
+        command: process.env.SERVER_PATH || ls_path,
         options: {
             env: {
                 ...process.env,                    // 继承当前进程环境变量，并添加或覆盖其中的环境变量
@@ -39,7 +43,7 @@ export function activate(context: ExtensionContext) {
     };
     const debug: Executable = {
         // 取得要运行的语言服务器的命令路径
-        command: process.env.SERVER_PATH || "egg-language-server",
+        command: process.env.SERVER_PATH || ls_path,
         options: {
             env: {
                 ...process.env,                    // 继承当前进程环境变量，并添加或覆盖其中的环境变量
