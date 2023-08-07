@@ -44,8 +44,9 @@
 			}			
 		},
 		{
+			// 模拟插件发布时的情景
 			"name": "Run demo (Release, disable-extensions)",
-			"type": "extensionHost",
+			"type": "extensionHost", 
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			"args": [
@@ -55,7 +56,7 @@
 			"outFiles": [
 				"${workspaceRoot}/client/out/**/*.js"
 			],
-			"preLaunchTask": "Build Server (release) and Extension",
+			"preLaunchTask": "Build Server (all, release) and Extension (release)",
 			"skipFiles": [
 				"<node_internals>/**/*.js"
 			]	
@@ -75,9 +76,9 @@
 			]
 		  },
 		{
+			"name": "Launch Client",
 			"type": "extensionHost",
 			"request": "launch",
-			"name": "Launch Client",
 			"runtimeExecutable": "${execPath}",
 			"args": [
 				// "--disable-extensions", // 临时禁止其他的一切插件
@@ -93,8 +94,7 @@
 			},
 			// 客户端应得到的环境变量：服务器 bin 的路径
 			"env": {
-				"SERVER_PATH_DEBUG": "${workspaceRoot}/target/debug/egg-language-server",
-				"SERVER_PATH_RELEASE": "${workspaceRoot}/target/release/egg-language-server"
+				"SERVER_PATH": "${workspaceRoot}/target/debug/egg-language-server"
 			}
 		},
 		{

@@ -108,12 +108,13 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 暂无自动化支持
 
 ```bash
-cross build --release --target aarch64-unknown-linux-gnu
-cross build --release --target x86_64-pc-windows-gnu    
-
+cargo build --release --target x86_64-unknown-linux-gnu
+cargo build --release --target x86_64-pc-windows-gnu # and x86_64-pc-windows-msvc
+cargo build --release --target aarch64-unknown-linux-gnu
 ```
 
 <!-- 参见 
+https://doc.rust-lang.org/cargo/appendix/glossary.html#target
 
 https://code.visualstudio.com/api/working-with-extensions/continuous-integration#github-actions
 
