@@ -15,6 +15,11 @@
 			]
 		},
 		{
+			"label": "Build Extension (release)",
+			"type": "npm",
+			"script": "esbuild",
+		},
+		{
 			"type": "npm",
 			"script": "watch",
 			"isBackground": true,
@@ -59,6 +64,14 @@
 			"dependsOn": [
 				"Build Server (release)",
 				"Build Extension"
+			],
+			"problemMatcher": "$rustc"
+		},
+		{
+			"label": "Build Server (release) and Extension (release)",
+			"dependsOn": [
+				"Build Server (release)",
+				"Build Extension (release)"
 			],
 			"problemMatcher": "$rustc"
 		}

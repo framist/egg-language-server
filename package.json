@@ -5,7 +5,7 @@
 	"publisher": "framist",
 	"repository": {
 		"type": "git",
-    	"url": "https://github.com/framist/egg-language-server"
+		"url": "https://github.com/framist/egg-language-server"
 	},
 	"icon": "doc/asserts/icon_128.png",
 	"license": "MIT",
@@ -20,12 +20,10 @@
 		"onLanguage:lisp",
 		"onLanguage:common-lisp",
 		"onLanguage:scheme",
-		"onLanguage:c",
 		"onLanguage:python",
-		"onLanguage:javascript",
-		"onLanguage:rust"
+		"onLanguage:javascript"
 	],
-	"main": "./client/out/extension",
+	"main": "./client/out/main",
 	"contributes": {
 		"configuration": {
 			"type": "object",
@@ -38,7 +36,7 @@
 					"minimum": 1,
 					"description": "Controls the maximum number of problems produced by the server.",
 					"markdownDescription": "控制最多报告问题的数量"
-				},				
+				},
 				"EgglanguageServer.ifExplanations": {
 					"scope": "resource",
 					"type": "boolean",
@@ -55,7 +53,7 @@
 					"dependencies": {
 						"EgglanguageServer.ifExplanations": true
 					}
-				},				
+				},
 				"EgglanguageServer.ifEggIR": {
 					"scope": "resource",
 					"type": "boolean",
@@ -104,18 +102,24 @@
 		]
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish_old": "npm run compile",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"lint": "eslint ./client/src --ext .ts,.tsx",
 		"postinstall": "cd client && npm install && cd ..",
-		"test": "sh ./scripts/e2e.sh"
+		"test": "sh ./scripts/e2e.sh",
+		"vscode:prepublish": "npm run esbuild-base -- --minify",
+		"esbuild-base": "esbuild ./client/src/extension.ts --bundle --outfile=client/out/main.js --external:vscode --format=cjs --platform=node",
+		"esbuild": "npm run esbuild-base -- --sourcemap",
+		"esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+		"test-compile": "tsc -p ./"
 	},
 	"devDependencies": {
 		"@types/mocha": "^9.1.0",
 		"@types/node": "^16.11.7",
 		"@typescript-eslint/eslint-plugin": "^5.42.0",
 		"@typescript-eslint/parser": "^5.42.0",
+		"esbuild": "^0.18.19",
 		"eslint": "^8.26.0",
 		"mocha": "^9.2.1",
 		"typescript": "^4.9.4"

@@ -4,12 +4,12 @@
  * ------------------------------------------------------------------------------------------ */
 
 
+import path = require('path');
 import {
     workspace,
     ExtensionContext,
     window,
-    commands,
-    extensions
+    commands
 } from "vscode";
 
 import {
@@ -26,9 +26,21 @@ let client: LanguageClient;
 export function activate(context: ExtensionContext) {
     // * 启动语言服务器
 
-    // 应该有更好的写法
-    const ls_path = extensions.getExtension('framist.egg-language-server').extensionPath + "/target/release/egg-language-server";
+    let ls_path = '';
+    const platform = process.platform;
+    if (platform === 'win32') {
+        // ls_path = path.join(context.extensionPath, 'bin', 'windows', 'executable.exe');
+    } else if (platform === 'darwin') {
+        // ls_path = path.join(context.extensionPath, 'bin', 'macos', 'executable');
+    } else if (platform === 'linux') {
+        ls_path = path.join(context.extensionPath, 'target', 'release', 'egg-language-server');
+    }
 
+    if (!ls_path) {
+        window.showErrorMessage('Egg Language Server : Unsupported platform. 😢');
+        return;
+    }
+    
     // 创建一个输出通道，用于显示语言服务器的跟踪信息
     const traceOutputChannel = window.createOutputChannel("egg Language Server trace");
     const run: Executable = {

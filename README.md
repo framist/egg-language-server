@@ -103,6 +103,21 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 
 参见 `scripts` 文件夹中的部分基准测试脚本
 
+### 跨平台 & CI
+
+暂无自动化支持
+
+```bash
+cross build --release --target aarch64-unknown-linux-gnu
+cross build --release --target x86_64-pc-windows-gnu    
+
+```
+
+<!-- 参见 
+
+https://code.visualstudio.com/api/working-with-extensions/continuous-integration#github-actions
+
+https://github.dev/microsoft/vscode-platform-specific-sample -->
 
 ## 已知问题
 

@@ -11,6 +11,19 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [Unreleased]
 
 
+## [0.1.2] - 2023-08-06
+
+### Added
+
+### Fixed
+
+tell users which platform is supported
+
+### Changed
+
+### Removed
+
+
 ## [0.1.1] - 2023-08-06
 
 ### Added

@@ -1,32 +1,26 @@
 .vscode/**
 .vscode-test/**
 .gitignore
-vsc-extension-quickstart.md
+.github/
 scripts/
+
+# keep pictures
 doc/
-!doc/asserts/**
+!doc/asserts/icon_128.png
+!doc/asserts/demo1.gif
 
-# 参考 LSP Example
+# client
 .vscode/**
-**/*.ts
-**/*.map
-.gitignore
-**/tsconfig.json
-**/tsconfig.base.json
-contributing.md
-.travis.yml
-client/node_modules/**
-!client/node_modules/vscode-jsonrpc/**
-!client/node_modules/vscode-languageclient/**
-!client/node_modules/vscode-languageserver-protocol/**
-!client/node_modules/vscode-languageserver-types/**
-!client/node_modules/{minimatch,brace-expansion,concat-map,balanced-match}/**
-!client/node_modules/{semver,lru-cache,yallist}/**
+client/
+!client/out/main.js
 
-# 参考 tower-lsp-boilerplate
-out/
-src/
-tsconfig.json
-webpack.config.js
-target
+# server
+server/
+target/
 !target/release/egg-language-server
+Cargo.*
+.eslintrc.js 
+.eslintignore
+
+# others
+tsconfig.json
