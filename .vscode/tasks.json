@@ -58,10 +58,10 @@
 			"problemMatcher": "$rustc"			
 		},
 		{
-			"label": "Build Server (x86_64-pc-windows-gnu release)",
+			"label": "Build Server (x86_64-pc-windows-msvc release)",
 			"group": "build",
 			"type": "shell",
-			"command": "cargo build --release --target x86_64-pc-windows-gnu",
+			"command": "cargo build --release --target x86_64-pc-windows-msvc",
 			"problemMatcher": "$rustc"		
 		},
 		{
@@ -76,7 +76,7 @@
 			"group": "build",
 			"dependsOn":[
 				"Build Server (x86_64-unknown-linux-gnu release)",
-				"Build Server (x86_64-pc-windows-gnu release)",
+				"Build Server (x86_64-pc-windows-msvc release)",
 				// "Build Server (aarch64-unknown-linux-gnu release)"
 			]
 		},

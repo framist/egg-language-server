@@ -18,8 +18,8 @@ client/
 server/
 target/
 !target/x86_64-unknown-linux-gnu/release/egg-language-server
-!target/x86_64-pc-windows-gnu/release/egg-language-server.exe
-!target/aarch64-unknown-linux-gnu/release/egg-language-server
+!target/x86_64-pc-windows-msvc/release/egg-language-server.exe
+# !target/aarch64-unknown-linux-gnu/release/egg-language-server
 Cargo.*
 .eslintrc.js 
 .eslintignore

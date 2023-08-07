@@ -109,8 +109,9 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 
 ```bash
 cargo build --release --target x86_64-unknown-linux-gnu
-cargo build --release --target x86_64-pc-windows-gnu # and x86_64-pc-windows-msvc
+cargo build --release --target x86_64-pc-windows-msvc # or x86_64-pc-windows-gnu
 cargo build --release --target aarch64-unknown-linux-gnu
+...
 ```
 
 <!-- 参见 
@@ -146,7 +147,29 @@ I am sorry, my English is bad, so almost empty here. :(
 
 # egg-language-server README
 
+Egg-powered code optimization language server and Visual Studio Code plugin.
+
+This plugin serves more as an experimental project, and further work is needed to make it a truly user-friendly code optimization tool.
+
 ## Features
+
+![demo](./doc/asserts/demo1.gif)
+
+egg-language-server includes a language server and a Visual Studio Code plugin. Currently, it supports subsets of the Lisp, Python, and JavaScript languages, with plans to support more languages in the future. It works best with Python.
+
+egg-language-server can help you:
+- Optimize program structure and improve code performance.
+- Simplify the source code itself.
+- Enhance your skills and code quality.
+
+The source code optimization in egg mainly consists of the following processes:
+1. Code -> AST: Based on Tree-sitter.
+2. AST -> IR: Implementation of `ast_to_sexpr` for each specific target language.
+3. IR <-> IR: Constructing a `CommonLanguage` that abstracts basic elements, procedure abstractions, and data abstractions through rewriting in egg.
+4. IR -> AST: Automatic derivation of methods for the Common Language to convert back to an Abstract Syntax Tree.
+5. AST -> Code: Implementation of `rpn_to_human` for each specific target language.
+
+
 
 ## Requirements
 

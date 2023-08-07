@@ -29,7 +29,7 @@ export function activate(context: ExtensionContext) {
     let ls_path = '';
     const platform = process.platform;
     if (platform === 'win32') {
-        ls_path = path.join(context.extensionPath, 'target', 'x86_64-pc-windows-gnu', 'release', 'egg-language-server.exe');
+        ls_path = path.join(context.extensionPath, 'target', 'x86_64-pc-windows-msvc', 'release', 'egg-language-server.exe');
     } else if (platform === 'darwin') {
         // ls_path = path.join(context.extensionPath, 'bin', 'macos', 'executable');
     } else if (platform === 'linux') {

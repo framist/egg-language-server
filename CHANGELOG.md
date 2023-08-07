@@ -11,6 +11,19 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [Unreleased]
 
 
+## [0.1.3] - 2023-08-06
+
+### Added
+
+x86_64-pc-windows-msvc support
+
+### Fixed
+
+### Changed
+
+### Removed
+
+
 ## [0.1.2] - 2023-08-06
 
 ### Added
