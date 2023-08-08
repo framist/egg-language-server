@@ -7,7 +7,7 @@
 
 # 介绍 ([English](#egg-language-server-readme))
 
-egg 驱动的编写时代码优化语言服务器及 Visual Studio Code 插件。
+![egg](https://egraphs-good.github.io/) 驱动的编写时代码优化语言服务器及 Visual Studio Code 插件。
 
 本插件更多作为实验性质，真正的易于使用的编写时源码优化有待进一步工作。
 
@@ -15,7 +15,7 @@ egg 驱动的编写时代码优化语言服务器及 Visual Studio Code 插件�
 
 ![demo](./doc/asserts/demo1.gif)
 
-egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。目前，它在 Python 上工作最好
+egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。它借助 ![egg](https://egraphs-good.github.io/) 从逻辑层面化简源码。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。目前，它在 Python 上工作最好。
 
 egg-language-server 可以帮助您：
 
@@ -30,6 +30,11 @@ egg 的源码优化主要分为以下过程：
 3. IR <-> IR: 构造基本元素抽象、过程抽象和数据抽象的 `CommonLanguage`。通过 egg 进行 Rewrite。
 4. IR -> AST：Common Language 自动派生方法
 5. AST -> Code：针对特定目标语言分别实现的 `rpn_to_human`
+
+## 快速开始
+
+1. 打开 VS Code
+2. 安装 [egg-language-server](https://marketplace.visualstudio.com/items?itemName=framist.egg-language-server) 插件
 
 ## 依赖
 
@@ -105,7 +110,13 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 
 ### 跨平台 & CI
 
-暂无自动化支持
+
+发行版支持的平台：
+
+- x86_64-unknown-linux-gnu
+- x86_64-pc-windows-msvc
+
+暂无自动化支持，手动编译示例：
 
 ```bash
 cargo build --release --target x86_64-unknown-linux-gnu
@@ -123,11 +134,14 @@ https://github.dev/microsoft/vscode-platform-specific-sample -->
 
 ## 已知问题
 
-许多
+许多，例如
+
+- [ ] 支持语言语法种类过少
+- [ ] 输出的人类可读代码可能会违背直觉，特别地在 Python 中可能因缩进问题导致语法错误
 
 ## 发行说明
 
-暂无发行
+目前可以在 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=framist.egg-language-server) 上找到此扩展。
 
 ## 参考
 
@@ -147,7 +161,7 @@ I am sorry, my English is bad, so almost empty here. :(
 
 # egg-language-server README
 
-Egg-powered code optimization language server and Visual Studio Code plugin.
+![Egg](https://egraphs-good.github.io/)-powered code optimization language server and Visual Studio Code plugin.
 
 This plugin serves more as an experimental project, and further work is needed to make it a truly user-friendly code optimization tool.
 
@@ -169,7 +183,10 @@ The source code optimization in egg mainly consists of the following processes:
 4. IR -> AST: Automatic derivation of methods for the Common Language to convert back to an Abstract Syntax Tree.
 5. AST -> Code: Implementation of `rpn_to_human` for each specific target language.
 
+## Quick Start
 
+1. Open VS Code
+2. Install the [egg-language-server](https://marketplace.visualstudio.com/items?itemName=framist.egg-language-server) extension
 
 ## Requirements
 

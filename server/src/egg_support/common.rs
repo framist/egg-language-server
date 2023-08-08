@@ -15,7 +15,7 @@ define_language! {
         Bool(bool),
         "var" = Var(Id),        // 声明之后为一个 var
         "=" = Eq([Id; 2]),
-        "app" = App([Id; 2]),   // apply 使用lam函数 声明之后为一个lambda, 如果是函数名，则需var声明
+        "app" = App([Id; 2]),   // apply 使用 lam 函数 声明之后为一个 lambda, 如果是函数名，则需 var 声明
         "lam" = Lambda([Id; 2]),
         "let" = Let([Id; 3]),
         "fix" = Fix([Id; 2]),
@@ -46,9 +46,9 @@ define_language! {
     }
 }
 
-// 该函数定义语言: SimpleLanguage。
-// 它包括 Num、加号"+"(Add、两个Id标志符参数)、
-// "*" 乘号(Mul、两个Id标志符参数)以及Symbol标记.
+// 该函数定义语言：SimpleLanguage。
+// 它包括 Num、加号"+"(Add、两个 Id 标志符参数)、
+// "*" 乘号 (Mul、两个 Id 标志符参数) 以及 Symbol 标记。
 #[cfg(not(feature = "float"))]
 define_language! {
     pub enum CommonLanguage {
@@ -113,7 +113,7 @@ define_language! {
  
         Symbol(Symbol),// 语言项的解析是按顺序进行的，所以这个应放在后面
         // 这是最终的回退，它将解析任何运算符 (作为字符串) 和任意数量的孩子。
-        // 请注意，如果有0个子级，则前一个分支将成功
+        // 请注意，如果有 0 个子级，则前一个分支将成功
         Other(Symbol, Vec<Id>),
     }
 }
@@ -198,7 +198,7 @@ fn eval(
             CommonLanguage::Num(x(a)?.num()?.checked_sub(x(b)?.num()?)?),
             format!("(- {} {})", x(a)?, x(b)?).parse().unwrap(),
         )),
-        // CommonLanguage::Div([a, b]) if x(b)?.num()? != 0 => Some((  // 除数不能为0
+        // CommonLanguage::Div([a, b]) if x(b)?.num()? != 0 => Some((  // 除数不能为 0
         //     CommonLanguage::Num(x(a)?.num()? / x(b)?.num()?),   // 整数除法（不是的情况怎么办？）还是不要在整数集中实现除法了
         //     format!("(/ {} {})", x(a)?, x(b)?).parse().unwrap(),
         // )),
@@ -522,6 +522,10 @@ pub fn simplify(s: &str) -> Result<Option<RecExpr<CommonLanguage>>, String> {
     if s.is_empty() {
         return Ok(None);
     }
+    if s.contains("unhandled-node-kind") {
+        return Ok(None); // TODO 暂时不解决这个问题
+    }
+
     let expr = match s.parse() {
         Ok(expr) => expr,
         Err(error) => return Err(format!("Egg failed to parse: {}", error)),
@@ -572,7 +576,7 @@ fn simplify_explain_test() {
     // };
 
     // 使用 Runner 简化表达式，该运行器创建带有
-    // 给定的表达式的 e-graph ，并在其上运行给定的规则
+    // 给定的表达式的 e-graph，并在其上运行给定的规则
     let mut runner = Runner::default()
         .with_explanations_enabled()
         .with_expr(&expr)

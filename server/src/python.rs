@@ -274,8 +274,10 @@ fn ast_to_sexpr(tree_cursor: &TreeCursor, code: &str) -> String {
             format!("")
         }
 
+        // TODO 直接表示为 cl
+        // 目前在 common::simplify 中屏蔽 unhandled-node-kind
         &_ => {
-            format!("<unhandled-node-kind-{}>", node.kind()) // TODO 直接表示为 cl
+            format!("<unhandled-node-kind-{}>", node.kind()) 
         }
     }
 }
@@ -293,7 +295,7 @@ fn py_parser_all(s: &str) -> Result<String, String> {
     debug!("sexp: \n{:?}", &root_node.to_sexp());
 
     let tree_cursor = tree.walk();
-    debug!("tree_cursor 方式打印:");
+    debug!("tree_cursor 方式打印：");
     print_tree_sitter(&&tree_cursor, s, 0);
 
     let sexpr = ast_to_sexpr(&tree_cursor, s);
@@ -319,7 +321,7 @@ pub fn py_parser(s: &str) -> Vec<EggDiagnostic> {
     debug!("sexp: \n{:?}", &root_node.to_sexp());
 
     let tree_cursor = tree.walk();
-    debug!("tree_cursor 方式打印:");
+    debug!("tree_cursor 方式打印：");
     print_tree_sitter(&&tree_cursor, s, 0);
 
     let d = parser_batch_helper(&tree_cursor, s);
@@ -327,7 +329,7 @@ pub fn py_parser(s: &str) -> Vec<EggDiagnostic> {
     d
 }
 
-// TODO 并行化 函数返回 simplify 的 vec handle， 在调用处 join
+// TODO 并行化 函数返回 simplify 的 vec handle，在调用处 join
 // use rayon::prelude::*;
 // use std::thread;
 
@@ -437,7 +439,7 @@ add1(y)
     println!("sexp: \n{:?}", &root_node.to_sexp());
 
     let tree_cursor = tree.walk();
-    println!("tree_cursor 方式打印:");
+    println!("tree_cursor 方式打印：");
     print_tree_sitter(&tree_cursor, CODE, 0);
 
     println!("my sexp: \n{:?}", ast_to_sexpr(&tree_cursor, CODE));

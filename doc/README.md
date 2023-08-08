@@ -1,0 +1,6 @@
+- [x] Fast_and_Extensible_Equality_Saturation_zh_cn* : egg's paper with Chinese translation
+- [x] assets/ : logo, icon, example gif, etc.
+- [ ] slides.pdf : slides for presentation
+- [ ] thesis.pdf : thesis
+- [ ] user_manual/ : user manual
+- [ ] developer_manual/ : developer manual
