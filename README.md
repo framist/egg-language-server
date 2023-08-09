@@ -138,6 +138,7 @@ https://github.dev/microsoft/vscode-platform-specific-sample -->
 
 - [ ] 支持语言语法种类过少
 - [ ] 输出的人类可读代码可能会违背直觉，特别地在 Python 中可能因缩进问题导致语法错误
+- [ ] 大文件的性能问题
 
 ## 发行说明
 
