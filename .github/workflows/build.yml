@@ -1,11 +1,10 @@
-name: CI
+name: build & test in muti platform
 on:
   push:
-    branches:
-      - "**"
-    tags:
-      - "v*"
-
+    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
+    
 jobs:
   build:
     strategy:
@@ -54,6 +53,9 @@ jobs:
         with:
           toolchain: stable
       - run: cargo build --release
+      - name: cargo test (release)
+        run: cargo test --release
+        
       - uses: actions/setup-node@v3
         with:
           node-version: '16'

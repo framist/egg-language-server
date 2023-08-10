@@ -10,8 +10,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [preview]
 
-### [0.1.5] - 2023-08-06 - and previous
+### [0.1.5] - 2023-08 - and previous
 
+- 0.1.5 use GitHub action to support Multi-platform, Deployment (CD), Continuous Integration (CI)
 - 0.1.4 shield something may have bug yet
 - 0.1.3 add x86_64-pc-windows-msvc support
 - 0.1.2 tell users which platform is supported
