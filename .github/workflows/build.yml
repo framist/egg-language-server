@@ -1,9 +1,13 @@
 name: build & test in muti platform
 on:
   push:
-    branches: [ $default-branch ]
+    branches:
+      - "**"
+    tags:
+      - "v*"
   pull_request:
-    branches: [ $default-branch ]
+    branches:
+      - "**"
     
 jobs:
   build:
