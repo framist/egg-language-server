@@ -138,7 +138,7 @@ https://doc.rust-lang.org/cargo/appendix/glossary.html#target
 
 https://code.visualstudio.com/api/working-with-extensions/continuous-integration#github-actions
 
-https://github.dev/microsoft/vscode-platform-specific-sample -->
+https://github.com/microsoft/vscode-platform-specific-sample -->
 
 ## 已知问题
 
