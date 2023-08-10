@@ -11,6 +11,7 @@
 	"license": "MIT",
 	"version": "0.1.5",
 	"preview": true,
+	"pricing": "Free",
 	"engines": {
 		"vscode": "^1.76.0"
 	},
@@ -92,10 +93,6 @@
 			}
 		},
 		"commands": [
-			{
-				"command": "EgglanguageServer.helloWorld",
-				"title": "helloWorld by EgglanguageServer"
-			},
 			{
 				"command": "EgglanguageServer.restart",
 				"title": "Restart EgglanguageServer"

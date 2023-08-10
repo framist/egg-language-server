@@ -8,84 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [preview]
 
-## [0.1.3] - 2023-08-06
+### [0.1.5] - 2023-08-06 - and previous
 
-### Added
-
-shield something may have bug yet
-
-### Fixed
-
-### Changed
-
-### Removed
-
-
-## [0.1.3] - 2023-08-06
-
-### Added
-
-x86_64-pc-windows-msvc support
-
-### Fixed
-
-### Changed
-
-### Removed
-
-
-## [0.1.2] - 2023-08-06
-
-### Added
-
-### Fixed
-
-tell users which platform is supported
-
-### Changed
-
-### Removed
-
-
-## [0.1.1] - 2023-08-06
-
-### Added
-
-### Fixed
-
-Still can't use... beacuse LS did not be included.
-
-### Changed
-
-### Removed
-
-
-## [0.1.0] - 2023-08-06
-
-### Added
-
-add icon
-
-### Fixed
-
-### Changed
-
-### Removed
-
-
-
-## [0.0.1] - 2023-08-06
-
-First published in VSCode Marketplace
-
-### Added
-
-### Fixed
-
-### Changed
-
-### Removed
-
+- 0.1.4 shield something may have bug yet
+- 0.1.3 add x86_64-pc-windows-msvc support
+- 0.1.2 tell users which platform is supported
+- 0.1.1 fixed: Still can't use beacuse LS did not be included.
+- 0.1.0 add icon
+- 0.0.1 First published in VSCode Marketplace
 

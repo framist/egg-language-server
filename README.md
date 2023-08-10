@@ -7,7 +7,7 @@
 
 # 介绍 ([English](#egg-language-server-readme))
 
-![egg](https://egraphs-good.github.io/) 驱动的编写时代码优化语言服务器及 Visual Studio Code 插件。
+[egg](https://egraphs-good.github.io/) 驱动的编写时代码优化语言服务器及 Visual Studio Code 插件。
 
 本插件更多作为实验性质，真正的易于使用的编写时源码优化有待进一步工作。
 
@@ -110,20 +110,28 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 
 ### 跨平台 & CI
 
+*暂时无 CI 支持，目前采用原始人方法*
 
-发行版支持的平台：
+目前发行版支持的平台：
 
 - x86_64-unknown-linux-gnu
 - x86_64-pc-windows-msvc
 
-暂无自动化支持，手动编译示例：
+编译语言服务器
 
-```bash
+```sh
 cargo build --release --target x86_64-unknown-linux-gnu
-cargo build --release --target x86_64-pc-windows-msvc # or x86_64-pc-windows-gnu
+cargo build --release --target x86_64-pc-windows-msvc # or x86_64-pc-windows-gnu or i686-pc-windows-gnu
 cargo build --release --target aarch64-unknown-linux-gnu
-...
+# 或使用 cross
 ```
+
+同样的，插件发布时[指定特定平台](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions)：
+
+```sh
+vsce publish --target win32-x64 linux-x64
+```
+
 
 <!-- 参见 
 https://doc.rust-lang.org/cargo/appendix/glossary.html#target
@@ -139,6 +147,7 @@ https://github.dev/microsoft/vscode-platform-specific-sample -->
 - [ ] 支持语言语法种类过少
 - [ ] 输出的人类可读代码可能会违背直觉，特别地在 Python 中可能因缩进问题导致语法错误
 - [ ] 大文件的性能问题
+- [ ] 支持更多平台
 
 ## 发行说明
 
@@ -162,7 +171,7 @@ I am sorry, my English is bad, so almost empty here. :(
 
 # egg-language-server README
 
-![Egg](https://egraphs-good.github.io/)-powered code optimization language server and Visual Studio Code plugin.
+[Egg](https://egraphs-good.github.io/)-powered code optimization language server and Visual Studio Code plugin.
 
 This plugin serves more as an experimental project, and further work is needed to make it a truly user-friendly code optimization tool.
 
