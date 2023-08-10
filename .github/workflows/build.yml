@@ -1,4 +1,4 @@
-name: build & test in muti platform
+name: build in muti platform
 on:
   push:
     branches:
@@ -55,24 +55,25 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Cache cargo
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            target
-          key: ${{ runner.os }}-cargo
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ matrix.platform }}-${{ matrix.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
       - run: cargo build --release
-      - name: cargo test (release)
-        run: cargo test --release
+      # - run: cargo test --release
         
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
       - run: npm install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
