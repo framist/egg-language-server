@@ -17,13 +17,14 @@ client/
 # server
 server/
 target/
-!target/*/release/egg-language-server
+!target/**/egg-language-server
+!target/**/egg-language-server.exe
 # 未处理好的问题，先忽略
 # !target/*/release/egg-language-server.exe
 # target/*/release/*.dll
 # target/i686-pc-windows-gnu/release/egg-language-server.exe
 # target/x86_64-pc-windows-gnu/release/egg-language-server.exe
-!target/x86_64-pc-windows-msvc/release/egg-language-server.exe
+# !target/x86_64-pc-windows-msvc/release/egg-language-server.exe
 Cargo.*
 .eslintrc.js 
 .eslintignore

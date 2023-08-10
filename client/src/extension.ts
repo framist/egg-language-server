@@ -26,20 +26,20 @@ let client: LanguageClient;
 export function activate(context: ExtensionContext) {
     // * 启动语言服务器
 
-    let ls_path = '';
+    const ls_path = path.join(context.extensionPath, 'target', 'release', 'egg-language-server');
     const platform = process.platform;
-    if (platform === 'win32') {
-        ls_path = path.join(context.extensionPath, 'target', 'x86_64-pc-windows-msvc', 'release', 'egg-language-server.exe');
-    } else if (platform === 'darwin') {
-        // ls_path = path.join(context.extensionPath, 'bin', 'macos', 'executable');
-    } else if (platform === 'linux') {
-        ls_path = path.join(context.extensionPath, 'target', 'x86_64-unknown-linux-gnu', 'release', 'egg-language-server');
-    }
+    // if (platform === 'win32') {
+    //     ls_path = path.join(context.extensionPath, 'target', 'x86_64-pc-windows-msvc', 'release', 'egg-language-server.exe');
+    // } else if (platform === 'darwin') {
+    //     // ls_path = path.join(context.extensionPath, 'bin', 'macos', 'executable');
+    // } else if (platform === 'linux') {
+    //     ls_path = path.join(context.extensionPath, 'target', 'x86_64-unknown-linux-gnu', 'release', 'egg-language-server');
+    // }
 
-    if (!ls_path) {
-        window.showErrorMessage('Egg Language Server : Unsupported platform. 😢');
-        return;
-    }
+    // if (!ls_path) {
+    //     window.showErrorMessage('Egg Language Server : Unsupported platform. 😢');
+    //     return;
+    // }
     
     // 创建一个输出通道，用于显示语言服务器的跟踪信息
     const traceOutputChannel = window.createOutputChannel("egg Language Server trace");
