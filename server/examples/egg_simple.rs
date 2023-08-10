@@ -1,8 +1,8 @@
 use egg::*;
 
-// 该函数定义语言: SimpleLanguage。
-// 它包括 Num、加号"+"(Add、两个Id标志符参数)、
-// "*" 乘号(Mul、两个Id标志符参数)以及Symbol标记.
+// 该函数定义语言：SimpleLanguage。
+// 它包括 Num、加号"+"(Add、两个 Id 标志符参数)、
+// "*" 乘号 (Mul、两个 Id 标志符参数) 以及 Symbol 标记。
 define_language! {
     enum SimpleLanguage {
         Num(i32),
@@ -12,8 +12,8 @@ define_language! {
     }
 }
 
-// 这段代码的作用是创建一个 Vec，里面包含了4条重写规则，
-// 用于对SimpleLanguage语言中的表达式进行重写。
+// 这段代码的作用是创建一个 Vec，里面包含了 4 条重写规则，
+// 用于对 SimpleLanguage 语言中的表达式进行重写。
 fn make_rules() -> Vec<Rewrite<SimpleLanguage, ()>> {
     vec![
         // 交换加法运算数顺序
@@ -33,12 +33,12 @@ fn make_rules() -> Vec<Rewrite<SimpleLanguage, ()>> {
 /// 解析一个表达式，使用 egg 对其进行简化，然后将其打印出来
 fn simplify() {
     let s = "(+ 1 1)";
-    // 解析表达式，类型注释(<Language>)告诉它使用哪种语言
-    //  实际上 RecExpr<SimpleLanguage> 是一个 逆波兰表达式的结构
+    // 解析表达式，类型注释 (<Language>) 告诉它使用哪种语言
+    // 实际上 RecExpr<SimpleLanguage> 是一个 逆波兰表达式的结构
     let expr: RecExpr<SimpleLanguage> = s.parse().unwrap();
 
     // 使用 Runner 简化表达式，该运行器创建带有
-    // 给定的表达式的 e-graph ，并在其上运行给定的规则
+    // 给定的表达式的 e-graph，并在其上运行给定的规则
     let runner = Runner::default().with_expr(&expr).run(&make_rules());
 
     // Runner 知道用 with_expr 给出的表达式在哪个 e-class 中

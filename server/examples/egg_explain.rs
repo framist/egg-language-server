@@ -2,7 +2,7 @@ use egg::{rewrite as rw, *};
 
 fn main() {
     let rules: &[Rewrite<SymbolLang, ()>] = &[
-        rw!("div-one 除以1"; "?x" => "(/ ?x 1)"),
+        rw!("div-one 除以 1"; "?x" => "(/ ?x 1)"),
         rw!("unsafe-invert-division 不安全的消除分母"; "(/ ?a ?b)" => "(/ 1 (/ ?b ?a))"),
         rw!("simplify-frac 简化分式"; "(/ ?a (/ ?b ?c))" => "(/ (* ?a ?c) (* (/ ?b ?c) ?c))"),
         rw!("cancel-denominator 约简分母"; "(* (/ ?a ?b) ?b)" => "?a"),

@@ -15,7 +15,7 @@
 
 ![demo](./doc/asserts/demo1.gif)
 
-egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。它借助 ![egg](https://egraphs-good.github.io/) 从逻辑层面化简源码。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。目前，它在 Python 上工作最好。
+egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。它借助 [egg](https://egraphs-good.github.io/) 从逻辑层面化简源码。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。目前，它在 Python 上工作最好。
 
 egg-language-server 可以帮助您：
 
@@ -46,7 +46,7 @@ egg 的源码优化主要分为以下过程：
 
 ## 设置
 
-此扩展提供以下设置：
+此扩展提供的主要设置有：
 
 - `EgglanguageServer.maxNumberOfProblems`: 
   - 描述：控制最多报告问题的数量
@@ -59,7 +59,7 @@ egg 的源码优化主要分为以下过程：
 - `EgglanguageServer.outLanguage`: 
   - 描述：控制 输出的优化结果参考的伪代码语言类型
 - `EgglanguageServer.trace.server`: 
-  - 描述：跟踪 VS Code 和语言服务器之间的通信
+  - 描述：设置 VS Code 和语言服务器之间的通信日志
 
 ## 开发
 
@@ -79,7 +79,7 @@ egg 的源码优化主要分为以下过程：
         └── main.rs // 语言服务器入口点
 ```
 
-### 运行
+### 运行调试
 
 0. 在此文件夹上打开 VS Code
 1. 在此文件夹中运行 `npm install` , 这将在客户端文件夹中安装所有必要的 npm 模块
@@ -108,37 +108,19 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 
 参见 `scripts` 文件夹中的部分基准测试脚本
 
-### 跨平台 & CI
+### 跨平台 & CI & CD
 
-*暂时无 CI 支持，目前采用原始人方法*
+采用 GitHub Actions 进行，参见 `.github/workflows` 文件夹。
 
-目前发行版支持的平台：
+- push 会自动进行构建
+- push tag 会自动构建、发布
+- pull request 会自动进行构建、测试
 
-- x86_64-unknown-linux-gnu
-- x86_64-pc-windows-msvc
+目前支持的平台有：
 
-编译语言服务器
-
-```sh
-cargo build --release --target x86_64-unknown-linux-gnu
-cargo build --release --target x86_64-pc-windows-msvc # or x86_64-pc-windows-gnu or i686-pc-windows-gnu
-cargo build --release --target aarch64-unknown-linux-gnu
-# 或使用 cross
-```
-
-同样的，插件发布时[指定特定平台](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions)：
-
-```sh
-vsce publish --target win32-x64 linux-x64
-```
+Windows x64, Windows ia32, Alpine Linux 64 bit, macOS Apple Silicon, macOS Intel, Windows ARM, Linux x64, Linux ARM64, Linux ARM32
 
 
-<!-- 参见 
-https://doc.rust-lang.org/cargo/appendix/glossary.html#target
-
-https://code.visualstudio.com/api/working-with-extensions/continuous-integration#github-actions
-
-https://github.com/microsoft/vscode-platform-specific-sample -->
 
 ## 已知问题
 
@@ -147,7 +129,8 @@ https://github.com/microsoft/vscode-platform-specific-sample -->
 - [ ] 支持语言语法种类过少
 - [ ] 输出的人类可读代码可能会违背直觉，特别地在 Python 中可能因缩进问题导致语法错误
 - [ ] 大文件的性能问题
-- [ ] 支持更多平台
+
+目前此插件仅为一个适应与通用语言的实验性工具。为了提升可用性，后续预计会分叉成针对不同语言的版本，如 `eggLS-Python` 等。
 
 ## 发行说明
 
@@ -218,7 +201,7 @@ The source code optimization in egg mainly consists of the following processes:
         └── main.rs // Language Server entry point
 ```
 
-### Running
+### Debugging
 
 0. Open VS Code on this folder.
 1. Run `npm install` in this folder. This installs all necessary npm modules in both the client and server folder

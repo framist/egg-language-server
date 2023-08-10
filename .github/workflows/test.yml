@@ -5,24 +5,56 @@ on:
       - "**"
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # - os: windows-latest
+          #   platform: win32
+          #   arch: x64
+          #   npm_config_arch: x64
+          # - os: windows-latest
+          #   platform: win32
+          #   arch: ia32
+          #   npm_config_arch: ia32
+          # - os: windows-latest
+          #   platform: win32
+          #   arch: arm64
+          #   npm_config_arch: arm
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            npm_config_arch: x64
+          # - os: ubuntu-latest
+          #   platform: linux
+          #   arch: arm64
+          #   npm_config_arch: arm64
+          # - os: ubuntu-latest
+          #   platform: linux
+          #   arch: armhf
+          #   npm_config_arch: arm
+          # - os: ubuntu-latest
+          #   platform: alpine
+          #   arch: x64
+          #   npm_config_arch: x64
+          # - os: macos-latest
+          #   platform: darwin
+          #   arch: x64
+          #   npm_config_arch: x64
+          # - os: macos-latest
+          #   platform: darwin
+          #   arch: arm64
+          #   npm_config_arch: arm64
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
 
-      - name: Cache cargo
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: linux-x64-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: rust Cache
+        uses: Swatinem/rust-cache@v2
 
       - uses: actions-rs/toolchain@v1
         with:
+          profile: minimal
           toolchain: stable
-      # - run: cargo build --release
+      - run: cargo build --release
       - run: cargo test --release
         
