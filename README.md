@@ -13,9 +13,9 @@
 
 ## 特性
 
-![demo](./doc/asserts/demo.webp)
+[![demo | 点击跳转观看 B 站版](./doc/asserts/demo.webp)](https://www.bilibili.com/video/BV1MN411z7WU)
 
-egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。它借助 [egg](https://egraphs-good.github.io/) 从逻辑层面化简源码。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。目前，它在 Python 上工作最好。
+egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。它是一个在代码编写时环境的代码静态分析工具，借助 [egg](https://egraphs-good.github.io/) 从逻辑层面化简源码，能交互式地提供优化指导。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。目前，它在 Python 上工作最好。
 
 egg-language-server 可以帮助您：
 
@@ -151,12 +151,18 @@ Windows x64, Windows ia32, Alpine Linux 64 bit, macOS Apple Silicon, macOS Intel
 ## 参考
 
 - 本项目同时也是作者的毕业设计。
+  - [Slide](./doc/slide.pdf)
 - 本项目作者对 egg 的论文《Egg: Fast and Extensible Equality Saturation》进行了中文翻译
   - [PDF](./doc/Fast_and_Extensible_Equality_Saturation_zh_cn.pdf)
   - [源码](./doc/Fast_and_Extensible_Equality_Saturation_zh_cn/)
 - 作为本项目的学习基础，作者有以下粗糙的笔记：
   - [Software-Foundations-Note](https://github.com/framist/Software-Foundations-Note) 
   - [CS61a-Note](https://framist.github.io/2022/12/19/CS61a-Note/)
+- Videos
+  - [bilibili](https://www.bilibili.com/video/BV1MN411z7WU)
+
+
+
 
 ---
 
