@@ -172,7 +172,7 @@ This plugin serves more as an experimental project, and further work is needed t
 
 ## Features
 
-![demo](./doc/asserts/demo1.gif)
+![demo](./doc/asserts/demo.webp)
 
 egg-language-server includes a language server and a Visual Studio Code plugin. Currently, it supports subsets of the Lisp, Python, and JavaScript languages, with plans to support more languages in the future. It works best with Python.
 
