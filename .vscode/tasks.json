@@ -50,36 +50,6 @@
 			"command": "cargo build --release",
 			"problemMatcher": "$rustc"
 		},
-		{
-			"label": "Build Server (x86_64-unknown-linux-gnu release)",
-			"group": "build",
-			"type": "shell",
-			"command": "cargo build --release --target x86_64-unknown-linux-gnu",
-			"problemMatcher": "$rustc"			
-		},
-		{
-			"label": "Build Server (x86_64-pc-windows-msvc release)",
-			"group": "build",
-			"type": "shell",
-			"command": "cargo build --release --target x86_64-pc-windows-msvc",
-			"problemMatcher": "$rustc"		
-		},
-		{
-			"label": "Build Server (aarch64-unknown-linux-gnu release)",
-			"group": "build",
-			"type": "shell",
-			"command": "cargo build --release --target aarch64-unknown-linux-gnu",
-			"problemMatcher": "$rustc"		
-		},
-		{
-			"label": "Build Server all platform",
-			"group": "build",
-			"dependsOn":[
-				"Build Server (x86_64-unknown-linux-gnu release)",
-				"Build Server (x86_64-pc-windows-msvc release)",
-				// "Build Server (aarch64-unknown-linux-gnu release)"
-			]
-		},
 		// 联合调试
 		{
 			"label": "Build Server and Extension",
@@ -98,9 +68,9 @@
 			"problemMatcher": "$rustc"
 		},
 		{
-			"label": "Build Server (all, release) and Extension (release)",
+			"label": "Build Server (release) and Extension (release)",
 			"dependsOn": [
-				"Build Server all platform",
+				"Build Server (release)",
 				"Build Extension (release)"
 			],
 			"problemMatcher": "$rustc"

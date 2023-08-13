@@ -359,7 +359,7 @@ fn parser_batch_helper(tree_cursor: &TreeCursor, code: &str) -> Vec<EggDiagnosti
 
     match node.kind() {
         // 递归终止点
-        "module" | "block" | "expression_statement" | "comparison_operator" | "binary_operator" 
+        "module" | "block" | "expression_statement" | "comparison_operator" | "binary_operator" | "boolean_operator"
             if diagnostics.is_empty() =>
         {
             let sexpr = ast_to_sexpr(&tree_cursor, code);

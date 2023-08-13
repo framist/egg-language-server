@@ -13,7 +13,7 @@
 
 ## 特性
 
-![demo](./doc/asserts/demo1.gif)
+![demo](./doc/asserts/demo.webp)
 
 egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。它借助 [egg](https://egraphs-good.github.io/) 从逻辑层面化简源码。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。目前，它在 Python 上工作最好。
 
@@ -35,6 +35,18 @@ egg 的源码优化主要分为以下过程：
 
 1. 打开 VS Code
 2. 安装 [egg-language-server](https://marketplace.visualstudio.com/items?itemName=framist.egg-language-server) 插件
+
+<details>
+<summary>试一试 demo！</summary>
+<pre><code>
+def get_answer(universe):
+    if 666 <= universe or universe < 666:
+        f = lambda x: lambda y: y + x
+        a = f(6)(6 * (lambda y: y)(6))
+        print(a)
+</code></pre>
+</details>
+
 
 ## 依赖
 

@@ -629,6 +629,7 @@ test_fn! { simplify_test8, make_rules(), "(& (| true (= 3 2)) true)" => "true" }
 
 test_fn! { simplify_test9, make_rules(), "(& (| (<= 233 666) (= 2 3)) true)" => "true" }
 
+
 // TODO
 // test_fn! { simplify_test10, make_rules(), " (let a 1 (!= (var a) 2))" => "true" }
 
@@ -640,14 +641,14 @@ fn debug_test1() {
         simplify_test("(let x 2 (| (= (var x) 0) (= (var x) 1))) ")
     );
 }
+
+// TODO
 #[test]
 fn debug_test2() {
     println!(
         "{:?}",
         simplify_test(
-            "(if (let x 2 (| (= (var x) 0) (= (var x) 1))) 
-    2 
-    0)"
+            "(let x 2 (* 9 (var x)))"
         )
     );
 }

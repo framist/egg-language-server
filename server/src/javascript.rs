@@ -270,7 +270,7 @@ fn js_parser_all(s: &str) -> Result<String, String> {
     debug!("sexp: \n{:?}", &root_node.to_sexp());
 
     let tree_cursor = tree.walk();
-    debug!("tree_cursor 方式打印:");
+    debug!("tree_cursor 方式打印：");
     print_tree_sitter(&tree_cursor, s, 0);
 
     let sexpr = ast_to_sexpr(&tree_cursor, s);
@@ -298,7 +298,7 @@ pub fn js_parser(s: &str) -> Vec<EggDiagnostic> {
     debug!("sexp: \n{:?}", &root_node.to_sexp());
 
     let tree_cursor = tree.walk();
-    debug!("tree_cursor 方式打印:");
+    debug!("tree_cursor 方式打印：");
     print_tree_sitter(&tree_cursor, s, 0);
 
     parser_batch_helper(&tree_cursor, s)
@@ -319,7 +319,8 @@ fn parser_batch_helper(tree_cursor: &TreeCursor, code: &str) -> Vec<EggDiagnosti
     }
 
     match node.kind() {
-        "program" | "statement_block" | "expression_statement" if diagnostics.is_empty() => {
+        "program" | "statement_block" | "expression_statement" |
+        "binary_expression" | "boolean_expression" | "comparison_expression" if diagnostics.is_empty() => {
             let sexpr = ast_to_sexpr(&tree_cursor, code);
             debug!("sexpr: \n{}", &sexpr);
             let tspan = node.range();
@@ -401,7 +402,7 @@ fn ast_test() {
     println!("sexp: \n{:?}", &root_node.to_sexp());
 
     let tree_cursor = tree.walk();
-    println!("tree_cursor 方式打印:");
+    println!("tree_cursor 方式打印：");
     print_tree_sitter(&tree_cursor, code, 0);
 
     let s = ast_to_sexpr(&tree_cursor, code);

@@ -56,7 +56,7 @@
 			"outFiles": [
 				"${workspaceRoot}/client/out/**/*.js"
 			],
-			"preLaunchTask": "Build Server (all, release) and Extension (release)",
+			"preLaunchTask": "Build Server (release) and Extension (release)",
 			"skipFiles": [
 				"<node_internals>/**/*.js"
 			]	

@@ -12,7 +12,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### [0.1.6] - 2023-08 - and previous
 
-- 0.1.6
+- 0.1.6 fix bugs and update demo
 - 0.1.5 Use GitHub Actions to support multi-platform deployment (CD) and continuous integration (CI)
 - 0.1.4 Shield potential bugs
 - 0.1.3 Add support for x86_64-pc-windows-msvc

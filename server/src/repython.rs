@@ -5,7 +5,7 @@ use crate::egg_support::*;
 
 /// 因为
 /// 	rpn_to_string(&best.to_string().parse().unwrap())
-/// 这里 `to_string().parse()` 是必要的 ，RecExpr<> 可能遭到污染
+/// 这里 `to_string().parse()` 是必要的，RecExpr<> 可能遭到污染
 /// 所以输入直接是 String 形式的 egg-IR
 pub fn py_reparser(sexpr: &String) -> Result<String, String> {
     match sexpr.parse::<EggIR>() {
@@ -28,7 +28,12 @@ fn rpn_helper_py(token: &CommonLanguage, stack: &mut Vec<String>) -> Result<Stri
         #[cfg(feature = "float")]
         Constant(f64) => f64.to_string(),
         Num(val) => val.to_string(),
-        Bool(val) => val.to_string(),
+        Bool(val) => {
+            match val {
+                false => "False".to_string(),
+                true => "True".to_string()
+            }
+        }
         Symbol(s) => s.to_string(),
         // 一元运算符
         op @ (Ln(_) | Sqrt(_)) => {

@@ -145,12 +145,14 @@ impl LanguageServer for Backend {
         Ok(None)
     }
     async fn code_action(&self, params: CodeActionParams) -> Result<Option<CodeActionResponse>> {
-        self.log_info(format!("code action requested! {:?}", params))
-            .await;
+        debug!("code action requested! {:?}", params);
         let diagnostics = params.context.diagnostics;
         let mut actions = Vec::new();
-
+        // 以下逻辑应该有更优雅的写法
         for diagnostic in diagnostics {
+            if diagnostic.source != Some("egg-language-server".to_string()){
+                continue;
+            }
             let mut change = HashMap::<Url, Vec<TextEdit>>::new();
             
             // auto fix 的内容是诊断信息第三行开始的内容
