@@ -15,7 +15,7 @@
 
 [![demo | 点击跳转观看 B 站版](./doc/asserts/demo.webp)](https://www.bilibili.com/video/BV1MN411z7WU)
 
-egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。它是一个在代码编写时环境的代码静态分析工具，借助 [egg](https://egraphs-good.github.io/) 从逻辑层面化简源码，能交互式地提供优化指导。目前支持 lisp、python、JavaScript 语言的**子集**，未来预计会支持更多语言。目前，它在 Python 上工作最好。
+egg-language-server 包括一个语言服务器及一个 Visual Studio Code 插件。它是一个在代码编写时环境的代码静态分析工具，借助 [egg](https://egraphs-good.github.io/) 从逻辑层面化简源码，能交互式地提供优化指导。目前支持 lisp、Python、JavaScript 语言的**子集**，未来预计会支持更多语言。目前，它在 Python 上工作最好。
 
 egg-language-server 可以帮助您：
 
@@ -30,6 +30,8 @@ egg 的源码优化主要分为以下过程：
 3. IR <-> IR: 构造基本元素抽象、过程抽象和数据抽象的 `CommonLanguage`。通过 egg 进行 Rewrite。
 4. IR -> AST：Common Language 自动派生方法
 5. AST -> Code：针对特定目标语言分别实现的 `rpn_to_human`
+
+详见 [Slide](./doc/slide.pdf)
 
 ## 快速开始
 
@@ -124,7 +126,7 @@ EGG_BENCH_CSV=common.csv cargo test --package egg-language-server --lib -- egg_s
 
 采用 GitHub Actions 进行，参见 `.github/workflows` 文件夹。
 
-- push 会自动进行构建
+<!-- - push 会自动进行构建 -->
 - push tag 会自动构建、发布
 - pull request 会自动进行构建、测试
 
@@ -141,6 +143,7 @@ Windows x64, Windows ia32, Alpine Linux 64 bit, macOS Apple Silicon, macOS Intel
 - [ ] 支持语言语法种类过少
 - [ ] 输出的人类可读代码可能会违背直觉，特别地在 Python 中可能因缩进问题导致语法错误
 - [ ] 大文件的性能问题
+- [ ] 用户可调粒度控制
 
 目前此插件仅为一个适应与通用语言的实验性工具。为了提升可用性，后续预计会分叉成针对不同语言的版本，如 `eggLS-Python` 等。
 
@@ -159,7 +162,7 @@ Windows x64, Windows ia32, Alpine Linux 64 bit, macOS Apple Silicon, macOS Intel
   - [Software-Foundations-Note](https://github.com/framist/Software-Foundations-Note) 
   - [CS61a-Note](https://framist.github.io/2022/12/19/CS61a-Note/)
 - Videos
-  - [bilibili](https://www.bilibili.com/video/BV1MN411z7WU)
+  - [用蛋消灭魔鬼！编写时源码优化 VSCode 插件演示 - bilibili](https://www.bilibili.com/video/BV1MN411z7WU)
 
 
 
@@ -193,6 +196,8 @@ The source code optimization in egg mainly consists of the following processes:
 3. IR <-> IR: Constructing a `CommonLanguage` that abstracts basic elements, procedure abstractions, and data abstractions through rewriting in egg.
 4. IR -> AST: Automatic derivation of methods for the Common Language to convert back to an Abstract Syntax Tree.
 5. AST -> Code: Implementation of `rpn_to_human` for each specific target language.
+
+more in [Slide (zh-Hans)](./doc/slide.pdf)
 
 ## Quick Start
 
