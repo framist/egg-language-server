@@ -12,6 +12,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### [0.1.6] - 2023-08 - and previous
 
+
 - 0.1.6 fix bugs and update demo
 - 0.1.5 Use GitHub Actions to support multi-platform deployment (CD) and continuous integration (CI)
 - 0.1.4 Shield potential bugs
@@ -23,6 +24,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 中文版本：
 
+- 0.1.7 demo 修复剪辑错误；增加 GitHub Release 自动化
 - 0.1.6 优化了使用说明
 - 0.1.5 使用 GitHub Actions 支持多平台部署（CD）和持续集成（CI）
 - 0.1.4 屏蔽可能存在的 bug

@@ -30,7 +30,7 @@ print(df.corr())
 # sns.regplot(x=exprslen, y=times, data=df, scatter_kws={'alpha': 0.01})
 # plt.xlabel(xlabel)
 # plt.ylabel(ylabel)
-# plt.title('全流程优化时间-输入程序的长度 关系图')
+# plt.title('全流程优化时间 - 输入程序的长度 关系图')
 # plt.show()
 
 
@@ -57,7 +57,7 @@ ax.violinplot([dfs[i]['times'] for i in range(5)],
 # # 设置透明度
 # for pc in ax.collections:
 # 	pc.set_alpha(0.9)
- 
+
 
 # ax.boxplot([dfs[i]['times'] for i in range(5)],
 #            showmeans=True,
@@ -69,7 +69,7 @@ ax.violinplot([dfs[i]['times'] for i in range(5)],
 # tight layout
 plt.xlabel(xlabel)
 plt.ylabel(ylabel)
-plt.title('全流程优化时间-输入程序的长度 关系图')
+plt.title('全流程优化时间 - 输入程序的长度 关系图')
 plt.tight_layout()
 # 展示图形
 plt.show()
@@ -99,7 +99,7 @@ df2 = df2[df2['times'] < 3]
 df1s = [d['times'] for _, d in df1.groupby(pd.cut(df1['exprslen'], bins=5, labels=False))]
 df2s = [d['times'] for _, d in df2.groupby(pd.cut(df2['exprslen'], bins=5, labels=False))]
 
-# 合并数据, 增加一列'group'，为本来其所在的组的序号
+# 合并数据，增加一列'group'，为本来其所在的组的序号
 df1s = pd.concat([pd.DataFrame({'times': df1s[i], 'group': [i] * len(df1s[i]), '使用分块': '否'}) for i in range(5)])
 df2s = pd.concat([pd.DataFrame({'times': df2s[i], 'group': [i] * len(df2s[i]), '使用分块': '是'}) for i in range(5)])
 
@@ -113,7 +113,10 @@ sns.violinplot(x="group", y="times", hue="使用分块",
 plt.grid(axis='y', linestyle='--', alpha=0.5)
 
 plt.xlabel("输入程序的长度（平均）")
-plt.xticks(ticks=[i for i in range(5)], labels=['{:.2f}'.format(dfs[i]['exprslen'].mean()) for i in range(5)])
+plt.xticks(
+    ticks=list(range(5)),
+    labels=['{:.2f}'.format(dfs[i]['exprslen'].mean()) for i in range(5)],
+)
 plt.ylabel(ylabel)
 # plt.title('无有分块优化算法')
 plt.show()

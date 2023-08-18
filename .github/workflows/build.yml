@@ -90,3 +90,8 @@ jobs:
       - run: npx vsce publish --packagePath $(find . -iname *.vsix)
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: $(find . -iname *.vsix)

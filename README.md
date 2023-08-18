@@ -163,7 +163,8 @@ Windows x64, Windows ia32, Alpine Linux 64 bit, macOS Apple Silicon, macOS Intel
   - [CS61a-Note](https://framist.github.io/2022/12/19/CS61a-Note/)
 - Videos
   - [用蛋消灭魔鬼！编写时源码优化 VSCode 插件演示 - bilibili](https://www.bilibili.com/video/BV1MN411z7WU)
-
+- 相似产品
+  - [sourcery](https://github.com/sourcery-ai/sourcery-vscode.git)
 
 
 
@@ -203,6 +204,19 @@ more in [Slide (zh-Hans)](./doc/slide.pdf)
 
 1. Open VS Code
 2. Install the [egg-language-server](https://marketplace.visualstudio.com/items?itemName=framist.egg-language-server) extension
+3. enjoy it!
+
+<details>
+<summary>try demo!</summary>
+<pre><code>
+def get_answer(universe):
+    if 666 <= universe or universe < 666:
+        f = lambda x: lambda y: y + x
+        a = f(6)(6 * (lambda y: y)(6))
+        print(a)
+</code></pre>
+</details>
+
 
 ## Requirements
 
