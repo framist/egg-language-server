@@ -31,7 +31,7 @@ egg 的源码优化主要分为以下过程：
 4. IR -> AST：Common Language 自动派生方法
 5. AST -> Code：针对特定目标语言分别实现的 `rpn_to_human`
 
-详见 [Slide](./doc/slide.pdf)
+原理、方案、实现、测试 详见 [Slide](./doc/slide.pdf)
 
 ## 快速开始
 
@@ -144,6 +144,7 @@ Windows x64, Windows ia32, Alpine Linux 64 bit, macOS Apple Silicon, macOS Intel
 - [ ] 输出的人类可读代码可能会违背直觉，特别地在 Python 中可能因缩进问题导致语法错误
 - [ ] 大文件的性能问题
 - [ ] 用户可调粒度控制
+- [ ] 用户自定义规则添加，与社区规则发展
 
 目前此插件仅为一个适应与通用语言的实验性工具。为了提升可用性，后续预计会分叉成针对不同语言的版本，如 `eggLS-Python` 等。
 
