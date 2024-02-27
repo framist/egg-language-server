@@ -1,7 +1,7 @@
 <div align="center">
   <img width="150" heigth="150" src="./doc/asserts/icon.png">
   <h1>egg-language-server</h1>
-  <b>🧪 in developing</b><br/>
+  <b><del>🧪 in developing</del> 💤 I am sleeping</b><br/>
   <i>Source Code Optimization Tools at Writing-time</i><br/>
 </div>
 
